@@ -5,8 +5,7 @@ b=1;
 while b
     
     % Calculate the thickness on the staggered grid for use in stress balance equations
-    Hm = (H(1:end-1) + H(2:end))./2; %use forward differences
-    Hm = [Hm,0];
+    Hm = [(H(1:end-1)+H(2:end))./2 0]; %use forward differences
     Hm(Hm<0) = 0; %cannot have negative values
     
     %calculate the linearization terms & effective viscosity required for 
@@ -100,14 +99,14 @@ while b
     end
     
     %use the backslash operator to perform the matrix inversion to solve for ice velocities
-    Un = M\T; %velocity (m s^-1)
+    Un(1:ice_end) = M\T; %velocity (m s^-1)
     
     %remove NaNs and apply the ice divide bounday condition
     Un(isnan(Un)) = 0;
     Un(Un<0) = 0;
     
-    %set velocity at the (dummy) terminus
-    Un(ice_end+1:length(x)) = zeros(1,length(x(ice_end+1:length(x))));
+    %set velocity past the (dummy) terminus to zero
+    Un(ice_end+1:length(x)) = 0;
         
     %make sure Un is a row vector so it can be compared with U
     if size(Un) == [length(x),1]
