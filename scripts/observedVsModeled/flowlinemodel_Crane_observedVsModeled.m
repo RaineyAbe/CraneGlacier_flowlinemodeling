@@ -15,7 +15,7 @@ dx0 = 150; % desired grid spacing (m)
 dx=dx0;
             
 use_binavg = 1;     % = 1 to use average within bins proportional to dx0
-figure_save = 1;    % = 1 to save figure
+figure_save = 0;    % = 1 to save figure
 
 % define home path in directory
     homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
@@ -57,7 +57,7 @@ figure_save = 1;    % = 1 to save figure
     for i=1:length(2009:2018)-1
         speeds = [];
         for j=1:length(u_obs0)
-            if contains(num2str(fix(u_obs0(j).year)),num2str(years(i)))
+            if contains(num2str(fix(u_obs0(j).date)),num2str(years(i)))
                 speeds = [speeds; u_obs0(j).speed'];
             end
         end
@@ -110,7 +110,7 @@ figure_save = 1;    % = 1 to save figure
     xi = 0:dx0:L; % desired distance vector (m from ice divide)  
     
     % calving front location
-    c = dsearchn(transpose(xi),x0(term_2009.x)); % 2009 terminus location (index)
+    c = dsearchn(transpose(xi),termx_obs(1)); % 2009 terminus location (index)
          
     % If the desired grid spacing is smaller than the original, use the
     % interp1 function to determine each spatial vector.
@@ -154,13 +154,6 @@ figure_save = 1;    % = 1 to save figure
     
     dUdxi = [(Ui(2:end)-Ui(1:end-1))./(xi(2:end)-xi(1:end-1)) 0]; % strain rate
     Hi = hi-hbi; % thickness (m)    
-
-    % add the calving front conditions for each spatial variable
-    hi(c+1:length(xi)) = zeros(1,length(hi(c+1:length(xi))));
-    Ui(c+1:length(xi)) = zeros(1,length(Ui(c+1:length(xi))));
-    Hi(c+1:length(xi)) = zeros(1,length(Hi(c+1:length(xi))));
-    dUdxi(c+1:length(xi)) = zeros(1,length(dUdxi(c+1:length(xi))));
-    betai(c+1:length(xi)) = zeros(1,length(betai(c+1:length(xi))));
     
     % find the location of the grounding line and the end of the ice-covered domain
     Hf = -(rho_sw./rho_i).*hbi; % flotation thickness (m)
@@ -174,8 +167,8 @@ figure_save = 1;    % = 1 to save figure
     
     % add a dummy ice end (hi & Hi)
     for i=c+1:length(xi)
-        %hi(i) = hi(i-1)-5; % decrease by 5m until at 0m  
-        Hi(i) = Hi(i-1)-30; % decrease by 20m until 0 
+        hi(i) = hi(i-1)-5; % decrease by 5m until at 0m  
+        Hi(i) = Hi(i-1)-10; % decrease by 20m until 0 
         if Hi(i)>=hi(i)-hbi(i)
             Hi(i)=hi(i)-hbi(i); % can't go beneath bed elevation
         end
@@ -185,11 +178,13 @@ figure_save = 1;    % = 1 to save figure
     
     % find the end of the ice-covered domain (m along centerline)
     ice_end = (find(Hi<=0,1,'first')); 
-    
-    % extend other variables from c+1:ice_end (Ui,Ai)
-    Ui(c+1:ice_end) = Ui(c).*ones(1,length(xi(c+1:ice_end)));
-    Ai(c+1:ice_end) = Ai(c).*ones(1,length(xi(c+1:ice_end)));
-    betai(gl:end) = zeros(1,length(betai(gl:end)));
+
+    % add the ice_end conditions for each spatial variable
+    hi(ice_end+1:length(xi)) = zeros(1,length(hi(ice_end+1:length(xi))));
+    Ui(ice_end+1:length(xi)) = zeros(1,length(Ui(ice_end+1:length(xi))));
+    Hi(ice_end+1:length(xi)) = zeros(1,length(Hi(ice_end+1:length(xi))));
+    dUdxi(ice_end+1:length(xi)) = zeros(1,length(dUdxi(ice_end+1:length(xi))));
+    betai(ice_end+1:length(xi)) = zeros(1,length(betai(ice_end+1:length(xi))));
     
     % use 90% the observed velocity at the upper bounds
     Ui(1:round(0.2*length(Ui))) = 0.9.*Ui(1:round(0.2*length(Ui)));
@@ -231,6 +226,9 @@ for i=1:length(t)
                 % mean sea level
                 plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
             end
+            % ice_end
+            plot(x(c:ice_end)/10^3,h(c:ice_end),'--','color',col(i,:),'linewidth',2,'HandleVisibility','off');
+            plot(x(c:ice_end)/10^3,h(c:ice_end)-H(c:ice_end),'--','color',col(i,:),'linewidth',2,'HandleVisibility','off');
         subplot(3,3,2); % modeled ice surface speed
             hold on; grid on; 
             set(gca,'FontSize',11,'linewidth',1); 
@@ -238,10 +236,12 @@ for i=1:length(t)
             xlim([0 60]); ylim([0 2200]);
             xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})'); 
             plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','2009');
+            % ice_end
+            plot(x(c:ice_end)./10^3,U(c:ice_end).*3.1536e7,'--','color',col(i,:),'linewidth',2,'HandleVisibility','off');
             % Add text label            
             tb = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
-                ' b ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);           
+                ' b ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5); 
         subplot(3,3,3); % modeled terminus position
             hold on; grid on; 
             set(gca,'FontSize',11,'linewidth',1);
@@ -358,12 +358,17 @@ for i=1:length(t)
             % ice surface
             plot(x(1:c)./10^3,h(1:c),'color',col(i,:),'linewidth',2,'displayname','2009');
             % calving front
-            plot(x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(i,:),'linewidth',2,'HandleVisibility','off');          
+            %plot(x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(i,:),'linewidth',2,'HandleVisibility','off');          
             % floating bed
             plot(x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(i,:),'linewidth',2,'HandleVisibility','off');
+            % ice end
+            plot(x(c:ice_end)/10^3,h(c:ice_end),'--','color',col(i,:),'linewidth',2,'HandleVisibility','off');                        
+            plot(x(c:ice_end)/10^3,h(c:ice_end)-H(c:ice_end),'--','color',col(i,:),'linewidth',2,'HandleVisibility','off');            
         subplot(3,3,2); % modeled ice surface speed
             xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})'); 
             plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','2009');     
+            % ice end
+            plot(x(c:ice_end)./10^3,U(c:ice_end).*3.1536e7,'--','color',col(i,:),'linewidth',2,'HandleVisibility','off');                   
         subplot(3,3,3); % modeled terminus position
             plot(x(c)/10^3,years(ii),'.','markersize',20,'color',col(i,:),'linewidth',1.5,'displayname',num2str(t(i)./3.1536e7+2009)); 
         % Observed
@@ -449,7 +454,7 @@ for i=1:length(t)
         end
         % use observed terminus position for first time increment
         if i==1
-            c=dsearchn(transpose(x),x0(term_2009.x));            
+            c=dsearchn(x',termx_obs(1));            
         end 
 
     %calculate the effective pressure (ice overburden pressure minus water
@@ -462,7 +467,7 @@ for i=1:length(t)
     N(N<0)=1; %cannot have negative values
 
     % Solve for new velocity
-    [U,dUdx,T] = U_convergence(x,U,u_obs,dUdx,dhdx,H,A,E,N,W,dx,c,ice_end,n,m,beta,rho_i,rho_sw,g); 
+    [U,dUdx,T] = U_convergence(x,U,U0,dUdx,dhdx,H,A,E,N,W,dx,c,ice_end,n,m,beta,rho_i,rho_sw,g); 
 
     % calculate ice flux
     F = U.*H.*W; % ice flux (m^3 s^-1)
@@ -477,17 +482,17 @@ for i=1:length(t)
     clear smb sigma_smb % clear to avoid changing size with changing x
 
     % interpolate smb0 to centerline, add tributary flux Q0 to smb
-    smb = [interp1(x0,smb0(yr).smb_linear'+Q0,x)]./3.1536e7; % m/s
+    smb = [interp1(x0,smb0'+Q0,x)]; % m/s
         smb(c+1:length(x)) = zeros(1,length(smb(c+1:length(x)))); % zeros past c
-    sigma_smb = [interp1(x0,smb0(yr).sigma_smb+Q0_err,x)]./3.1536e7; % m/s
+    sigma_smb = [interp1(x0,smb0_err+Q0_err,x)]; % m/s
         sigma_smb(c+1:length(x)) = zeros(1,length(smb(c+1:length(x)))); % zeros past c
 
     % adjust smb to minimize misfit of surface observations 
-    smb = smb-0.1e-5; % m/s
-    smb(1:30) = smb(1:30)-0.12e-5; 
-    smb(50:70) = smb(50:70)+0.05e-5;
-    smb(50:100) = smb(50:100)+0.08e-5; 
-    smb(115:290) = smb(115:290)-0.06e-5; 
+    %smb = smb-0.1e-5; % m/s
+    %smb(1:30) = smb(1:30)-0.12e-5; 
+    %smb(50:70) = smb(50:70)+0.05e-5;
+    %smb(50:100) = smb(50:100)+0.08e-5; 
+    %smb(115:290) = smb(115:290)-0.06e-5; 
 
     % new thickness (change from dynamics, SMB, & submarine melting)
     Hn = H+dH+(smb.*dt); 
@@ -556,7 +561,7 @@ for i=1:length(t)
         end
         % use observed terminus position for first time increment
         if i==1
-            c=dsearchn(transpose(x),x0(term_2009.x));            
+            c=dsearchn(x',termx_obs(1));            
         end 
 
 

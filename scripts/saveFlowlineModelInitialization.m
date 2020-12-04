@@ -34,12 +34,11 @@ end
     end
 
 % 2. ice surface elevation
-h0 = load('Crane_OIBObservations_2009-2018.mat').Crane_OIB(1).surf;
+h0 = load('Crane_SurfaceObservations_2009-2018.mat').h(1).surface;
 if size(h0)==[186 1]
     h0=h0';
 end
-    % Use linear interp to fill in gaps
-    h0 = feval(fit(x0(~isnan(h0))',h0(~isnan(h0))','linearinterp'),x0);
+h0(isnan(h0))=0; % replace NaNs with zeros
 
 % 3. glacier bed elevation
 hb0 = load('Crane_ObservedBed_Tate.mat').hb.hb0;

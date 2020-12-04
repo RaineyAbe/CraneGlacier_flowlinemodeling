@@ -23,7 +23,7 @@ while b
         Am = [Am,0];
         Um = (U(1:end-1) + U(2:end))./2; %speed on the staggered grid from forward differencing
         Um = [Um,0];
-        dUmdx = [(Um(2:end)-Um(1:end-1))./(x(2:end)-x(1:end-1)) 0]; %strain rates on the staggered grid
+        dUmdx = [0 (Um(2:end)-Um(1:end-1))./(x(2:end)-x(1:end-1))]; %strain rates on the staggered grid
 
         vm=zeros(1,length(x)); % pre-allocate vm
         for k=1:length(x)
@@ -68,7 +68,7 @@ while b
                 (((2*gamma(k).*H(k))./W(k)).*((5/(E*A(k).*W(k))).^(1/n))); %for U(k)
             G_plus(k) = (2./(dx.^2)).*Hm(k).*vm(k); %for U(k+1)
             T(k) = (rho_i.*g.*H(k).*dhdx(k)); %gravitational driving stress
-        end
+        end 
    end
     % use driving stress at the upper boundary that results in 90% observed
     % velocity 
@@ -82,7 +82,7 @@ while b
         G_plus(c+(j-1)) = 0;
         T(c+(j-1)) = (E*A(c+(j-1)).*(((rho_i.*g./4).*(H(c+(j-1)).*(1-(rho_i./rho_sw)))).^n)).*dx;
     end
-    T(ice_end) = 0;
+    %T(ice_end) = 0;
         
     %remove any NaNs from the coefficient vectors
     G_minus(isnan(G_minus)) = 0;
@@ -128,7 +128,7 @@ while b
             dUdx = dUndx;
             return %break the U iterations
     end
-    
+     
     %if not sufficiently converged, set Un to U and solve the stress balance matrix again
     U = Un;
     dUdx = dUndx;
