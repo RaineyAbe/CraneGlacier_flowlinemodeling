@@ -8,7 +8,6 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
 dx0 = 5000; % desired grid spacing (m)
             % Stress-coupling Length (SCL) =~ 5km
 use_binavg = 1;     % = 1 to use average within bins proportional to dx0
-use_u_lin = 0;      % = 1 y/n to use a linear trendline for the velocity
 save_figure = 1;    % = 1 to save figure of resistive stresses
 poly_solve = 1;     % = 1 to solve for the best polynomial degree fit for beta
 plotStresses = 0; % = 1 to solve for and plot the finalresistive stresses
@@ -21,19 +20,22 @@ cd([homepath,'inputs-outputs']);
 addpath('/Users/raineyaberle/Desktop/Research/matlabFunctions');
 addpath([homepath,'scripts/tuningbeta']);
 
-    % Load 2009 terminus position (m along centerline)
-    centerline = load('LarsenB_centerline.mat').centerline;
-    termx = centerline.termx(5); termy = centerline.termy(5); % row 5 = 2009
-        x_cl = load('Crane_centerline.mat').x; 
-        y_cl = load('Crane_centerline.mat').y;
+% Load Crane Glacier initialization variables
+load('Crane_flowline_initialization.mat');
+    A0 = feval(fit(x0',A0','poly1'),x0)';
+    W0(isnan(W0)) = W0(find(~isnan(W0),1,'last'));
     
-        % Search for the index of the coordinate closest to the terminus location
-        term = dsearchn([x_cl y_cl],[termx termy]); 
-        
+    % Load 2009 terminus position
+    x_cl = load('Crane_centerline.mat').x; 
+    y_cl = load('Crane_centerline.mat').y;     
+    termx = load('LarsenB_centerline.mat').centerline.termx;
+    termy = load('LarsenB_centerline.mat').centerline.termy;    
+    term = dsearchn([x_cl y_cl],[termx(5) termy(5)]);
+        clear x_cl y_cl termx termy
+    
     % densities and g
     rho_i = 917; % ice density (kg m^-3)
     rho_sw = 1028; % ocean water density (kg m^-3)
-    rho_fw = 1000; % fresh water density (kg m^-3)
     g = 9.81; % acceleration (m s^-2)
         
     % time stepping (s)
@@ -42,121 +44,65 @@ addpath([homepath,'scripts/tuningbeta']);
     t_end = 1*3.1536e7;    
     t = (t_start:dt:t_end);
 
-    % glacier geometry initialisation
-    % initial grid spacing vectors x and dx (m)
-        x0 = zeros(1,term);
-        for i=2:length(x_cl)
-            x0(i) = sqrt((x_cl(i)-x_cl(i-1))^2+(y_cl(i)-y_cl(i-1))^2)+x0(i-1);
-        end
-        x0 = transpose(x0); % make a row vector
-        x = x0(1:term);
-        dx = dx0; 
-    % bed elevation (m)
-        OIBPicks.hb = load('Crane_OIBPicks_2018.mat').CraneOIBPicks_2018_full.hb_geoid;
-        OIBPicks.X = load('Crane_OIBPicks_2018.mat').CraneOIBPicks_2018_full.Easting;
-        OIBPicks.Y = load('Crane_OIBPicks_2018.mat').CraneOIBPicks_2018_full.Northing;
-        hb0 = interp1(OIBPicks.Y,OIBPicks.hb,y_cl);
-            hb0(1:6) = hb0(7).*ones(6,1); hb=hb0(1:term); 
-    % surface elevation (m)
-        h_obs = load('Crane_SurfaceObservations_2009-2018.mat').h;
-        h0 = h_obs(3).surface(1:term); % 2011 OIB ice surface 
-        h=h0;
-    % width (m)
-        W0 = load('Crane_CalculatedWidth.mat').width.W;
-        W = W0(1:term);
-    % thickness (m)
-        H0 = h-transpose(hb(1:length(h)));
-        H = H0;
-        
-    % surface mass balance 
-    smb0 = load('Crane_downscaledSMB_2009-2016.mat').SMB(3).smb_linear; % 2011 SMB (m/yr)
-    smb0_err = load('Crane_downscaledSMB_2009-2016.mat').SMB(3).sigma_smb; % (m/yr)
-        % tributary fluxes
-        Q = transpose(load('TributaryFlux.mat').tribFlux.Q); % (m/yr)
-        Q_err = transpose(load('TributaryFlux.mat').tribFlux.Q_err); % (m/yr)
-            Q = Q./3.1536e7; % m/s
-            Q_err = Q_err./3.1536e7; % m/s
-        Q_x = transpose(load('TributaryFlux.mat').tribFlux.x);
-        % interpolate to centerline
-        Q = interp1(Q_x,Q,x0);
-        Q_err = interp1(Q_x,Q_err,x0);
-        % add tributary flux to smb
-        smb = smb0+Q(1:length(smb0));
-        smb_err = transpose(smb0_err)+Q_err(1:length(smb0_err)); 
-        
     % stress parameters (unitless)
-        m = 1; % basal sliding exponent
-        n = 3; % flow law exponent
-        E = 1; % enhancement factor
-    % rate factor (Pa^-3 s^-1)
-        A0 = load('Crane_RateFactor.mat').A; % rate factor (Pa^-n s^-1)
-        A=A0;    
-    %  ice speed (m/s)
-        %Use a smoothing spline fit function to interpolate U along centerline
-        %where data do not exist
-        u = load('Crane_CenterlineSpeeds_2009-2017.mat').u; 
-        U0 = u(3).speed; % 2011 speed (m s^-1)
-        
-        % Align index / coordinates for U profile            
-        U0 = fit(y_cl(~isnan(U0)),U0(~isnan(U0)),'linearinterp'); 
-        U0 = feval(U0,y_cl); 
-       
-        % Use a linear trendline for velocity (optional)
-        if use_u_lin==1
-            U = polyval(polyfit(x,U0(1:term),1),x); 
-        else 
-            U=U0;
-        end 
+    m = 1; % basal sliding exponent
+    n = 3; % flow law exponent
+    E = 1; % enhancement factor
         
 % regrid the initialization data using the interp1 function to match the desired grid spacing
-    x_i = x; % rename initialization distance vector
-    L = x(term); % length of glacier (m)
+    x_i = x0; % rename initialization distance vector
+    L = x0(term); % length of glacier (m)
     x = 0:dx0:L; % desired distance vector (m from ice divide)
-    h = interp1(x_i,h,x,'linear','extrap');
-    hb = interp1(x_i,hb,x,'linear','extrap');
-    W = interp1(x_i,W(1:term),x,'linear','extrap');
-    U = interp1(x_i,U(1:term),x,'linear','extrap');
-    A = interp1(x_i,A(1:term),x,'linear','extrap');
-    SMB0 = interp1(x_i,smb(1:term),x,'linear','extrap');
+    h = interp1(x_i,h0,x,'linear','extrap');
+    hb = interp1(x_i,hb0,x,'linear','extrap');
+    W = interp1(x_i,W0,x,'linear','extrap');
+    U = interp1(x_i,U0,x,'linear','extrap');
+    A = interp1(x_i,A0,x,'linear','extrap');
+    SMB0 = interp1(x_i,smb0,x,'linear','extrap');
     dUdx = (U(2:end)-U(1:end-1))./(x(2:end)-x(1:end-1));
         dUdx = [0,dUdx];
     
     beta = zeros(length(t),length(x)); % (s^{1/m} m^{-1/m})
-    
-    clear x_cl y_cl
-    
+           
 % Use a staggered grid to calculate averages within bins
     if use_binavg
         xm = (x(1:end-1)+x(2:end))./2;
         for k=1:length(x)
             if k==1
-              h(k) = mean(h0(1:dsearchn(x0,xm(k))));
-              hb(k) = mean(hb0(1:dsearchn(x0,xm(k))));
-              W(k) = mean(W0(1:dsearchn(x0,xm(k))));
-              U(k) = mean(U0(1:dsearchn(x0,xm(k))));
-              A(k) = mean(A0(1:dsearchn(x0,xm(k))));
-              SMB0(k) = mean(smb0(1:dsearchn(x0,xm(k)))); 
+              h(k) = mean(h0(1:dsearchn(x0',xm(k))));
+              hb(k) = mean(hb0(1:dsearchn(x0',xm(k))));
+              W(k) = mean(W0(1:dsearchn(x0',xm(k))));
+              U(k) = mean(U0(1:dsearchn(x0',xm(k))));
+              A(k) = mean(A0(1:dsearchn(x0',xm(k))));
+              SMB0(k) = mean(smb0(1:dsearchn(x0',xm(k)))); 
             elseif k==length(x)
-              h(k) = mean(h0(dsearchn(x0,xm(k-1)):term));
-              hb(k) = mean(hb0(dsearchn(x0,xm(k-1)):term));
-              W(k) = mean(W0(dsearchn(x0,xm(k-1)):term));
-              U(k) = mean(U0(dsearchn(x0,xm(k-1)):term));
-              A(k) = mean(A0(dsearchn(x0,xm(k-1)):term));
-              SMB0(k) = mean(smb0(dsearchn(x0,xm(k-1)):term));
+              h(k) = mean(h0(dsearchn(x0',xm(k-1)):term));
+              hb(k) = mean(hb0(dsearchn(x0',xm(k-1)):term));
+              W(k) = mean(W0(dsearchn(x0',xm(k-1)):term));
+              U(k) = mean(U0(dsearchn(x0',xm(k-1)):term));
+              A(k) = mean(A0(dsearchn(x0',xm(k-1)):term));
+              SMB0(k) = mean(smb0(dsearchn(x0',xm(k-1)):term));
             else
-              h(k) = mean(h0(dsearchn(x0,xm(k-1)):dsearchn(x0,xm(k))));
-              hb(k) = mean(hb0(dsearchn(x0,xm(k-1)):dsearchn(x0,xm(k))));
-              W(k) = mean(W0(dsearchn(x0,xm(k-1)):dsearchn(x0,xm(k))));
-              U(k) = mean(U0(dsearchn(x0,xm(k-1)):dsearchn(x0,xm(k))));
-              A(k) = mean(A0(dsearchn(x0,xm(k-1)):dsearchn(x0,xm(k))));
-              SMB0(k) = mean(smb0(dsearchn(x0,xm(k-1)):dsearchn(x0,xm(k))));
+              h(k) = mean(h0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
+              hb(k) = mean(hb0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
+              W(k) = mean(W0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
+              U(k) = mean(U0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
+              A(k) = mean(A0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
+              SMB0(k) = mean(smb0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
             end
         end 
         H = h-hb;
     end 
    
-    SMB=SMB0;
-    
+    SMB=SMB0; dx=dx0;
+
+% find the grounding line
+%Hf = -(rho_sw./rho_i).*hb; % flotation thickness (m)
+%gl = find(Hf-H>0,1,'first')-1; %grounding line location
+
+% add floating thickness past grounding line
+%H(gl:end) = h(gl:end)*rho_sw/(rho_sw-rho_i); % buoyant thickness using surface
+ 
     % Solve for faf at the calving frontx
     faf = H(end)*rho_i/(-hb(end)*rho_sw);
     disp(['FAF = ',num2str(faf)]);
@@ -266,9 +212,9 @@ for i=1:length(t)
     % Plot resulting beta
         figure(3)
         if mod(i-1,round(length(t)/10))==0
-            plot(x(1:c)./10^3,beta(i,1:c),'-','Color',col(i,:),'linewidth',2,'DisplayName',['yr ',num2str(t(i)./3.1536e7)]); hold on;
+            plot(x(1:c-1)./10^3,beta(i,1:c-1),'-','Color',col(i,:),'linewidth',2,'DisplayName',['yr ',num2str(t(i)./3.1536e7)]); hold on;
         else
-            plot(x(1:c)./10^3,beta(i,1:c),'-','Color',col(i,:),'linewidth',2,'HandleVisibility','off'); hold on;
+            plot(x(1:c-1)./10^3,beta(i,1:c-1),'-','Color',col(i,:),'linewidth',2,'HandleVisibility','off'); hold on;
         end 
         ylim([min(beta(i,:)) max(beta(i,:))]);
         

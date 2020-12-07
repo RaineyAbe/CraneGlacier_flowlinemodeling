@@ -28,6 +28,6 @@ t_decidate = t./3.1536e7 + 2009; % decidate
 termx_obs_current = interp1(termDate_obs_int,termx_obs_fit,t_decidate); % (m)
 
 % compute the RMSE of the modeled vs. observed terminus position
-term_rmse = sqrt((x(c) - termx_obs_current)^2);
+term_rmse = x(c) - termx_obs_current;
 
 end 
