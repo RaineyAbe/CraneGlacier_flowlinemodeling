@@ -1,5 +1,5 @@
 %% solve the stress balance equations to obtain speed values (U)
-function [U,dUdx,T] = U_convergence(x,U,dUdx,dhdx,H,A,E,N,W,dx,c,ice_end,n,m,beta,rho_i,rho_sw,g,u_obs)
+function [U,dUdx,T] = U_convergence(x,U,dUdx,dhdx,H,A,E,N,W,dx,c,ice_end,n,m,beta,rho_i,rho_sw,g,U0)
 
 b=1;
 while b
@@ -74,7 +74,7 @@ while b
    end
     % use driving stress at the upper boundary that results in 90% observed
     % velocity 
-    T(1) = u_obs(1,1)*G(1);
+    T(1) = U0(1,1)*G(1);
     
     %apply the hydrostatic equilibrium boundary condition from the calving
     %front (c) to the end of the ice-covered domain (terminus)

@@ -12,7 +12,7 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
 
 %% define time and space independent variables
     
-dx0 = 150; % desired grid spacing (m)
+dx0 = 200; % desired grid spacing (m)
 dx=dx0;
            
 save_figure = 0; % = 1 to save image for sensitivity test
@@ -29,6 +29,7 @@ smr_change = 0.00; % percent change in SMR (1=100%)
 % Load Crane Glacier initialization variables
     load('Crane_flowline_initialization.mat');
     A0 = feval(fit(x0',A0','poly1'),x0)';
+    W0(isnan(W0)) = W0(find(~isnan(W0),1,'last'));
  
 % submarine melting rate parameter
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:
@@ -64,7 +65,7 @@ smr_change = 0.00; % percent change in SMR (1=100%)
     g = 9.81; % acceleration (m s^-2)
 
 % time stepping (s)
-    dt = 0.1*3.1536e7; 
+    dt = 0.05*3.1536e7; 
     t_start = 0*3.1536e7; 
     t_end = 10*3.1536e7;    
     t = (t_start:dt:t_end);
@@ -183,7 +184,7 @@ for test=1%:2
     x=xi; h=hi; hb=hbi; W=Wi; H=Hi; A=Ai; beta=betai; U=Ui; dUdx=dUdxi;
     ice_end=ice_endi;
     
-    for i=1:15%length(t)
+    for i=1:length(t)
 
         % set up figures, plot geometries at t==0, then every t/10 iterations
         if t(i)==t_start
@@ -324,10 +325,11 @@ for test=1%:2
             % find the location of the grounding line and use a floating
             % geometry from the grounding line to the calving front
             gl = find(Hf-H>0,1,'first')-1; %grounding line location 
-            ice_end = (find(H<=0,1,'first')); %end of ice-covered domain
+            ice_end = find(H<=100,1,'first'); %end of ice-covered domain
             if isempty(ice_end) || ice_end>length(x)
                 ice_end = length(x);
                 disp('ice end criteria not met.');
+                break;
             end
         
         %calculate the glacier's surface elevation and slope
@@ -375,7 +377,6 @@ for test=1%:2
         % calculate the  change in ice thickness from continuity
         dHdt = -(1./W).*gradient(F,x);
         dH = dHdt.*dt;
-        dH = movmean(dH,20);
         
         % surface mass balance
         yr = round(t(i)/3.1536e7)+1;
@@ -397,11 +398,15 @@ for test=1%:2
         end
 
         % adjust smb to minimize misfit of surface observations 
+        smb = smb-0.03e-5;
         smb(1:30) = smb(1:30)-0.12e-5; 
         smb(5:20) = smb(5:20)+0.05e-5;
         smb(50:70) = smb(50:70)+0.05e-5;
         smb(50:100) = smb(50:100)+0.08e-5; 
         smb(115:290) = smb(115:290)-0.07e-5; 
+        smb(125:170) = smb(125:170)-0.1e-5;
+        smb(153:163) = smb(153:163)-0.2e-5;
+        smb = movmean(smb,20);
 
         % new thickness (change from dynamics, SMB, & SMR)
         Hn = H+dH+(smb.*dt)+(smr.*dt); 
@@ -423,17 +428,17 @@ for test=1%:2
         xn = 0:dx:L; %new distance vector    
 
         %adjust the space-dependent variables to the new distance vector
-        hb = interp1(x0,hb0,xn);
-        W = interp1(x0,W0,xn);
-        H = interp1(x,H,xn,'linear','extrap'); % ice thickness (m)
-        Hf = interp1(x,Hf,xn,'linear','extrap');
+        hb = interp1(x0,hb0,xn); hb(isnan(hb)) = hb(find(~isnan(hb),1,'last'));
+        W = interp1(x0,W0,xn); W(isnan(W)) = W(find(~isnan(W),1,'last'));
+        H = interp1(x,H,xn,'linear','extrap'); H(isnan(H)) = H(find(~isnan(H),1,'last')); % ice thickness (m)
+        Hf = interp1(x,Hf,xn,'linear','extrap'); Hf(isnan(Hf)) = Hf(find(~isnan(Hf),1,'last'));
         U = interp1(x,U,xn,'linear','extrap'); % speed (m s^-1)
         A = interp1(x,A,xn,'linear','extrap'); % rate factor (Pa^-n s^-1)
         beta = interp1(x,beta,xn,'linear','extrap'); % basal roughness factor
 
         %find the location of the grounding line and end of the ice-covered domain for the adjusted data
         gl = find(Hf-H<0,1,'last');
-        ice_end = (find(H<=0,1,'first'));
+        ice_end = find(H<=100,1,'first');
         if isempty(ice_end) || ice_end>length(xn)
             ice_end = length(xn);
             disp('ice end criteria not met.')

@@ -1,7 +1,7 @@
 %% solve the stress balance equations to obtain the basal roughness factor (beta)
     % Adapted and adjusted from Ellyn's original code and Enderlin et al. (2013)
     
-function [beta,U,vm,T,dUdx] = betaSolve(x,h,rho_i,g,m,n,A,H,W,dx,c,ice_end,N,i,U0,x0,t,beta,E,rho_sw,plotStresses)
+function [beta,U,vm,T,dUdx] = betaSolve(x,h,rho_i,g,m,n,A,H,W,dx,c,ice_end,N,i,U0,x0,t,beta,E,rho_sw)
     
     % Load observed speed, use linear trendline
     U = interp1(x0,U0,x); 
@@ -147,23 +147,6 @@ function [beta,U,vm,T,dUdx] = betaSolve(x,h,rho_i,g,m,n,A,H,W,dx,c,ice_end,N,i,U
         beta(i,1) = beta(i,2); %beta(i,c) = 0; % floating
         %beta(beta<=0)=0;
    
-        % Plot resulting stress balance variables
-        if plotStresses==1
-            if i==1
-                figure(4)
-                hold on; plot(x/10^3,G_minus,'-b','linewidth',2,'displayname','G_{minus}');
-                plot(x./10^3,G_plus,'-c','linewidth',1,'displayname','G_{plus}');
-                plot(x./10^3,G,'-m','linewidth',2,'displayname','G');
-                plot(x./10^3,T,'-g','linewidth',1,'displayname','T_d'); 
-            else 
-                figure(4)
-                hold on; plot(x/10^3,G_minus,'-b','linewidth',2,'HandleVisibility','off');
-                plot(x./10^3,G_plus,'-c','linewidth',1,'HandleVisibility','off');
-                plot(x./10^3,G,'-m','linewidth',2,'HandleVisibility','off');
-                plot(x./10^3,T,'-g','linewidth',1,'HandleVisibility','off');             
-            end 
-        end 
-        
     % Run the forward U_convergence with the resulting beta to check success
         %set-up coefficient vectors for the linearized stress terms over the calving front
         %[C(k)*U(k-1)+E(k)*U(k)+G(k)*U(k+1)=Td]
