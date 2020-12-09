@@ -8,9 +8,10 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
 dx0 = 500:500:7e3; % desired grid spacings
     % Stress-coupling Length (SCL) =~ 5km
 
-mu_RMSE = zeros(1,length(dx0));
+mu_RMSE = zeros(1,length(dx0)); % mean RMSE of polynomial fits
+betaFit_save = zeros(length(dx0),186); % saved beta fits
 
-figure_save = 1; % =1 to save figures for each spatial resolution
+figure_save = 1; % = 1 to save figures for each spatial resolution
 
 for z=1:length(dx0)
     
@@ -114,7 +115,8 @@ for z=1:length(dx0)
     H(H>h-hb) = h(H>h-hb)-hb(H>h-hb); % thickness cannot go beneath bed
 
     % set up figures
-    col = parula(length(dx0)+5); %Color scheme for plots
+    col = parula(length(dx0)+2); %Color scheme for plots
+    col = flipud(col(1:end-2,:));
     figure(1); % fig1 = glacier geometry
         set(gcf,'Position',[0 100 500 400]);
         set(gca,'FontSize',14,'FontName','Arial'); grid on;
@@ -141,6 +143,7 @@ for z=1:length(dx0)
         xlim([0 50]); ylim([-1e4 1e4]);
     subplot(1,3,2); % best poly fit
         hold on; grid on;
+        xlim([0 60]); ylim([-500 2500]);
         set(gca,'FontSize',14,'FontName','Arial','linewidth',2); grid on; 
         xlabel('Distance Along Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})');
         title('\beta Polynomial Fits');
@@ -148,9 +151,9 @@ for z=1:length(dx0)
     subplot(1,3,3); % RMSE
         hold on; grid on; 
         set(gca,'FontSize',14,'FontName','Arial','linewidth',2); grid on;
-        xlabel('dx (km)'); ylabel('RMSE (s^{1/m} m^{-1/m})');
-        title('RMSE of poly fits');
-        xlim([0 8]); ylim([0 6e9]);
+        xlabel('dx (m)'); ylabel('mean RMSE (s^{1/m} m^{-1/m})');
+        title('RMSE of polynomial fits');
+        xlim([0 8e3]); ylim([0 6e9]);
         hold on; grid on; legend;       
         
     for i=1 % only run through one time increment
@@ -214,18 +217,27 @@ for z=1:length(dx0)
         
             % Solve for the best polynomial fit of beta using cross-validation
             if poly_solve==1
-                deg = [0:5]; % polynomial degrees
+                
+                deg = 0:5; % polynomial degrees
                 nMC=length(x); % number of Monte-Carlo simulations
                 pTrain=0.9; % percentage of points to use as training data 
                 replace=0; % do not replace values in MC simulations
 
-                % Input into bestPolyFit function
+                % Call on bestPolyFit function
                 [RMSE,bestPoly] = bestPolyFit(x(1:end-1),beta(i,1:end-1),pTrain,deg,nMC,replace);
+                % Fit the resulting best polynomial to the data
                 betaFit = polyfit(x(1:end-1),beta(i,1:end-1),bestPoly);
+                % Make sure y-intercept is positive (beta ~<0) 
                 if length(betaFit)>1 && betaFit(2)<0
                     betaFit(2)=0;
                 end
+                % Evaluate the polynomial at every x-value 
                 betaFit = polyval(betaFit,x0);
+                betaFit_save(z,:) = betaFit;
+                % Save the mean RMSE
+                mu_RMSE(z) = mean(RMSE);
+                % Save  beta
+                betaSave(z).beta = interp1(x,beta(1,:),x0);
 
                 % Plot polynomial fit
                 figure(3);
@@ -233,16 +245,71 @@ for z=1:length(dx0)
                 plot(x0./10^3,betaFit,'color',col(z,:),'linewidth',2,...
                     'displayname',num2str(dx0(z)));
         
-                mu_RMSE(z) = mean(RMSE);
-                
                 % Plot RMSE of polynomial fit
                 figure(3);
                 subplot(1,3,3); 
                 plot(dx0(z),mean(RMSE),'*','color',col(z,:),'markersize',15,...
                     'linewidth',2,'displayname',num2str(dx0(z)));
                 
+                if figure_save
+                    if dx0(z)==dx0(end)
+                        cd /Users/raineyaberle/Desktop/Courses/GEOPH_522_Geostats/CourseProject/resultsImages
+                        figure(3);
+                        saveas(gcf,[num2str(dx0(z)),'.png'],'png');
+                        saveas(gcf,[num2str(dx0(z)),'_2.png'],'png');
+                        saveas(gcf,[num2str(dx0(z)),'_3.png'],'png');                       
+                        disp([num2str(dx0(z)),'.png saved']);
+                    else
+                        cd /Users/raineyaberle/Desktop/Courses/GEOPH_522_Geostats/CourseProject/resultsImages
+                        figure(3);
+                        saveas(gcf,[num2str(dx0(z)),'.png'],'png');
+                        disp([num2str(dx0(z)),'.png saved']);
+                    end
+                    
+                end
             end 
 
     end 
 
 end
+
+    cd /Users/raineyaberle/Desktop/Courses/GEOPH_522_Geostats/CourseProject/resultsImages/
+    figure(4); clf
+    set(gca,'FontSize',14,'FontName','Arial','linewidth',2); grid on;
+    xlabel('dx (m)'); ylabel('mean RMSE (s^{1/m} m^{-1/m})');
+    title('RMSE of polynomial fits');
+    xlim([3e3 8e3]); ylim([0 8e4]);
+    hold on; grid on; legend;  
+    for z=1:length(dx0)
+        plot(dx0(z),mu_RMSE(z),'*','color',col(z,:),'markersize',15,...
+            'linewidth',2,'displayname',num2str(dx0(z)));    
+    end
+    saveas(gcf,'zoomedRMSE.png','png');
+    disp('zoomedRMSE.png saved');
+    
+    figure(5); clf
+    set(gcf,'Position',[270 281 899 424]);
+    subplot(1,2,1);
+        set(gca,'FontSize',14,'FontName','Arial','linewidth',2); grid on;
+        title('\beta');
+        hold on; grid on; legend('Location','northwest');
+        xlabel('Distance Along Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})');
+        for z=10:14
+            plot(x0(1:100)./10^3,betaSave(z).beta(1:100),'k',...
+                'linewidth',2,'color',col(z,:),'displayname',num2str(dx0(z)));
+        end
+    subplot(1,2,2);
+        set(gca,'FontSize',14,'FontName','Arial','linewidth',2); grid on;
+        title('\beta linear fit');
+        hold on; grid on; legend('Location','northwest');
+        xlabel('Distance Along Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})');
+        for z=10:14
+            plot(x0(1:100)./10^3,betaFit_save(z,1:100),'-m',...
+                'linewidth',2,'color',col(z,:),'displayname',num2str(dx0(z)));
+        end
+        saveas(gcf,'optimalBeta.png','png');
+        disp('optimalBeta.png saved');
+    
+    
+    
+    

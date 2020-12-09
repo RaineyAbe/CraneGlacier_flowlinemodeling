@@ -30,6 +30,7 @@ smr_change = 0.00; % percent change in SMR (1=100%)
     load('Crane_flowline_initialization.mat');
     A0 = feval(fit(x0',A0','poly1'),x0)';
     W0(isnan(W0)) = W0(find(~isnan(W0),1,'last'));
+    %A0(100:end) = A0(100:end).*5;
  
 % submarine melting rate parameter
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:
@@ -65,7 +66,7 @@ smr_change = 0.00; % percent change in SMR (1=100%)
     g = 9.81; % acceleration (m s^-2)
 
 % time stepping (s)
-    dt = 0.05*3.1536e7; 
+    dt = 0.01*3.1536e7; 
     t_start = 0*3.1536e7; 
     t_end = 10*3.1536e7;    
     t = (t_start:dt:t_end);
@@ -398,7 +399,7 @@ for test=1%:2
         end
 
         % adjust smb to minimize misfit of surface observations 
-        smb = smb-0.03e-5;
+        %smb = smb-0.03e-5;
         smb(1:30) = smb(1:30)-0.12e-5; 
         smb(5:20) = smb(5:20)+0.05e-5;
         smb(50:70) = smb(50:70)+0.05e-5;

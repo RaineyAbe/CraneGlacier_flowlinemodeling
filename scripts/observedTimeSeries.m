@@ -14,9 +14,9 @@ clear all; close all;
 
 bed_save = 'n';        % Switch 'y'/'n' to save/not save bed
 surface_save = 'n';    % Switch 'y'/'n' to save/not save surface
-velocity_save = 'n';   % Switch 'y'/'n' to save/not save velocity
-dHdt_save = 'y';       % Switch 'y'/'n' to save/not save dHdt
-figures_save = 'n';    % Switch 'y'/'n' to save/not save figures 
+velocity_save = 'y';   % Switch 'y'/'n' to save/not save velocity
+dHdt_save = 'n';       % Switch 'y'/'n' to save/not save dHdt
+figures_save = 'y';    % Switch 'y'/'n' to save/not save figures 
 
 % 1. Glacier ice surface (PGC & OIB)
     %Note: OIB columns
@@ -37,7 +37,7 @@ figures_save = 'n';    % Switch 'y'/'n' to save/not save figures
     cl.X = load('Crane_centerline.mat').x; cl.Y = load('Crane_centerline.mat').y;
     
         % Define x as distance along centerline
-        x = []; x(1)=0;
+        x = zeros(1,length(cl.X));
         for i=2:(length(cl.X))
             x(i)=sqrt((cl.X(i)-cl.X(i-1))^2+(cl.Y(i)-cl.Y(i-1))^2)+x(i-1);
         end
@@ -238,18 +238,7 @@ figures_save = 'n';    % Switch 'y'/'n' to save/not save figures
         hold off;
     
     % calculate & plot dHdt
-    n=[1 2 3 9 11 21 22 25 28 30 35 36]; % use most continuous profiles (and at least one per year)
-    figure(3); set(gcf,'Position',[386 285 1028 520]); clf  
-        subplot(2,2,3); % dHdt
-            legend('location','best'); grid on;
-            xlabel('distance along centerline (km)'); ylabel('dHdt (m/yr)');
-            set(gca,'fontsize',11,'fontweight','bold','LineWidth',1);
-            title('dHdt');
-        subplot(2,2,4); % smoothed dHdt
-            legend('location','best'); grid on;
-            xlabel('distance along centerline (km)'); ylabel('dHdt (m/yr)');
-            set(gca,'fontsize',11,'fontweight','bold','LineWidth',1);   
-            title('smoothed dHdt'); 
+    n=[1 2 3 9 11 21 22 25 28 30 35 36]; % use most continuous profiles (and at least one per year)  
         dHdt.dHdt = zeros(length(h),length(x)); dt = zeros(1,length(n));            
         for i=1:length(n)
             if i==1
@@ -258,19 +247,14 @@ figures_save = 'n';    % Switch 'y'/'n' to save/not save figures
                 dHdt.dt(i) = (datenum(h(n(i)).date)-datenum(h(n(i-1)).date)).*8.64e3; % (day*8.64e3s/day = s)
                 dHdt.dHdt(i,:) = (h(n(i)).surface - h(n(i-1)).surface)./(dHdt.dt(i)); % m/s
             end
-            figure(3); 
-            subplot(2,2,3);
-                hold on; plot(x./10^3,dHdt.dHdt(i,:).*3.1536e7,'color',col(n(i),:),'linewidth',2,'displayname',h(n(i)).date(1:4));
-            subplot(2,2,4);
-                hold on; plot(x./10^3,movmean(dHdt.dHdt(i,:).*3.1536e7,15),'color',col(n(i),:),'linewidth',2,'displayname',h(n(i)).date(1:4));            
         end  
         % dHdt total
         dHdt.h1 = h(1).surface; dHdt.h2 = h(36).surface; 
         dHdt.dt_total = (datenum(h(36).date)-datenum(h(1).date)).*8.64e3; % s
         dHdt.dH_total = dHdt.h1-dHdt.h2;
         dHdt.dHdt_total = (dHdt.h1-dHdt.h2)./(dHdt.dt_total); % m/s
-        figure(3); 
-            subplot(2,2,1:2); hold on; grid on;
+        figure(3); clf; set(gcf,'Position',[386 285 1028 520]);
+            hold on; grid on;
             yyaxis left; ylabel('ice surface (m)'); title('dH_{tot}');
             plot(x./10^3,h(1).surface,x./10^3,h(36).surface,'-b','linewidth',2);
             yyaxis right; plot(x./10^3,dHdt.dH_total,'--m','linewidth',2);
@@ -322,12 +306,13 @@ figures_save = 'n';    % Switch 'y'/'n' to save/not save figures
             u = transpose(ncread(ANTfiles(i).name,'v')); % m/y
             u_err = transpose(ncread(ANTfiles(i).name,'v_err'));         
             u(u==-32767) = NaN; %Replace no data values with NaN
-
+        
             U(i).date = str2double(ANTfiles(i).name(11:14));                % observation date
             U(i).speed = interp2(X,Y,u,cl.X,cl.Y)./3.1536e7;                % interpolated speed (m/s)
             U(i).speed_err = interp2(X,Y,u_err,cl.X,cl.Y)./3.1536e7;        % interpolated speed error (m/s)
             U(i).units = "m/s";                                             % speed units
             U(i).source = "ITS-LIVE";                                       % speed data source
+            U(i).numPts = length(U(i).speed(~isnan(U(i).speed)));           % number of data points 
 
         end 
         
@@ -345,35 +330,55 @@ figures_save = 'n';    % Switch 'y'/'n' to save/not save figures
                 u_cl_err = (interp2(x_v,y_v,v_err,cl.X,cl.Y))./(3600*24); %m s^-1
 
             %Save interpolated speed info as structure
-                U(i+length(ANTfiles)).date = V(i).decidates(1);     % observation date
-                U(i+length(ANTfiles)).speed = u_cl;              % interpolated speed (m/s)
-                U(i+length(ANTfiles)).speed_err = u_cl_err;      % interpolated speed error (m/s)
-                U(i+length(ANTfiles)).units = 'm/s';             % speed units
-                U(i+length(ANTfiles)).source = 'TSX';            % speed data source
+            int = i+length(ANTfiles);
+                U(int).date = V(i).decidates(1);                % observation date
+                U(int).speed = u_cl;                            % interpolated speed (m/s)
+                U(int).speed_err = u_cl_err;                    % interpolated speed error (m/s)
+                U(int).units = 'm/s';                           % speed units
+                U(int).source = 'TSX';                          % speed data source
+                U(int).numPts = ...
+                    length(U(int).speed(~isnan(U(int).speed))); % number of data points 
 
         end 
-
+        
+        % sort and linearly extrapolate speeds to fill in gaps
+        U = sortStruct(U,'date',1);
+        % mean of first velocities where data exist
+        U1 = nanmean([U(15).speed(1) U(16).speed(1) U(17).speed(1) ...
+            U(18).speed(1) U(19).speed(1)],'all'); % m/s
+        for k=1:length(U)
+            % use the average speed at first point if NaN
+            if isnan(U(k).speed(1))
+                U(k).speed(1) = U1;
+            end
+            U(k).speed_linearextrap = feval(fit(x(~isnan(U(k).speed))',...
+                U(k).speed(~isnan(U(k).speed)),'pchip'),x(1:135));
+            U(k).speed_linearextrap(136:186) = U(k).speed_linearextrap(135);
+            
+        end
+        
         % save u variable as structure
         cd([homepath,'CraneGlacier_modeling/inputs-outputs']);
         save('Crane_CenterlineSpeeds_2007-2017.mat','U');
         disp('velocity variable saved');
         
     else
+        cd([homepath,'CraneGlacier_modeling/inputs-outputs/']);
         U = load('Crane_CenterlineSpeeds_2007-2017.mat').U; 
-    end 
+    end     
     
     % Plot velocities
-    n = [10 12 13 1 2 3 4 5 6 7 8];
-    col = parula(length(n)+3); % Color scheme for plotting u profiles
+    col = parula(length(n)+2); % Color scheme for plotting u profiles
+    n = [2 4 6 8 9 14 15:19];
     figure(2); subplot(2,1,2);
-        for i=1:length(n)
-            plot(x./10^3,U(n(i)).speed.*3.1536e7,'-','color',col(i,:),'linewidth',2,...
-                'displayname',num2str(round(U(n(i)).date)));
-        end 
+       for i=1:length(n)
+           plot(x./10^3,U(n(i)).speed.*3.1536e7,'-','color',col(i,:),'linewidth',2,...
+               'displayname',num2str(round(U(n(i)).date)));
+       end 
                       
     if strcmp(figures_save,'y')
         cd([homepath,'figures']);
-        saveas(gcf,'CraneCenterlineSpeeds_2009-2017.png');
+        saveas(gcf,'CraneCenterlineSpeeds_2007-2017.png');
         disp('Figure 3 saved');
     end 
     
