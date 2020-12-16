@@ -15,7 +15,7 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
 dx0 = 200; % desired grid spacing (m)
 dx=dx0;
            
-save_figure = 0; % = 1 to save image for sensitivity test
+save_figure = 0;    % = 1 to save image for sensitivity test
 
 % Change SMB or SMR by a certain percentage
 smb_change = 0.00; % percent change in SMB (1=100%)
@@ -28,9 +28,8 @@ smr_change = 0.00; % percent change in SMR (1=100%)
 
 % Load Crane Glacier initialization variables
     load('Crane_flowline_initialization.mat');
-    A0 = feval(fit(x0',A0','poly1'),x0)';
+    %A0 = feval(fit(x0',A0','poly1'),x0)';
     W0(isnan(W0)) = W0(find(~isnan(W0),1,'last'));
-    %A0(100:end) = A0(100:end).*5;
  
 % submarine melting rate parameter
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:
@@ -70,6 +69,7 @@ smr_change = 0.00; % percent change in SMR (1=100%)
     t_start = 0*3.1536e7; 
     t_end = 10*3.1536e7;    
     t = (t_start:dt:t_end);
+    yrs=0; % counter for # of years has passed
 
 % stress parameters (unitless)
     m = 1; % basal sliding exponent
@@ -100,7 +100,7 @@ smr_change = 0.00; % percent change in SMR (1=100%)
         hbi = interp1(x0,hb0,xi);
         Wi = interp1(x0,W0,xi);
         Ui = interp1(x0,U0,xi);
-        Ai = interp1(x0,A0,xi);
+        Ai = interp1(x0,A0(1,:),xi);
         betai = interp1(x0,beta0,xi);            
     else
         % Use a staggered grid for bin averages
@@ -111,21 +111,21 @@ smr_change = 0.00; % percent change in SMR (1=100%)
               hbi(k) = mean(hb0(1:dsearchn(x0',xm(k))));
               Wi(k) = mean(W0(1:dsearchn(x0',xm(k))));
               Ui(k) = mean(U0(1:dsearchn(x0',xm(k))));
-              Ai(k) = mean(A0(1:dsearchn(x0',xm(k))));
+              Ai(k) = mean(A0(1,1:dsearchn(x0',xm(k))));
               betai(k) = mean(beta0(1:dsearchn(x0',xm(k))));               
             elseif k==length(xi)
               hi(k) = mean(h0(dsearchn(x0',xm(k-1)):c));
               hbi(k) = mean(hb0(dsearchn(x0',xm(k-1)):c));
               Wi(k) = mean(W0(dsearchn(x0',xm(k-1)):c));
               Ui(k) = mean(U0(dsearchn(x0',xm(k-1)):c));
-              Ai(k) = mean(A0(dsearchn(x0',xm(k-1)):c));
+              Ai(k) = mean(A0(1,dsearchn(x0',xm(k-1)):c));
               betai(k) = mean(beta0(dsearchn(x0',xm(k-1)):c));              
             else
               hi(k) = mean(h0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
               hbi(k) = mean(hb0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
               Wi(k) = mean(W0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
               Ui(k) = mean(U0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
-              Ai(k) = mean(A0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
+              Ai(k) = mean(A0(1,dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));
               betai(k) = mean(beta0(dsearchn(x0',xm(k-1)):dsearchn(x0',xm(k))));                            
             end
         end
@@ -234,6 +234,7 @@ for test=1%:2
                 % 2009 terminus position
                 plot(x(c)./10^3,2009,'.','markersize',10,'color',col(i,:),...
                     'linewidth',1.5,'displayname','Modeled');
+            
         else
             figure(1); hold on; % Plot geometries every 10 time iterations
             if mod(i-1,round(length(t)/10))==0
@@ -367,6 +368,12 @@ for test=1%:2
         N_marine = rho_i*g*H(sl+1:length(x))+(rho_sw*g*hb(sl+1:length(x))); %effective pressure where the bed is below sea level (Pa)
         N = [N_ground N_marine];
         N(N<0)=1; %cannot have negative values
+        
+        % adjust the rate factor on whole years
+        if i~=1 && mod(i-1,round(length(t)/10))==0
+            yrs = yrs+1; disp(num2str(yrs+2009));
+            A = interp1(x0,A0_adj(yrs+1,:),x);
+        end
 
         % Solve for new velocity
         [U,dUdx,vm,T] = U_convergence(x,U,U0,dUdx,dhdx,H,A,E,N,W,dx,c,ice_end,n,m,beta,rho_i,rho_sw,g); 

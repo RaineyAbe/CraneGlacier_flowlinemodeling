@@ -64,16 +64,17 @@ end
     % fit smoothing spline to fill in gaps
     U0 = feval(fit(x0(~isnan(U))',U(~isnan(U))','linearinterp'),x0);
 
-% 6. rate factor, A
+% 6. rate factor, A & adjusted rate factor
 A0 = load('Crane_RateFactorA.mat').A;
 if size(A0)==[186 1]
     A0=A0';
 end
+A0_adj = load('Crane_AdjustedAnnualRateFactor_2009-2019.mat').A_adj;
 
 % 7. basal roughness factor, beta
-beta = load('Crane_CalculatedBeta.mat').beta.beta;
-x_beta = load('Crane_CalculatedBeta.mat').beta.x;
-beta0 = interp1(x_beta,beta,x0);
+beta = load('Crane_CalculatedBeta2.mat').beta;
+beta_linear = load('Crane_CalculatedBeta2.mat').beta_linear;
+beta0 = beta; beta0_linear = beta_linear;
 
 % 8. surface mass balance w/ uncertainty, smb and smb_err
 smb = load('Crane_downscaledSMB_2009-2016.mat').SMB(1).smb_interp; % m/a
@@ -89,8 +90,8 @@ Q0 = interp1(x_Q,Q,x0)./3.1536e7; % m/s
 Q0_err = interp1(x_Q,Q_err,x0)./3.1536e7; % m/s
 
 % Save resulting variables
-save('Crane_flowline_initialization.mat','h0','hb0','W0','A0','U0',...
-    'beta0','x0','smb0','smb0_err','Q0','Q0_err');
+save('Crane_flowline_initialization.mat','h0','hb0','W0','A0','A0_adj','U0',...
+    'beta0','beta0_linear','x0','smb0','smb0_err','Q0','Q0_err');
 disp(['initialization variable saved in: ',pwd]);
 
 

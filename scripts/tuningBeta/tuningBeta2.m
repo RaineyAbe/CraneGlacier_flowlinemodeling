@@ -11,7 +11,7 @@ dx0 = 500:500:7e3; % desired grid spacings
 mu_RMSE = zeros(1,length(dx0)); % mean RMSE of polynomial fits
 betaFit_save = zeros(length(dx0),186); % saved beta fits
 
-figure_save = 1; % = 1 to save figures for each spatial resolution
+figure_save = 0; % = 1 to save figures for each spatial resolution
 
 for z=1:length(dx0)
     
@@ -227,6 +227,8 @@ for z=1:length(dx0)
                 [RMSE,bestPoly] = bestPolyFit(x(1:end-1),beta(i,1:end-1),pTrain,deg,nMC,replace);
                 % Fit the resulting best polynomial to the data
                 betaFit = polyfit(x(1:end-1),beta(i,1:end-1),bestPoly);
+                % display
+                disp(['dx = ',num2str(dx0(z)),': ',num2str(betaFit),', RMSE = ',num2str(nanmean(RMSE,'all'))]);
                 % Make sure y-intercept is positive (beta ~<0) 
                 if length(betaFit)>1 && betaFit(2)<0
                     betaFit(2)=0;
@@ -309,6 +311,13 @@ end
         end
         saveas(gcf,'optimalBeta.png','png');
         disp('optimalBeta.png saved');
+        
+    % Save the 5500 
+    cd([homepath,'inputs-outputs']);
+    beta = betaSave(11).beta;
+    beta_linear = betaFit_save(11,:);
+    save('Crane_CalculatedBeta2.mat','beta','beta_linear');
+    disp('saved Crane_CalculatedBeta2.mat');
     
     
     
