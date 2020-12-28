@@ -5,7 +5,8 @@ b=1;
 while b
     
     % Calculate the thickness on the staggered grid for use in stress balance equations
-    Hm = [(H(1:end-1)+H(2:end))./2 0]; %use forward differences
+    Hm = (H(1:end-1) + H(2:end))./2; %use forward differences
+    Hm = [Hm,0];
     Hm(Hm<0) = 0; %cannot have negative values
     
     %calculate the linearization terms & effective viscosity required for 
@@ -23,7 +24,7 @@ while b
         Am = [Am,0];
         Um = (U(1:end-1) + U(2:end))./2; %speed on the staggered grid from forward differencing
         Um = [Um,0];
-        dUmdx = [0 (Um(2:end)-Um(1:end-1))./(x(2:end)-x(1:end-1))]; %strain rates on the staggered grid
+        dUmdx = [(Um(2:end)-Um(1:end-1))./(x(2:end)-x(1:end-1)) 0]; %strain rates on the staggered grid
 
         vm=zeros(1,length(x)); % pre-allocate vm
         for k=1:length(x)
@@ -68,7 +69,7 @@ while b
                 (((2*gamma(k).*H(k))./W(k)).*((5/(E*A(k).*W(k))).^(1/n))); %for U(k)
             G_plus(k) = (2./(dx.^2)).*Hm(k).*vm(k); %for U(k+1)
             T(k) = (rho_i.*g.*H(k).*dhdx(k)); %gravitational driving stress
-        end 
+        end
    end
     % use driving stress at the upper boundary that results in 90% observed
     % velocity 
@@ -82,7 +83,7 @@ while b
         G_plus(c+(j-1)) = 0;
         T(c+(j-1)) = (E*A(c+(j-1)).*(((rho_i.*g./4).*(H(c+(j-1)).*(1-(rho_i./rho_sw)))).^n)).*dx;
     end
-    %T(ice_end) = 0;
+    T(ice_end) = 0;
         
     %remove any NaNs from the coefficient vectors
     G_minus(isnan(G_minus)) = 0;
@@ -99,14 +100,14 @@ while b
     end
     
     %use the backslash operator to perform the matrix inversion to solve for ice velocities
-    Un(1:ice_end) = M\T; %velocity (m s^-1)
+    Un = M\T; %velocity (m s^-1)
     
     %remove NaNs and apply the ice divide bounday condition
     Un(isnan(Un)) = 0;
     Un(Un<0) = 0;
     
-    % set velocity past the (dummy) terminus as the final velocity
-    Un(ice_end+1:length(x)) = Un(ice_end);
+    %set velocity at the (dummy) terminus
+    Un(ice_end+1:length(x)) = zeros(1,length(x(ice_end+1:length(x))));
         
     %make sure Un is a row vector so it can be compared with U
     if size(Un) == [length(x),1]
@@ -128,7 +129,7 @@ while b
             dUdx = dUndx;
             return %break the U iterations
     end
-     
+    
     %if not sufficiently converged, set Un to U and solve the stress balance matrix again
     U = Un;
     dUdx = dUndx;

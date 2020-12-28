@@ -26,7 +26,8 @@ tune_calving = 1;   % = 1 to plot terminus RMSE to help tune calving params.
 % Load Crane Glacier initialization variables
     load('Crane_flowline_initialization.mat');
     A0 = feval(fit(x0',A0','poly1'),x0)';
-    A0_adj = A0_adj./4;
+    A0_adj(1:115) = A0_adj(1:115)./10;
+    A0_adj(116:end) = A0_adj(116:end)./10;
     W0(isnan(W0)) = W0(find(~isnan(W0),1,'last'));
     W0 = movmean(W0,20);
     
@@ -65,7 +66,7 @@ smr0 = 4.75e-8; % m/s = 1.5 m/a
 % time stepping (s)
     dt = 0.01*3.1536e7; 
     t_start = 0*3.1536e7; 
-    t_end = 10*3.1536e7;    
+    t_end = 50*3.1536e7;    
     t = (t_start:dt:t_end);
 
 % stress parameters (unitless)
@@ -187,7 +188,7 @@ smr0 = 4.75e-8; % m/s = 1.5 m/a
         
         % continue to the next loop if there is an error
         %try
-            for i=1:726%length(t)
+            for i=1:length(t)
 
                if tune_calving
                 % set up figures, plot geometries at t==0, then every t/10 iterations
@@ -245,7 +246,8 @@ smr0 = 4.75e-8; % m/s = 1.5 m/a
                         % floating bed
                         plot(x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(i,:),'linewidth',2,'HandleVisibility','off');
                         % ice end
-                        plot(x(c:ice_end)/10^2,h(c:ice_end),'--','color',col(i,:),'linewidth',2,'HandleVisibility','off');
+                        plot(x(c+1:ice_end)./10^3,h(c+1:ice_end),'--','color',col(i,:),'linewidth',1.5,'HandleVisibility','off');            
+                        plot(x(c+1:ice_end)./10^3,h(c+1:ice_end)-H(c+1:ice_end),'--','color',col(i,:),'linewidth',1.5,'HandleVisibility','off');  
                     figure(2); hold on; % Plot velocity every 10 time iterations
                         % 1:c
                         plot(x(1:c)/10^3,U(1:c).*3.1536e7,'-','Color',col(i,:),'linewidth',2,'DisplayName',num2str(t(i)./3.1536e7)); hold on;
@@ -428,9 +430,10 @@ smr0 = 4.75e-8; % m/s = 1.5 m/a
 
             % adjust smb to minimize misfit of surface observations 
             smb_add = zeros(1,length(x0));
-                 smb_add(1:100) = smb_add(1:100)-0.08e-5;
-                 smb_add(101:186) = smb_add(101:186)-0.1e-5;
-                 smb_add(82:150) = smb_add(82:150)-0.05e-5;
+                 smb_add(1:115) = smb_add(1:115)-0.09e-5;
+                 smb_add(1:25) = smb_add(1:25)-0.08e-5;
+                 smb_add(101:186) = smb_add(101:186)-0.05e-5;
+                 %smb_add(82:150) = smb_add(82:150)-0.05e-5;
             smb = interp1(x0,smb0+Q0+smb_add,x);
 
             % new thickness (change from dynamics, SMB, & SMR)

@@ -68,7 +68,7 @@ dx = dx0;
 year = 1; %keeps track of the number of model years 
 year_previous = 0; %used to plot profiles once per model year
 year_start = 0; %tracks the time elapsed
-year_end = year_start+5; %stops time for the model
+year_end = year_start+20; %stops time for the model
 
 %set-up empty plots for the data
 gl = find((-(rho_sw./rho_i).*hb)-H>0,1,'first'); %find the initial grounding line

@@ -13,6 +13,7 @@
 %   6. rate factor, A
 %   7. basal roughness factor, beta
 %   8. surface mass balance, smb
+%   9. tributary ice volume flux, Q
 
 clear all; close all;
 
@@ -74,6 +75,7 @@ A0_adj = load('Crane_AdjustedAnnualRateFactor_2009-2019.mat').A_adj;
 % 7. basal roughness factor, beta
 beta = load('Crane_CalculatedBeta2.mat').beta;
 beta_linear = load('Crane_CalculatedBeta2.mat').beta_linear;
+beta(beta<0)=0;
 beta0 = beta; beta0_linear = beta_linear;
 
 % 8. surface mass balance w/ uncertainty, smb and smb_err
