@@ -132,7 +132,11 @@ homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
         ylabel('Elevation (m)'); 
         xlim([0 55]);
         for i=1:length(h)
-            plot(cl.x./10^3,h(i).surface,'linewidth',1.5,'color',col(col_h(i),:),'HandleVisibility','off');
+            if i==16
+            else
+                plot(cl.x./10^3,h(i).surface,'linewidth',1.5,...
+                    'color',col(col_h(i),:),'HandleVisibility','off');
+            end
         end
         plot(cl.x./10^3,hb,'-k','linewidth',1.5,'displayname','Bed');
         plot(cl.x./10^3,-bathym,'--k','linewidth',1.5,'displayname','Bathymetry');
@@ -156,15 +160,80 @@ homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
     subplot(2,2,4); hold on; % SMB
         set(gca,'linewidth',2,'fontsize',12); grid on;
         xlabel('Distance Along Centerline (km)'); ylabel('Mean Annual SMB (m/yr)');
-        xlim([0 55]);
+        xlim([0 55]); set(gca,'clim',[2002 2019]); 
+        c = colorbar('Limits',[2002 2019],'Ticks',[2002 2010 2019],'Position',[.92 .32 .03 .3410]);
         for i=1:length(SMB)
             plot(cl.x(1:137)./10^3,SMB(i).smb_interp.*365,'color',col(col_SMB(i),:),'linewidth',1.5);
         end
+        
+    % Save figure
+    cd([homepath,'../figures']);
+    saveas(gcf,'observedTimeSeries.png','png');
+    disp(['observedTimeSeries.png saved in: ',pwd]);
+    
+    cd([homepath,'../write-ups/Thesis/figures']);
+    saveas(gcf,'observedTimeSeries.png','png');
+    disp(['observedTimeSeries.png saved in: ',pwd]);
     
 %% Figure 3. Sensitivity Tests
 
-
-
-
-
+    % Create figure
+    figure(10); clf; set(gcf,'Position',[0 0 1100 1000]);
+    cd([homepath,'scripts/100yrScenario']);
+    
+    % Load saved figures
+    im_a = hgload('SMR0_SMB-1e-07.fig');
+    im_b = hgload('SMR0_SMB-2e-07.fig');
+    im_c = hgload('SMR0_SMB1e-07.fig');
+    im_d = hgload('SMR-1e-07_SMB0.fig');
+    im_e = hgload('SMR-2e-07_SMB0.fig');
+    im_f = hgload('SMR1e-07_SMB0.fig');
+    
+    % Copy figures onto subplots
+    figure(10); 
+    %SMB
+    SP(1)=subplot(2,3,1); hold on; grid on;
+        copyobj(allchild(get(im_a,'CurrentAxes')),SP(1));
+        % Add text label
+        ta = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
+            ' a ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);
+    SP(2)=subplot(2,3,2); hold on; grid on;
+        copyobj(allchild(get(im_b,'CurrentAxes')),SP(2));
+        % Add text label            
+        tb = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
+            ' b ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);     
+    SP(3)=subplot(2,3,3); hold on; grid on;
+        copyobj(allchild(get(im_c,'CurrentAxes')),SP(3));
+        % Add text label            
+         tc = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.86+min(get(gca,'XLim')),...
+             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
+             ' c ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);     
+    %SMR
+    SP(4)=subplot(2,3,4); hold on; grid on;
+        copyobj(allchild(get(im_d,'CurrentAxes')),SP(4));
+        % Add text label            
+        td = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
+            ' d ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);                
+    SP(5)=subplot(2,3,5); hold on; grid on;
+        copyobj(allchild(get(im_e,'CurrentAxes')),SP(5));
+        % Add text label            
+        te = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
+            ' e ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);     
+    SP(6)=subplot(2,3,6); hold on; grid on;
+        copyobj(allchild(get(im_f,'CurrentAxes')),SP(6));           
+        % Add text label            
+        tf = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.88+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
+            ' f ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);                            
+   % Insert text annotations
+   tSMB = annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','SMB', ...
+        'HeadStyle','none','LineStyle', 'none', 'TextRotation',90,'Position',[.05 .79 0 0],...
+        'FontSize',18,'FontName','Arial','fontweight','bold','TextColor',[0.75 0 0]);
+   tSMR = annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','SMR', ...
+        'HeadStyle','none','LineStyle', 'none', 'TextRotation',90,'Position',[.05 .31 0 0],...
+        'FontSize',18,'FontName','Arial','fontweight','bold','TextColor',[0.75 0 0]);
 

@@ -673,8 +673,9 @@ for e=1:length(Efit)
             disp('Adjust dt');
             break;
         end
-        if min(H) < H_min
+        if min(H(1:c)) < H_min
             disp('Too thin! Check A, E, U, beta...');
+            break;
         end
 
         % find the precise location of the grounding line (where H=Hf)
@@ -771,11 +772,18 @@ figure(11); clf
         'displayname',eqn);
     plot(x0./10^3,dH_obs,'-k','linewidth',3,'displayname','observed dH');
 
+% save Ebest
+cd([homepath,'inputs-outputs']);
+save('Ebest.mat','Ebest','x');
+disp('Ebest saved');
+    
 %% 3. Tune fresh water depth in crevasses fwd
 % (Using 100 yr output as initialization)
 
-% use previously found Ebest
-E = Ebest;
+% load Ebest and 100 yr output variables
+cd([homepath,'inputs-outputs']);
+E = load('Ebest.mat').Ebest;
+load('Crane_flowline_100yr_output.mat');
 
 % calving parameters
 Hc = 400; % m -> set the calving front to a default minimum ice thickness value
@@ -1093,15 +1101,17 @@ figure(6); clf; hold on;
 %% 4. Run sensitivity tests for SMB & SMR
 % (Using 100 yr output as initialization)
 
+% load Ebest and 100 yr output variables
+cd([homepath,'inputs-outputs']);
+E = load('Ebest.mat').Ebest;
+load('Crane_flowline_100yr_output.mat');
 fwd=27; % best fwd from step #3
-
-cd([homepath,'scripts/100yrScenario']);
 
 save_figure = 1; % = 1 to save resulting figure
 
 % set up changes in SMB & SMR
-smb_change = -5.0e-7; % m/s change in SMB
-smr_change = 0.0e-7; % m/s change in SMR
+smb_change = 0.0e-7; % m/s change in SMB
+smr_change = -1.0e-7; % m/s change in SMR
 
 % loop through the no-change, then the change scenario
 for test=1:2
@@ -1189,37 +1199,38 @@ for test=1:2
             set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
             xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
             legend('Location','east'); xlim([0 65]); ylim([-1200 1200]);
-            %title(['SMR = +',num2str(smr_change*100),'%, SMB = +',num2str(smb_change*100),'%']);
+            title(['SMR = + ',num2str(round(smr_change.*3.1536e7)),'m/a, SMB = + ',...
+                num2str(round(smb_change*3.1536e7)),'m/a, \Delta L = ',num2str(x2(c2)-x1(c1)),'m']);
             ax1=get(gca);
-            % ice surface
-            plot(x1(1:c1)/10^3,movmean(h1(1:c1),5),'-k','linewidth',2,'displayname','no change');
-            plot(x2(1:c2)/10^3,movmean(h2(1:c2),5),'color',[0.8 0 0],'linewidth',2,'displayname','change');
-            % calving front
-            plot(x1(c1)*[1,1]/10^3,[h1(c1)-H1(c1),h1(c1)],'-k','linewidth',2,'HandleVisibility','off');
-            plot(x2(c2)*[1,1]/10^3,[h2(c2)-H2(c2),h2(c2)],'color',[0.8 0 0],'linewidth',2,'HandleVisibility','off');
-            % floating bed
-            plot(x1(gl1:c1)/10^3,h1(gl1:c1)-H1(gl1:c1),'-k','linewidth',2,'HandleVisibility','off');
-            plot(x2(gl2:c2)/10^3,h2(gl2:c2)-H2(gl2:c2),'color',[0.8 0 0],'linewidth',2,'HandleVisibility','off');
-            % bed elevation
-            plot(x1/10^3,hb1,'k','linewidth',2,'HandleVisibility','off');
+                % ice surface
+                plot(x1(1:c1)/10^3,movmean(h1(1:c1),5),'-k','linewidth',2,'displayname','no change');
+                plot(x2(1:c2)/10^3,movmean(h2(1:c2),5),'color',[0.8 0 0],'linewidth',2,'displayname','change');
+                % calving front
+                plot(x1(c1)*[1,1]/10^3,[h1(c1)-H1(c1),h1(c1)],'-k','linewidth',2,'HandleVisibility','off');
+                plot(x2(c2)*[1,1]/10^3,[h2(c2)-H2(c2),h2(c2)],'color',[0.8 0 0],'linewidth',2,'HandleVisibility','off');
+                % floating bed
+                plot(x1(gl1:c1)/10^3,h1(gl1:c1)-H1(gl1:c1),'-k','linewidth',2,'HandleVisibility','off');
+                plot(x2(gl2:c2)/10^3,h2(gl2:c2)-H2(gl2:c2),'color',[0.8 0 0],'linewidth',2,'HandleVisibility','off');
+                % bed elevation
+                plot(x1/10^3,hb1,'k','linewidth',2,'HandleVisibility','off');
             % inset plot of terminus
             ax2 = axes('Position',[0.62 0.62 0.28 0.28]);
-            hold on; grid on; set(gca,'linewidth',2,'fontweight','bold');
-            title(['\Delta L = ',num2str(x2(c2)-x1(c1)),'m']);
-            xlim([40 50]); ylim([-1000 300]);
-            % ice surface
-            plot(x1(1:c1)/10^3,h1(1:c1),'-k','linewidth',2,'displayname','no change');
-            plot(x2(1:c2)/10^3,h2(1:c2),'color',[0.8 0 0],'linewidth',2,'displayname','no change');
-            % calving front
-            plot(x1(c1)*[1,1]/10^3,[h1(c1)-H1(c1),h1(c1)],'-k','linewidth',2,'HandleVisibility','off');
-            plot(x2(c2)*[1,1]/10^3,[h2(c2)-H2(c2),h2(c2)],'color',[0.8 0 0],'linewidth',2,'HandleVisibility','off');
-            % floating bed
-            plot(x1(gl1:c1)/10^3,h1(gl1:c1)-H1(gl1:c1),'-k','linewidth',2,'HandleVisibility','off');
-            plot(x2(gl2:c2)/10^3,h2(gl2:c2)-H2(gl2:c2),'color',[0.8 0 0],'linewidth',2,'HandleVisibility','off');
-            % bed elevation
-            plot(x/10^3,hb,'k','linewidth',2,'HandleVisibility','off');
-            % mean sea level
-            plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
+                hold on; grid on; set(gca,'linewidth',2,'fontweight','bold');
+                title(['\Delta L = ',num2str(x2(c2)-x1(c1)),'m']);
+                xlim([40 50]); ylim([-1000 300]);
+                % ice surface
+                plot(x1(1:c1)/10^3,h1(1:c1),'-k','linewidth',2,'displayname','no change');
+                plot(x2(1:c2)/10^3,h2(1:c2),'color',[0.8 0 0],'linewidth',2,'displayname','no change');
+                % calving front
+                plot(x1(c1)*[1,1]/10^3,[h1(c1)-H1(c1),h1(c1)],'-k','linewidth',2,'HandleVisibility','off');
+                plot(x2(c2)*[1,1]/10^3,[h2(c2)-H2(c2),h2(c2)],'color',[0.8 0 0],'linewidth',2,'HandleVisibility','off');
+                % floating bed
+                plot(x1(gl1:c1)/10^3,h1(gl1:c1)-H1(gl1:c1),'-k','linewidth',2,'HandleVisibility','off');
+                plot(x2(gl2:c2)/10^3,h2(gl2:c2)-H2(gl2:c2),'color',[0.8 0 0],'linewidth',2,'HandleVisibility','off');
+                % bed elevation
+                plot(x/10^3,hb,'k','linewidth',2,'HandleVisibility','off');
+                % mean sea level
+                plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
         end
         
         % calculate the thickness required to remain grounded at each grid cell
@@ -1421,6 +1432,7 @@ for test=1:2
     
 end
 
+cd([homepath,'scripts/100yrScenario']);
 if save_figure && ishandle(4)
     % Save figure for test
     figName = ['SMR',num2str(smr_change),'_SMB',num2str(smb_change)];
