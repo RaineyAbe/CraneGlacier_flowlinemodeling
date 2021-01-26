@@ -100,14 +100,14 @@ while b
     end
     
     %use the backslash operator to perform the matrix inversion to solve for ice velocities
-    Un = M\T; %velocity (m s^-1)
+    Un = M\T(1:ice_end); %velocity (m s^-1)
     
     %remove NaNs and apply the ice divide bounday condition
     Un(isnan(Un)) = 0;
     Un(Un<0) = 0;
     
     %set velocity at the (dummy) terminus
-    Un(ice_end+1:length(x)) = zeros(1,length(x(ice_end+1:length(x))));
+    Un(ice_end+1:length(x)) = Un(c)*ones(1,length(x(ice_end+1:length(x))));
         
     %make sure Un is a row vector so it can be compared with U
     if size(Un) == [length(x),1]
