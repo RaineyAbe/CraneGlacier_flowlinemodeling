@@ -23,9 +23,8 @@ while b
         Am = (A(1:end-1) + A(2:end))./2; %rate factor on the staggered grid from forward differencing
         Am = [Am,0];
         Um = (U(1:end-1) + U(2:end))./2; %speed on the staggered grid from forward differencing
-        Um = [Um,0];
+        Um = [Um,Um(end)];
         dUmdx = [(Um(2:end)-Um(1:end-1))./(x(2:end)-x(1:end-1)) 0]; %strain rates on the staggered grid
-
         vm=zeros(1,length(x)); % pre-allocate vm
         for k=1:length(x)
             vm(k) = ((E(k)*Am(k)).^(-1/n)).*(abs(dUmdx(k))).^((1-n)/n); %effective viscosity (Pa s)
@@ -81,7 +80,7 @@ while b
         G_minus(c+(j-1)) = -1;
         G(c+(j-1)) = 1;
         G_plus(c+(j-1)) = 0;
-        T(c+(j-1)) = (E(k)*A(c+(j-1)).*(((rho_i.*g./4).*(H(c+(j-1)).*(1-(rho_i./rho_sw)))).^n)).*dx;
+        T(c+(j-1)) = (E(j)*A(c+(j-1)).*(((rho_i.*g./4).*(H(c+(j-1)).*(1-(rho_i./rho_sw)))).^n)).*dx;
     end
     T(ice_end) = 0;
         
@@ -107,7 +106,7 @@ while b
     Un(Un<0) = 0;
     
     %set velocity at the (dummy) terminus
-    Un(ice_end+1:length(x)) = Un(c)*ones(1,length(x(ice_end+1:length(x))));
+    Un(ice_end+1:length(x)) = Un(ice_end-1)*ones(1,length(x(ice_end+1:length(x))));
         
     %make sure Un is a row vector so it can be compared with U
     if size(Un) == [length(x),1]
