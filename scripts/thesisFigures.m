@@ -2,7 +2,7 @@
 % RKA 2020-2021
 % Script to plot and save figures for thesis
 
-% Figure 1. Map of the study area
+% Figure 1. Map of the study area - THIS VERSION NOT USED
 % Figure 2. Observed Conditions Time Series
 % Figure 3. Sensitivity Tests
 
@@ -13,11 +13,11 @@ homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
     cd([homepath,'inputs-outputs']);
     cl.X = load('Crane_centerline.mat').x; cl.Y = load('Crane_centerline.mat').y;
     
-        % Define x as distance along centerline
-        cl.x = zeros(1,length(cl.X));
-        for i=2:(length(cl.X))
-            cl.x(i)=sqrt((cl.X(i)-cl.X(i-1))^2+(cl.Y(i)-cl.Y(i-1))^2)+cl.x(i-1);
-        end
+    % Define x as distance along centerline
+    cl.x = zeros(1,length(cl.X));
+    for i=2:(length(cl.X))
+        cl.x(i)=sqrt((cl.X(i)-cl.X(i-1))^2+(cl.Y(i)-cl.Y(i-1))^2)+cl.x(i-1);
+    end
         
 %% Figure 1. Map of the study area
 
@@ -189,101 +189,152 @@ homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
     
 %% Figure 3. Sensitivity Tests
 
-    close all;
-    cd([homepath,'scripts/100yrScenario']);
-    
-    save_figure = 1; % = 1 to save figure
-    
-    % Load saved figures
-    im_a = hgload('SMR0_SMB-1e-07.fig');
-    im_b = hgload('SMR0_SMB-3e-07.fig');
-    im_c = hgload('SMR0_SMB1e-07.fig');
-    im_d = hgload('SMR-1e-07_SMB0.fig');
-    im_e = hgload('SMR-3e-07_SMB0.fig');
-    im_f = hgload('SMR1e-07_SMB0.fig');
+close all;
 
-    % Create figure
-    figure(10); clf; set(gcf,'Position',[0 0 1100 1000]);
-    
-    % Copy figures onto subplots
-    figure(10); 
-    %SMB
-    SP(1)=subplot(2,3,1); hold on; grid on;
-        copyobj(allchild(get(im_a,'CurrentAxes')),SP(1));
-        xlim([20 50]); ylim([-1000 600]);
-        set(gca,'fontsize',12,'linewidth',2);
-        ylabel('Elevation (m)');
-        title('-3.2 m/a');
-        % Add text label
-        ta = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
-            ' a ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);    
-    SP(2)=subplot(2,3,2); hold on; grid on;
-        copyobj(allchild(get(im_b,'CurrentAxes')),SP(2));
-        xlim([20 50]); ylim([-1000 600]);
-        set(gca,'fontsize',12,'linewidth',2);
-        title('-9.5 m/a');
-        % Add text label            
-        tb = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
-            ' b ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);     
-    SP(3)=subplot(2,3,3); hold on; grid on;
-        copyobj(allchild(get(im_c,'CurrentAxes')),SP(3));
-        xlim([20 50]); ylim([-1000 600]);
-        set(gca,'fontsize',12,'linewidth',2);
-        title('+3.2 m/a');
-        % Add text label            
-         tc = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.86+min(get(gca,'XLim')),...
-             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
-             ' c ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);     
-    %SMR
-    SP(4)=subplot(2,3,4); hold on; grid on;
-        copyobj(allchild(get(im_d,'CurrentAxes')),SP(4));
-        xlim([20 50]); ylim([-1000 600]);
-        set(gca,'fontsize',12,'linewidth',2);
-        xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)'); 
-        % Add text label            
-        td = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
-            ' d ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);                
-    SP(5)=subplot(2,3,5); hold on; grid on;
-        copyobj(allchild(get(im_e,'CurrentAxes')),SP(5));
-        xlim([20 50]); ylim([-1000 600]);
-        set(gca,'fontsize',12,'linewidth',2);
-        xlabel('Distance Along Centerline (km)');
-        % Add text label            
-        te = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
-            ' e ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);     
-    SP(6)=subplot(2,3,6); hold on; grid on;
-        copyobj(allchild(get(im_f,'CurrentAxes')),SP(6));
-        xlim([20 50]); ylim([-1000 600]);
-        set(gca,'fontsize',12,'linewidth',2);
-        xlabel('Distance Along Centerline (km)');
-        legend('no change','change','Position',[0.9 0.48 0.0836 0.0490],...
-            'fontsize',12);
-        % Add text label            
-        tf = text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.88+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
-            ' f ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5);                            
-   % Insert text annotations
-   tSMB = annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','SMB', ...
-        'HeadStyle','none','LineStyle', 'none', 'TextRotation',90,'Position',[.05 .79 0 0],...
-        'FontSize',18,'FontName','Arial','fontweight','bold','TextColor',[0.75 0 0]);
-   tSMR = annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','SMR', ...
-        'HeadStyle','none','LineStyle', 'none', 'TextRotation',90,'Position',[.05 .31 0 0],...
-        'FontSize',18,'FontName','Arial','fontweight','bold','TextColor',[0.75 0 0]);
+% load sensitivity test no change variables
+cd([homepath,'inputs-outputs']);
+load('Crane_sensitivityTests_noChange.mat');
 
+cd([homepath,'scripts/100yrScenario/results']);
+
+save_figure = 1; % = 1 to save figure
+
+% Set up figures
+figure(10); clf % SMR
+set(gcf,'Position',[100 300 1300 400]);
+subplot(1,3,1); hold on; grid on; % a) geometry
+    set(gca,'fontsize',14,'linewidth',2);
+    xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m.a.s.l)'); 
+    xlim([35 60]); ylim([-1200 600]);
+    plot(x1./10^3,hb1,'-k','linewidth',2);
+    % Add text label            
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+        (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' a ','edgecolor','k','fontsize',14,'fontweight','bold','linewidth',1.5);  
+subplot(1,3,2); hold on; grid on; % b) speed
+    set(gca,'fontsize',14,'linewidth',2);
+    xlabel('Distance Along Centerline (km)'); ylabel('Speed (m a^{-1})');  
+    xlim([0 60]); ylim([0 1500]);
+    % Add text label            
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+        (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' b ','edgecolor','k','fontsize',14,'fontweight','bold','linewidth',1.5); 
+subplot(1,3,3); hold on; grid on; % c) \Delta H
+    set(gca,'fontsize',14,'linewidth',2);
+    xlabel('\Delta SMR (m a^{-1})'); ylabel('\DeltaH (m)');
+    xlim([-4 2]); ylim([-1.5 1.5]);
+    % Add text label            
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+        (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' c ','edgecolor','k','fontsize',14,'fontweight','bold','linewidth',1.5);         
+figure(11); clf % SMB
+set(gcf,'Position',[200 100 1300 400]);
+subplot(1,3,1); hold on; grid on; % c) geometry
+    set(gca,'fontsize',14,'linewidth',2);
+    xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m.a.s.l)'); 
+    xlim([35 60]); ylim([-1200 600]);        
+    plot(x1./10^3,hb1,'-k','linewidth',2);
+    % Add text label            
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+        (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' a ','edgecolor','k','fontsize',14,'fontweight','bold','linewidth',1.5);         
+subplot(1,3,2); hold on; grid on; % d) speed
+    set(gca,'fontsize',14,'linewidth',2);
+    xlabel('Distance Along Centerline (km)'); ylabel('Speed (m a^{-1})');     
+    xlim([0 60]); ylim([0 1500]); grid on;
+    % Add text label            
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+        (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' b ','edgecolor','k','fontsize',14,'fontweight','bold','linewidth',1.5); 
+subplot(1,3,3); hold on; grid on; % c) \Delta H
+    set(gca,'fontsize',14,'linewidth',2);
+    xlabel('\Delta SMB (m a^{-1})'); ylabel('\DeltaH (m)');
+    xlim([-4 2]); ylim([-10 25]);
+    % Add text label            
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+        (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' c ','edgecolor','k','fontsize',14,'fontweight','bold','linewidth',1.5); 
+    
+% Loop through results and plot
+files = dir('*geom.mat');
+Ismr=[]; Ismb=[];
+for i=1:length(files)
+    if contains(files(i).name,'SMB0')
+        Ismr=[Ismr; i];
+    elseif contains(files(i).name,'SMR0')
+        Ismb=[Ismb; i];
+    end
+end
+
+col=parula(length(Ismr)+1); % color scheme for plotting
+% SMR
+for i=1:length(Ismr)
+    load(files(Ismr(i)).name);
+    figure(10); hold on;
+    subplot(1,3,1); hold on; 
+        % ice surface
+        plot(x1(1:cf)./10^3,hf(1:cf),'color',col(i,:),'linewidth',2);
+        % calving front
+        plot([x1(cf) x1(cf)]./10^3,[hf(cf) hf(cf)-Hf(cf)],'color',col(i,:),'linewidth',2);
+        % floating bed
+        plot(x1(glf:cf)./10^3,hf(glf:cf)-Hf(glf:cf),'color',col(i,:),'linewidth',2);
+    subplot(1,3,2); hold on; 
+        % ice surface speed
+        plot(x1(1:cf)./10^3,Uf(1:cf).*3.1536e7,'color',col(i,:),'linewidth',2);
+    subplot(1,3,3); hold on; 
+        % dH
+        dH = mean(H1(1:c1)-Hf(1:c1),'omitnan'); 
+        n1 = regexp(files(Ismr(i)).name,'R')+1; % indices to start of dSMR value
+        n2 = regexp(files(Ismr(i)).name,'_S')-1; % indices to end of dSMR value
+        plot(str2double(files(Ismr(i)).name(n1:n2))*3.1536e7,dH,'o',...
+            'markersize',10,'linewidth',2,'color',col(i,:));
+        % colormap
+        colormap(flipud(col)); c=colorbar; caxis([-4 1]);   
+        set(get(c,'Title'),'String','(m a^{-1})');
+end
+
+% SMB
+for i=1:length(Ismb)
+    load(files(Ismb(i)).name);
+    figure(11); hold on;
+    subplot(1,3,1); hold on; 
+        % ice surface
+        plot(x1(1:cf)./10^3,hf(1:cf),'color',col(i,:),'linewidth',2);
+        % calving front
+        plot([x1(cf) x1(cf)]./10^3,[hf(cf)-Hf(cf) hf(cf)],'color',col(i,:),'linewidth',2);
+        % floating bed
+        plot(x1(glf:cf)./10^3,hf(glf:cf)-Hf(glf:cf),'color',col(i,:),'linewidth',2);
+    subplot(1,3,2); hold on; 
+        % ice surface speed
+        plot(x1(1:cf)./10^3,Uf(1:cf).*3.1536e7,'color',col(i,:),'linewidth',2);
+    subplot(1,3,3); hold on;
+        % dH
+        dH = mean(H1(1:c1)-Hf(1:c1),'omitnan'); 
+        n1 = regexp(files(Ismb(i)).name,'B')+1; % indices to start of dSMB value
+        n2 = regexp(files(Ismb(i)).name,'_g')-1; % indices to end of dSMB value
+        plot(str2double(files(Ismb(i)).name(n1:n2))*3.1536e7,dH,'o',...
+            'markersize',10,'linewidth',2,'color',col(i,:));
+        % colormap
+        colormap(flipud(col)); colorbar; caxis([-4 1]); 
+        set(get(c,'Title'),'String','(m a^{-1})');            
+end
+    
 % Save figure 
 if save_figure
     % Save in figures folder
     cd([homepath,'../figures/']);
-    saveas(gcf,'Crane_sensitivityTests.png','png');
+    figure(10);
+    saveas(gcf,'Crane_sensitivityTests_SMR.png','png');
+    figure(11);
+    saveas(gcf,'Crane_sensitivityTests_SMB.png','png');    
     disp(['figure saved in: ',pwd]);
     
     % Save in thesis figures folder
     cd([homepath,'../write-ups/Thesis/figures/']);
-    saveas(gcf,'Crane_sensitivityTests.png','png');
+    figure(10);
+    saveas(gcf,'Crane_sensitivityTests_SMR.png','png');
+    figure(11);
+    saveas(gcf,'Crane_sensitivityTests_SMB.png','png');    
     disp(['figure saved in: ',pwd]);  
     
 end

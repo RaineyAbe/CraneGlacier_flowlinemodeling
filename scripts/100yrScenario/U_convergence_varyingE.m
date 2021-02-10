@@ -30,7 +30,7 @@ while b
             vm(k) = ((E(k)*Am(k)).^(-1/n)).*(abs(dUmdx(k))).^((1-n)/n); %effective viscosity (Pa s)
         end
         vm(1) = vm(2); 
-        vm(vm>8e+16) = 8e+16; %set a maximum value for very low strain rates
+        vm(vm>2e+16) = 2e+16; %set a maximum value for very low strain rates
                 
         if m > 1
             eta=zeros(1,length(x)); % pre-allocate eta
@@ -55,7 +55,7 @@ while b
     
     %set-up coefficient vectors for the linearized stress terms over the calving front
     %[C(k)*U(k-1)+E(k)*U(k)+G(k)*U(k+1)=Td]
-   for k=1:c-1
+    for k=1:c-1
         if k == 1
             %set the upper boundary coefficients
             G_minus(1) = 0;
@@ -69,7 +69,7 @@ while b
             G_plus(k) = (2./(dx.^2)).*Hm(k).*vm(k); %for U(k+1)
             T(k) = (rho_i.*g.*H(k).*dhdx(k)); %gravitational driving stress
         end
-   end
+    end
     % use driving stress at the upper boundary that results in 90% observed
     % velocity 
     T(1) = U0(1)*0.9.*G(1);
@@ -99,14 +99,12 @@ while b
     end
     
     %use the backslash operator to perform the matrix inversion to solve for ice velocities
-    Un = M\T(1:ice_end); %velocity (m s^-1)
-    
-    %remove NaNs and apply the ice divide bounday condition
+    Un = M(1:c,1:c)\T(1:c); %velocity (m s^-1)
     Un(isnan(Un)) = 0;
     Un(Un<0) = 0;
     
     %set velocity at the (dummy) terminus
-    Un(ice_end+1:length(x)) = Un(ice_end-1)*ones(1,length(x(ice_end+1:length(x))));
+    Un(c+1:length(x)) = Un(c)*ones(1,length(x(c+1:length(x))));
         
     %make sure Un is a row vector so it can be compared with U
     if size(Un) == [length(x),1]

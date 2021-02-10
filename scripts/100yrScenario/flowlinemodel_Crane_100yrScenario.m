@@ -35,7 +35,6 @@ use_binavg = 1;     % = 1 to use average within bins proportional to dx0
 
 % Load Crane Glacier initialization variables
     load('Crane_flowline_initialization.mat');
-    %A0 = polyval(polyfit([x0(1) x0(end)],[A0(1) A0_adj(1,end)],2),x0);
     A0(140:end)=A0(140:end).*2;
     A0 = polyval(polyfit(x0,A0,1),x0);
     beta0 = movmean(beta0,20); % use moving mean for smooth boundaries
@@ -52,7 +51,7 @@ use_binavg = 1;     % = 1 to use average within bins proportional to dx0
 %   Adusumilli et al. (2018):
 %       Larsen C basal melt rate (1994-2016) = 0.5+/-1.4 m/a = 1.59e-8 m/s
 %       Larsen C net mass balance (1994-2016)= -0.4+/-1.3 m/a = 1.27e-8 m/s
-smr0 = 4.75e-8; % m/s = 1.5 m/a
+smr0 = -1.5/3.1536e7; % m/s SMR
 
 % Load observed conditions
     % dH
@@ -191,8 +190,6 @@ smr0 = 4.75e-8; % m/s = 1.5 m/a
     
 %% 1. Run the flowline model for 100 years to reach near steady-state 
 %   conditions using 2009 observations
-
-    E = load('Ebest.mat').Ebest;
     
  % Run flowline model
     for i=1:length(t)
@@ -352,7 +349,7 @@ smr0 = 4.75e-8; % m/s = 1.5 m/a
 
         % add submarine melting rate where ice is ungrounded
         smr(1:gl)= 0; % m/s (zero at grounded ice)
-        smr(gl+1:length(x)) = -smr0.*ones(1,length(x(gl+1:end))); % m/s
+        smr(gl+1:length(x)) = smr0.*ones(1,length(x(gl+1:end))); % m/s
 
         % adjust smb to minimize misfit of surface observations
         smb_add = zeros(1,length(x0));
@@ -660,7 +657,7 @@ for f=1:length(F0)
 
         % add submarine melting rate where ice is ungrounded
         smr(1:gl)= 0; % m/s (zero at grounded ice)
-        smr(gl+1:length(x)) = -smr0.*ones(1,length(x(gl+1:end))); % m/s
+        smr(gl+1:length(x)) = smr0.*ones(1,length(x(gl+1:end))); % m/s
 
         % adjust smb to minimize misfit of surface observations
         smb_add = zeros(1,length(x0));
@@ -986,7 +983,7 @@ for f=1:length(sigma_b)
 
         % add submarine melting rate where ice is ungrounded
         smr(1:gl)= 0; % m/s (zero at grounded ice)
-        smr(gl+1:length(x)) = -smr0.*ones(1,length(x(gl+1:end))); % m/s
+        smr(gl+1:length(x)) = smr0.*ones(1,length(x(gl+1:end))); % m/s
 
         % adjust smb to minimize misfit of surface observations
         smb_add = zeros(1,length(x0));
@@ -1115,7 +1112,6 @@ sigma_bbest = sigma_b(abs(misfit)==min(abs(misfit)));
 save('sigma_bbest.mat','sigma_bbest');
 disp(['Best sigma_b = ',num2str(sigma_bbest./10^3),' kPa saved.']);
 
-% Note: sigma_bbest = 0 by way of tuning...
 % But we know there is sea ice present, so we will implement 
 % a of 10kPa, similar to that at implemented at Helheim Glacier 
 % (Nick et al., 2010)
@@ -1812,11 +1808,32 @@ F0 = load('F0best.mat').F0best; % optimal inner boundary flux from step #5
 load('Crane_sensitivityTests_noChange.mat'); % load no change variables
 load('Crane_flowline_100yr_output2.mat');
 
-save_figure = 1; % = 1 to save resulting figure
+save_figure = 1;    % = 1 to save resulting figure
+save_f = 1;         % = 1 to save final geometry and speed 
 
 % set up changes in SMB & SMR
-smb_change = 0.0e-7; % m/s change in SMB
-smr_change = 0.0e-7; % m/s change in SMR
+delta_smb = 0/3.1536e7; % m/s change in SMB
+delta_smr = -3.5/3.1536e7; % m/s change in SMR
+
+    % Note: dec SMR in increments of 0.5 m a-1 (1.585e-8)
+    % until reaching SMR found on the western AP: ~ (Adusumilli et al., 2018)
+    
+    % calculate SMR and SMR_change where ice is ungrounded
+    smri = zeros(1,length(x)); % m/s (zero at grounded ice and past ice_end)
+    % fit an exponential function to smr past the grounding line 
+    % to avoid large spatial gradients
+    smri(gl+1:ice_end) = feval(fit([x(gl+1);x(round((ice_end-(gl+1))*0.8+gl+1));x(ice_end)],...
+        [0;-smr0;0],'smoothingspline'),x(gl+1:ice_end));
+    smr_change = zeros(1,length(x)); % m/s (zero at grounded ice and past ice_end)
+    % fit an exponential function to smr past the grounding line 
+    % to avoid large spatial gradients
+    smr_change(gl:ice_end) = feval(fit([x(gl);x(round((ice_end-gl)*0.8+gl+1));x(ice_end)],...
+        [0;-smr0+delta_smr;0],'smoothingspline'),x(gl:ice_end));
+    
+    % calculate SMB and SMB_change by interpolating smb0 to centerline 
+    % and adding tributary flux Q0
+    smbi = movmean(interp1(x0,smb0+Q0-5e-7,xj),20); % m/s
+    smb_change = smbi+delta_smb; 
 
 % time stepping (s)
 dt = 0.001*3.1536e7; 
@@ -1829,51 +1846,51 @@ x=xj; h=hj; hb=hbj; W=Wj; H=Hj; A=Aj; beta=betaj; U=Uj; dUdx=dUdxj;
 ice_end=ice_endj; c=cj;
     
 % Run flowline model
-for i=1:13849%length(t)
+for i=1:length(t)
 
     if t(i)==t_start
         col = parula(length(t)+20); %Color scheme for plots
         figure(1); clf % glacier geometry
-        hold on; grid on;
-        set(gcf,'Position',[0 50 500 400]);
-        set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
-        legend('Location','northeast'); xlim([0 65]); ylim([min(hb)-100 max(h)+200]);
-        title('a) Glacier Geometry');
-        xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
-        % ice surface
-        plot(x(1:c)./10^3,h(1:c),'color',col(i,:),'linewidth',2,'displayname','0');
-        % calving front
-        plot(x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(i,:),'linewidth',2,'HandleVisibility','off');
-        % ice end
-        plot(x(c+1:ice_end)./10^3,h(c+1:ice_end),'--','color',col(i,:),'linewidth',1.5,'HandleVisibility','off');
-        plot(x(c+1:ice_end)./10^3,h(c+1:ice_end)-H(c+1:ice_end),'--','color',col(i,:),'linewidth',1.5,'HandleVisibility','off');
-        % floating bed
-        plot(x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(i,:),'linewidth',2,'HandleVisibility','off');
-        % bed elevation
-        plot(x/10^3,hb,'k','linewidth',2,'HandleVisibility','off');
-        % mean sea level
-        plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
+            hold on; grid on;
+            set(gcf,'Position',[0 100 500 400]);
+            set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
+            legend('Location','northeast'); xlim([0 70]); ylim([min(hb)-100 max(h)+200]);
+            title('a) Glacier Geometry');
+            xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
+            % ice surface
+            plot(x(1:c)./10^3,h(1:c),'color',col(i,:),'linewidth',2,'displayname','0');
+            % calving front
+            plot(x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(i,:),'linewidth',2,'HandleVisibility','off');
+            % ice end
+            plot(x(c+1:ice_end)./10^3,h(c+1:ice_end),'--','color',col(i,:),'linewidth',1.5,'HandleVisibility','off');
+            plot(x(c+1:ice_end)./10^3,h(c+1:ice_end)-H(c+1:ice_end),'--','color',col(i,:),'linewidth',1.5,'HandleVisibility','off');
+            % floating bed
+            plot(x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(i,:),'linewidth',2,'HandleVisibility','off');
+            % bed elevation
+            plot(x/10^3,hb,'k','linewidth',2,'HandleVisibility','off');
+            % mean sea level
+            plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
         figure(2); clf % ice speed
-        hold on; grid on;
-        set(gcf,'Position',[500 50 500 400]);
-        set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
-        title('b) Ice Speed Profile');
-        xlim([0 65]); ylim([0 4000]);
-        xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})');
-        legend('Location','northeast');
-        % 1:c
-        plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','0');
-        % c:ice_end
-        plot(x(c:ice_end)./10^3,U(c:ice_end).*3.1536e7,'--','color',col(i,:),'linewidth',2,'HandleVisibility','off');
+            hold on; grid on;
+            set(gcf,'Position',[475 100 500 400]);
+            set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
+            title('b) Ice Speed Profile');
+            xlim([0 70]); ylim([0 4000]);
+            xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})');
+            legend('Location','northeast');
+            % 1:c
+            plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','0');
+            % c:ice_end
+            plot(x(c:ice_end)./10^3,U(c:ice_end).*3.1536e7,'--','color',col(i,:),'linewidth',2,'HandleVisibility','off');
         figure(3); clf % terminus position
-        hold on; grid on;
-        set(gcf,'Position',[1000 50 500 400]);
-        set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
-        title('c) Terminus Position'); ylabel('Year');
-        xlabel('Distance Along Centerline (km)');
-        xlim([35 55]);legend('Location','northeast');
-        % initial terminus position
-        plot(x(c)/10^3,t(i),'.','markersize',15,'color',col(i,:),'displayname','0');
+            hold on; grid on;
+            set(gcf,'Position',[950 100 500 400]);
+            set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
+            title('c) Terminus Position'); ylabel('Year');
+            xlabel('Distance Along Centerline (km)');
+            xlim([35 70]); ylim([0 20]); legend('Location','best');
+            % initial terminus position
+            plot(x(c)/10^3,t(i),'.','markersize',15,'color',col(i,:),'displayname','0');
     elseif mod(i-1,round(length(t)/50))==0 %mod(i-1,round(length(t)/10))==0
         figure(1); hold on; % Plot geometries every 10 time iterations
         if mod(i-1,round(length(t)/10))==0
@@ -1971,31 +1988,14 @@ for i=1:13849%length(t)
     dHdt = -(1./W).*gradient(F,x);
     dH = dHdt.*dt;
 
-    % surface mass balance
-    yr = round(t(i)/3.1536e7)+1;
-    if yr>10
-        yr=10;
-    end
-    clear smb sigma_smb smr % clear to avoid changing size with changing x
-
-    % interpolate smb0 to centerline, add tributary flux Q0 to smb
-    smb = interp1(x0,smb0+Q0,x); % m/s
-    sigma_smb = interp1(x0,smb0_err+Q0_err,x); % m/s
-    sigma_smb(ice_end+1:end) = 0;
-
-    % add submarine melting rate where ice is ungrounded
-    smr(1:gl)= 0; % m/s (zero at grounded ice)
-    smr(gl+1:length(x)) = -smr0.*ones(1,length(x(gl+1:end))); % m/s
-
-    % adjust smb to minimize misfit of surface observations
-    smb_add = zeros(1,length(x0));
-    smb_add = smb_add-0.05e-5; 
-    smb = movmean(interp1(x0,smb0+Q0+smb_add,x),20);
-
-    % implement changes to SMB & SMR after 10 years
+    % implement SMB & SMR with changes after 10 years
+    clear smb smr
     if t(i)/3.1536e7>10
-        smb=smb+smb_change;
-        smr=smr+smr_change;
+        smb=interp1(xj,smb_change,x);
+        smr=interp1(xj,smr_change,x);
+    else
+        smb=interp1(xj,smbi,x);
+        smr=interp1(xj,smri,x);
     end
 
     % new thickness (change from dynamics, SMB, & SMR)
@@ -2004,7 +2004,7 @@ for i=1:13849%length(t)
     H = Hn; %set as the new thickness value
 
     % smooth out the points near the ice divide
-    H(1:10) = ones(1,length(H(1:10))).*nanmean(H(1:10),'all');
+    H(1:5) = ones(1,length(H(1:5))).*nanmean(H(1:5),'all');
 
     % thickness & surface past calving front
     for j=c-10:length(xi)
@@ -2100,16 +2100,15 @@ end
 
 % plot results on final time step
 if t(i)==t_end
-    h2=h; H2=H; x2=x; c2=c; gl2=gl; % save geometry variables
-
+    h2=h; H2=H; x2=x; c2=c; gl2=gl; % save final geometry
     figure(4); clf % sensitivity test changes
     hold on; grid on;
     set(gcf,'Position',[350 300 700 600]);
     set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
     xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
-    legend('Location','east'); xlim([0 65]); ylim([-1200 1200]);
-    title(['SMR = + ',num2str(round(smr_change.*3.1536e7,1)),'m/a, SMB = + ',...
-        num2str(round(smb_change*3.1536e7,1)),'m/a, \Delta L = ',num2str(x2(c2)-x1(c1)),'m']);
+    legend('Location','east'); xlim([0 70]); ylim([-1200 1200]);
+    title(['SMR = + ',num2str(round(delta_smr.*3.1536e7,1)),'m/a, SMB = + ',...
+        num2str(round(delta_smb*3.1536e7,1)),'m/a']);
     ax1=get(gca);
         % ice surface
         plot(x1(1:c1)/10^3,h1(1:c1),'-k','linewidth',2,'displayname','no change');
@@ -2127,7 +2126,7 @@ if t(i)==t_end
         hold on; grid on; set(gca,'linewidth',2,'fontweight','bold');
         title(['\Delta L = ',num2str(x2(c2)-x1(c1)),'m, ','\Delta H_{mean} = ',...
             num2str(round(mean(H2)-mean(H1),1)),' m']);
-        xlim([40 50]); ylim([-1000 300]);
+        xlim([40 60]); ylim([-1000 300]);
         % ice surface
         plot(x1(1:c1)/10^3,h1(1:c1),'-k','linewidth',2,'displayname','no change');
         plot(x2(1:c2)/10^3,h2(1:c2),'color',[0.8 0 0],'linewidth',2,'displayname','no change');
@@ -2144,10 +2143,10 @@ if t(i)==t_end
 end
 
 % save figure
-cd([homepath,'scripts/100yrScenario']);
 if save_figure && ishandle(4)
+    cd([homepath,'scripts/100yrScenario/results']);
     % Save figure for test
-    figName = ['SMR',num2str(smr_change),'_SMB',num2str(smb_change)];
+    figName = ['SMR',num2str(delta_smr),'_SMB',num2str(delta_smb)];
     saveas(gcf,[figName,'.png'],'png');
     saveas(gcf,[figName,'.fig'],'fig');
     disp(['Fig. 4 saved (.png & .fig) in: ',pwd]);
@@ -2157,3 +2156,13 @@ else
     disp('no figure saved.');
 end
 
+% save geometry
+if save_f
+    cd([homepath,'scripts/100yrScenario/results']);
+    fileName=['SMR',num2str(delta_smr),'_SMB',num2str(delta_smb),'_geom.mat'];
+    hf=h; Hf=H; glf=gl; cf=c; ice_endf=ice_end; Uf=U; 
+    save(fileName,'hf','Hf','cf','cf','ice_endf','Uf','glf');
+    disp('geometry saved.');
+else
+    disp('geometry not saved.');
+end
