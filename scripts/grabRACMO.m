@@ -16,7 +16,7 @@
 
 close all; clear all; warning off; 
 
-%1. Load centerline, 2011 Snowfall (sf), Snowmelt (sm), Runoff (ro),
+%% 1. Load centerline, 2011 Snowfall (sf), Snowmelt (sm), Runoff (ro),
 %Surface Mass Balance (SMB), Air Temperature (airtemp) along centerline
 
     homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
@@ -411,7 +411,7 @@ close all;
         xlabel('Distance Along Centerline (m)'); ylabel('SMB (m yr^-^1)');
         hold off;  
     
-%% Adjust air temperature at ice surface using a dry adiabatic lapse rate
+%% 5. Adjust air temperature at ice surface using a dry adiabatic lapse rate
 %close all;
 
     %Load RACMO air temperature
@@ -502,13 +502,13 @@ close all;
         title('RACMO Air Temperature');
         hold off;
     
-%% Save adjusted variables
+%% 6. Save adjusted variables
 cd /Users/raineyaberle/Desktop/Research/RACMO2.3
 save('Crane_downscaledSMB_2011.mat','x','h_cl_11','smb.interp','smb.linear');
 
 save('Crane_adjustedAirTemp_2011.mat','T.cl_11');
 
-%% Repeat above steps to load smb for 2009-2019
+%% 7. Repeat above steps to load smb for 2009-2019
 
 close all; clear all;
 
@@ -520,15 +520,15 @@ col = parula(length(years)+1);
 
 %Load centerline
     homepath='/Users/raineyaberle/Desktop/Research/';
-    cd([homepath,'CraneGlacier_modeling']);
     addpath([homepath,'matlabFunctions']);
     addpath([homepath,'CraneGlacier_modeling/data/RACMO2.3']);
     cl.X = load('Crane_centerline.mat','x').x; 
     cl.Y = load('Crane_centerline.mat','y').y;
+    cd([homepath,'CraneGlacier_modeling/inputs-outputs']);
     
     % Load most advanced terminus position (2019)
-    term = dsearchn([cl.X cl.Y],[load('CraneTerminusPosition_2002-2019.mat').term(61).X ...
-    load('CraneTerminusPosition_2002-2019.mat').term(61).Y]); 
+    term = dsearchn([cl.X cl.Y],[load('Crane_TerminusPosition_2002-2019.mat').term(61).X ...
+    load('Crane_TerminusPosition_2002-2019.mat').term(61).Y]); 
     % clip centerline at this point
     %cl.X = cl.X(1:term); cl.Y = cl.Y(1:term);
 

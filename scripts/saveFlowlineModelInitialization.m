@@ -13,7 +13,9 @@
 %   6. rate factor, A
 %   7. basal roughness factor, beta
 %   8. surface mass balance, smb
-%   9. tributary ice volume flux, Q
+%   9. submarine melting rate, smr
+%   10. tributary ice volume flux, Q
+%   11. calving front location, c
 
 clear all; close all;
 
@@ -66,17 +68,16 @@ end
     U0 = feval(fit(x0(~isnan(U))',U(~isnan(U))','linearinterp'),x0);
 
 % 6. rate factor, A & adjusted rate factor
-A0 = load('Crane_RateFactorA.mat').A;
+A0_adj = load('Crane_AdjustedAnnualRateFactor_2009-2019.mat').A_adj;
+A0 = polyval(polyfit(x0,A0_adj(1,:),1),x0);
 if size(A0)==[186 1]
     A0=A0';
 end
-A0_adj = load('Crane_AdjustedAnnualRateFactor_2009-2019.mat').A_adj;
 
 % 7. basal roughness factor, beta
-beta = load('Crane_CalculatedBeta2.mat').beta;
-beta_linear = load('Crane_CalculatedBeta2.mat').beta_linear;
+beta = load('Crane_CalculatedBeta.mat').beta;
 beta(beta<0)=0;
-beta0 = beta; beta0_linear = beta_linear;
+beta0 = beta; beta0 = movmean(beta0,20);
 
 % 8. surface mass balance w/ uncertainty, smb and smb_err
 smb = load('Crane_downscaledSMB_2009-2016.mat').SMB(1).smb_interp; % m/a
@@ -84,16 +85,34 @@ smb_err = load('Crane_downscaledSMB_2009-2016.mat').SMB(1).sigma_smb; % m/a
 smb0 = [smb' smb(end).*ones(1,length(x0)-length(smb))]./3.1536e7; % m/s
 smb0_err = [smb_err smb_err(end).*ones(1,length(x0)-length(smb_err))]./3.1536e7; % m/s
 
-% 9. tributary ice volume flux
+% 9. submarine melting rate, smr
+%   Dryak and Enderlin (2020), Crane iceberg melt rates:
+%       2013-2014: 0.70 cm/d = 8.1e-8 m/s
+%       2014-2015: 0.51 cm/d = 5.29e-8 m/s
+%       2015-2016: 0.46 cm/d = 4.77e-8 m/s
+%       2016-2017: 0.08 cm/d = 0.823e-8 m/s
+%       Mean melt rate (2013-17) = 4.75e-8 m/s = 1.5 m/yr
+%   Adusumilli et al. (2018):
+%       Larsen C basal melt rate (1994-2016) = 0.5+/-1.4 m/a = 1.59e-8 m/s
+%       Larsen C net mass balance (1994-2016)= -0.4+/-1.3 m/a = 1.27e-8 m/s
+smr0 = -1.5/3.1536e7; % m/s SMR
+
+% 10. tributary ice volume flux
 Q = load('TributaryFlux.mat').tribFlux.Q; % m/a
 Q_err = load('TributaryFlux.mat').tribFlux.Q_err; % m/a
 x_Q = load('TributaryFlux.mat').tribFlux.x; % m along centerline
 Q0 = interp1(x_Q,Q,x0)./3.1536e7; % m/s
 Q0_err = interp1(x_Q,Q_err,x0)./3.1536e7; % m/s
 
+% 10. calving front location
+termx = load('LarsenB_centerline.mat').centerline.termx;
+termy = load('LarsenB_centerline.mat').centerline.termy;
+termdate = load('LarsenB_centerline.mat').centerline.termdate;
+c0 = dsearchn([x_cl' y_cl'],[termx(5),termy(5)]);
+
 % Save resulting variables
-save('Crane_flowline_initialization.mat','h0','hb0','W0','A0','A0_adj','U0',...
-    'beta0','beta0_linear','x0','smb0','smb0_err','Q0','Q0_err');
+save('Crane_flowline_initialization.mat','h0','hb0','W0','A0','U0',...
+    'beta0','x0','smb0','smr0','Q0','c0');
 disp(['initialization variable saved in: ',pwd]);
 
 

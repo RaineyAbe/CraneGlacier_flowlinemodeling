@@ -18,7 +18,7 @@ velocity_save = 'y';   % Switch 'y'/'n' to save/not save velocity
 dHdt_save = 'n';       % Switch 'y'/'n' to save/not save dHdt
 figures_save = 'y';    % Switch 'y'/'n' to save/not save figures 
 
-% 1. Glacier ice surface (PGC & OIB)
+%% 1. Glacier ice surface (PGC & OIB)
     %Note: OIB columns
     %Elevation = 5
     %Surface elevation = surface(5) - elevation(7)
@@ -449,7 +449,7 @@ end
 
 hold off;
 
-%% Terminus Position
+%% 2. Terminus Position
 
     % Load LarsenB_centerline variable (Dryak & Enderlin)
     cd([homepath,'CraneGlacier_modeling/inputs-outputs']);
@@ -510,7 +510,7 @@ hold off;
     saveas(fig_termTime,'CraneTerminusAlongCL_2002-2019.png');
     disp('Figures 4 & 5 saved');
  
-%% Plot observation timeseries, saving figures
+%% 3. Plot observation timeseries, saving figures
 % Save an image of the figure for every year to make a time lapse
 
 clear all; close all;
@@ -647,7 +647,7 @@ clear all; close all;
         disp([figname,' saved']);
     end
     
-%% Plot study area
+%% 4. Plot study area
 
 homepath='/Users/raineyaberle/Desktop/Research/';
 addpath([homepath,'matlabFunctions']);
