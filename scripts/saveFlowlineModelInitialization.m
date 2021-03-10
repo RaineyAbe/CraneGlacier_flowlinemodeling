@@ -66,18 +66,23 @@ end
     U(1) = load('Crane_CenterlineSpeeds_2007-2017.mat').U(4).speed(1);
     % fit smoothing spline to fill in gaps
     U0 = feval(fit(x0(~isnan(U))',U(~isnan(U))','linearinterp'),x0);
+    if size(U0)==[186,1]
+        U0=U0';
+    end
 
 % 6. rate factor, A & adjusted rate factor
-A0_adj = load('Crane_AdjustedAnnualRateFactor_2009-2019.mat').A_adj;
-A0 = polyval(polyfit(x0,A0_adj(1,:),1),x0);
+A_adj = load('Crane_AdjustedAnnualRateFactor_2009-2019.mat').A_adj;
+A = load('Crane_RateFactorA.mat').A;
+%A0 = polyval(polyfit(x0,A_adj(1,:),1),x0);
+A0 = polyval(polyfit(x0,A,1),x0);
 if size(A0)==[186 1]
     A0=A0';
 end
 
 % 7. basal roughness factor, beta
-beta = load('Crane_CalculatedBeta.mat').beta;
-beta(beta<0)=0;
-beta0 = beta; beta0 = movmean(beta0,20);
+beta = load('betabest.mat').betabest.beta;
+betax = load('betabest.mat').betabest.x;
+beta0 = interp1(betax,beta,x0); %beta0=movmean(beta0,5);
 
 % 8. surface mass balance w/ uncertainty, smb and smb_err
 smb = load('Crane_downscaledSMB_2009-2016.mat').SMB(1).smb_interp; % m/a

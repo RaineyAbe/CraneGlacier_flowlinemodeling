@@ -359,7 +359,7 @@ Ismb = find(strcmp('SMB',table2array(files(:,8))));
 Ismr = find(strcmp('SMR',table2array(files(:,8))));
 files = table2struct(files);
 
-col=cmocean('thermal',16); % color scheme for plotting
+col=cmocean('thermal',length(Ismb)+2); % color scheme for plotting
 
 % SMR
 for i=1:length(Ismr)
@@ -377,11 +377,11 @@ for i=1:length(Ismr)
         plot(x1(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col(i,:),'linewidth',2);
     subplot(1,3,3); hold on; 
         % dH
-        dH = mean(H2(1:c2)-H1(1:c2),'omitnan'); 
+        dH = nanmean(H2(1:c2))-nanmean(H1(1:c1)); 
         plot(files(Ismr(i)).change,dH,'o',...
             'markersize',10,'linewidth',2,'color',col(i,:));
         % colormap
-        colormap(col); c=colorbar; caxis([-1 4.5]);   
+        colormap(col); c=colorbar; caxis([-1 8]);   
         set(get(c,'label'),'String','\DeltaSMR (m a^{-1})');
 end
 
@@ -391,21 +391,21 @@ for i=1:length(Ismb)
     figure(11); hold on;
     subplot(1,3,1); hold on; 
         % ice surface
-        plot(x1(1:c2)./10^3,h2(1:c2),'color',col(i,:),'linewidth',2);
+        plot(x2(1:c2)./10^3,h2(1:c2),'color',col(i,:),'linewidth',2);
         % calving front
-        plot([x1(c2) x1(c2)]./10^3,[h2(c2)-H2(c2) h2(c2)],'color',col(i,:),'linewidth',2);
+        plot([x2(c2) x2(c2)]./10^3,[h2(c2)-H2(c2) h2(c2)],'color',col(i,:),'linewidth',2);
         % floating bed
-        plot(x1(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col(i,:),'linewidth',2);
+        plot(x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col(i,:),'linewidth',2);
     subplot(1,3,2); hold on; 
         % ice surface speed
-        plot(x1(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col(i,:),'linewidth',2);
+        plot(x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col(i,:),'linewidth',2);
     subplot(1,3,3); hold on;
         % dH
-        dH = mean(H2(1:c2)-H1(1:c2),'omitnan'); 
+        dH = nanmean(H2(1:c2))-nanmean(H1(1:c1)); 
         plot(files(Ismb(i)).change,dH,'o',...
             'markersize',10,'linewidth',2,'color',col(i,:));
         % colormap
-        colormap(flipud(col)); c=colorbar; caxis([-4.5 1]); 
+        colormap(col); c=colorbar; caxis([-6 3]); 
         set(get(c,'label'),'String','\DeltaSMB (m a^{-1})');            
 end
     
