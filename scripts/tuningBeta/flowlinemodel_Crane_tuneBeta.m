@@ -13,7 +13,7 @@ addpath([homepath,'../matlabFunctions/']); % add path to bestPolyFit.m
 cd([homepath,'inputs-outputs/']);
 
 % grid spacing
-dx0 = 1000:100:5000;
+dx0 = 500:100:5000;
 
 % Load Crane Glacier initialization variables
 load('Crane_flowline_initialization.mat');
@@ -164,11 +164,6 @@ for j=1:length(dx0)
             plot(x0./10^3,hb0,'k','linewidth',2,'HandleVisibility','off');
             % mean sea level
             plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
-            % colorbar
-            colormap(parula(length(col))); cb=colorbar('Ticks',[0 0.5 1],...
-                'YTickLabel',[{num2str(dx0(1)/10^3)} {num2str(dx0(round(length(dx0)/2))/10^3)} {num2str(dx0(end)/10^3)}],...
-                'Position',[.9 .35 .025 .3410],'Fontname','arial','fontweight','bold');  
-                cb.Label.String = 'dx (km)';
         ax2 = axes('Position',[0.35 0.1 0.25 0.8]); % ice speed
             hold on; grid on; set(gca,'FontSize',12,'linewidth',2,'fontweight','bold');
             title('Ice Speed'); xlim([0 50]); ylim([0 2500]);
@@ -196,12 +191,12 @@ for j=1:length(dx0)
         % colorbar
         colormap(parula(length(col))); cb=colorbar('Ticks',[0 0.5 1],...
             'YTickLabel',[{num2str(dx0(1)/10^3)} {num2str(dx0(round(length(dx0)/2))/10^3)} {num2str(dx0(end)/10^3)}],...
-            'Position',[.95 .35 .025 .3410],'Fontname','arial','fontweight','bold');  
-            cb.Label.String = 'dx (km)';        
+            'Position',[.96 .35 .025 .3410],'Fontname','arial','fontweight','bold');  
+            cb.Title.String = 'dx (km)';        
     end
 
     % Calculate RMSE of resulting speed using beta solution
-    RMSE(j) = sqrt((sum(Un_rev-U).^2./length(U)));
+    RMSE(j) = sqrt((sum((Un_rev-U).^2)./length(U)));
 
     % display results
     disp(['dx = ',num2str(dx0(j)),' m: ']);
@@ -218,14 +213,14 @@ figure(4); clf
 set(gcf,'Position',[441   145   894   652]);
 subplot(2,2,1:2);
     set(gca,'fontsize',14,'fontname','arial','linewidth',2);
-    xlabel('x (km along centerline)'); ylabel('\beta (s^{1/m} m^{-1/m})'); 
+    xlabel('Distance Alonc Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})'); 
     title('\beta_{best}'); hold on; grid on; 
     plot(beta(Ibest).x./10^3,beta(Ibest).beta,'linewidth',2);  
 subplot(2,2,3);
     set(gca,'fontsize',14,'fontname','arial','linewidth',2);
-    xlabel('dx (km)'); ylabel('RMSE (m/s)'); title('RMSE of \beta Solutions');
-    hold on; plot(dx0./10^3,RMSE,'.','markersize',20); grid on;
-    plot(dx0(Ibest)/10^3,RMSE(Ibest),'*','markersize',20,'linewidth',2);  
+    xlabel('dx (km)'); ylabel('RMSE (m a^{-1})'); title('RMSE of \beta Solutions');
+    hold on; plot(dx0./10^3,RMSE.*3.1536e7,'.','markersize',20); grid on;
+    plot(dx0(Ibest)/10^3,RMSE(Ibest)*3.1536e7,'*','markersize',20,'linewidth',2);  
 subplot(2,2,4);
     set(gca,'fontsize',14,'fontname','arial','linewidth',2);
     xlabel('x (m along centerline)'); ylabel('U (m a^{-1})'); title('U Solutions');

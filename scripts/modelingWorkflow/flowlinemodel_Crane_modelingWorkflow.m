@@ -130,10 +130,10 @@ for i=1:length(t)
     % find the location of the grounding line and use a floating
     % geometry from the grounding line to the calving front
     if ~isempty(find(Hf-H>0,1,'first'))
-        xgl = x(find(Hf-H>0,1,'first')-1);
-        %xgl = interp1(Hf(find(Hf-H>0,1,'first')-1:find(Hf-H>0,1,'first')+1)...
-        %    -H(find(Hf-H>0,1,'first')-1:find(Hf-H>0,1,'first')+1),...
-        %    x(find(Hf-H>0,1,'first')-1:find(Hf-H>0,1,'first')+1),0,'linear','extrap'); % (m along centerline)
+        %xgl = x(find(Hf-H>0,1,'first')-1);
+        xgl = interp1(Hf(find(Hf-H>0,1,'first')-1:find(Hf-H>0,1,'first'))...
+            -H(find(Hf-H>0,1,'first')-1:find(Hf-H>0,1,'first')),...
+            x(find(Hf-H>0,1,'first')-1:find(Hf-H>0,1,'first')),0,'linear','extrap'); % (m along centerline)
     else
         xgl=xcf;
     end
@@ -314,7 +314,7 @@ save_Ebest = 1; % = 1 to save Ebest
 % define Efit values to tests 
 clear Efit
 ub_E = 1:4; % upper bound (minimum E near ice divide)
-lb_E = 1:4; % lower bound (maximum E at terminus)
+lb_E = 2:4; % lower bound (maximum E at terminus)
 deg_E = 1; % polynomial degrees
 col_E = winter(length(deg_E)*length(lb_E)*length(ub_E)); % color scheme for plotting
 % set up figure
@@ -575,13 +575,13 @@ end
 
 close all;
 
-save_fwdbest = 1; % = 1 to save fwdbest
+save_fwdbest = 0; % = 1 to save fwdbest
     
 % load 100 yr output conditions
 %    load('Crane_flowline_100yr_output.mat');
 
 % define fwd values to test
-    fwd0 = 15:5:25; % fresh water depth in crevasses (m)
+    fwd0 = 0:5:30; % fresh water depth in crevasses (m)
     
 % pre-allocate misfit variables
     c_misfit = NaN.*zeros(length(fwd0),length(2009:2018));        
@@ -822,7 +822,7 @@ save_F1best = 1; % = 1 to save best F1
 %   load('Crane_flowline_100yr_output.mat');
 
 % define inner boundary flux values to test
-    F10 = 0:5:20; % (m^3 s^-1)
+    F10 = 0:5:50; % (m^3 s^-1)
 
 % pre-allocate misfit variables
     dH_tot = NaN.*zeros(length(F10),length(x0)); % total dH on each iteration
@@ -1335,7 +1335,7 @@ save_final = 1;     % = 1 to save final geometry and speed
 %   from 1 m a-1 until reaching SMR found on at other Antarctic ice shelves: 
 %   ~6 m a^-1 (Adusumilli et al., 2020)
     delta_smb = 0/3.1536e7; % m/s change in SMB
-    delta_smr = -6/3.1536e7; % m/s change in SMR
+    delta_smr = 0/3.1536e7; % m/s change in SMR
     
 % define time stepping (s)
     dt = 0.01*3.1536e7;

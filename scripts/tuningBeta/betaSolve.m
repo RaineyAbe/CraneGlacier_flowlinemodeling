@@ -76,7 +76,7 @@ function [beta,dUdx,Un_rev] = betaSolve(H,c,x,U,n,A,E,m,dx,rho_i,g,h,rho_sw,sigm
     T(isnan(T)) = 0;
           
     % Solve for beta using the G term (solved from the equation below)
-    % [G_minus(k)*U(k-1)+G(k)*U(k)+G_plus(k)*U(k+1)=T]
+    % [G_minus(k)*U(k-1)+G(k)*U(k)+G_plus(k)*U(k+1)=T(k)]
     % G(k) = (T(k) - G_minus(k)*U(k-1) - G_plus(k)*U(k+1)))/U(k)
     %   where G(k) = -2./(dx(k).^2)*(Hm(k)*vm(k)+Hm(k-1)*vm(k-1)) 
     %             - (beta(k)*N(k)*eta(k))
@@ -86,7 +86,7 @@ function [beta,dUdx,Un_rev] = betaSolve(H,c,x,U,n,A,E,m,dx,rho_i,g,h,rho_sw,sigm
     %         - (gamma(k)*H(k)/W(k))*(5/(2*A(k)*W(k))^(1/3))]/(N(k)*eta(k));
     % Solve for G (for U(k))
     G(2:c) = (T(2:c)-G_minus(2:c).*Um(1:c-1)-G_plus(2:c).*Um(2:c))./U(2:c);
-    G(1)=G(2);
+    G(1)=T(1)/U(1);
         
     % Solve the basal roughness factor, beta
     beta(2:c) = (-G(2:c)-(2./(dx(2:c).^2)).*(Hm(2:c).*vm(2:c)+Hm(1:c-1).*vm(1:c-1))...
