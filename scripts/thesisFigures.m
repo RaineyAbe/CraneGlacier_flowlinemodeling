@@ -53,7 +53,7 @@ save_figure = 1; % = 1 to save figure
     ax1.XTick=xticks; ax1.XTickLabel=string(xticks./10^3);
     ax1.YTick=yticks; ax1.YTickLabel=string(yticks./10^3);
     set(ax1,'YDir','normal','XLim',xlimits','YLim',ylimits,'FontSize',14,...
-        'linewidth',2,'fontsize',14,'Position',[0.183 0.1 0.685 0.85]); 
+        'linewidth',2,'fontsize',12,'Position',[0.183 0.1 0.685 0.85]); 
     xlabel('Easting (km)'); ylabel('Northing (km)');
     
 % load & display REMA as contours
@@ -77,7 +77,7 @@ save_figure = 1; % = 1 to save figure
     im2.AlphaData=0.5; caxis([0 1100]);
     % set axes properties
     ax2.XLim=xlimits; ax2.YLim=ylimits; 
-    set(ax2,'YDir','normal','Visible','off','fontsize',14,'XTick',[],'YTick',[]); 
+    set(ax2,'YDir','normal','Visible','off','fontsize',12,'XTick',[],'YTick',[]); 
     ax2.Position=[0.181 0.098 0.6855 0.853]; hold on; 
     % add legend
     l=legend('Position',[0.25 0.85 0.12 0.07],'Color',[175 175 175]/255,...
@@ -87,13 +87,13 @@ save_figure = 1; % = 1 to save figure
     latlon = graticuleps(-66:0.25:-64,-64:0.5:-62,'color',[175 175 175]/255,'linewidth',1,...
         'HandleVisibility','off');
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','62.00^oS','textcolor',[175 175 175]/255,...
-        'HeadStyle','none','LineStyle', 'none','Position',[.94 .66 0 0],'FontSize',14,'FontName','Arial');     
+        'HeadStyle','none','LineStyle', 'none','Position',[.94 .66 0 0],'FontSize',12,'FontName','Arial');     
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','62.50^oS','textcolor',[175 175 175]/255, ...
-        'HeadStyle','none','LineStyle', 'none','Position',[.94 .38 0 0],'FontSize',14,'FontName','Arial');     
+        'HeadStyle','none','LineStyle', 'none','Position',[.94 .38 0 0],'FontSize',12,'FontName','Arial');     
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','65.25^oW','textcolor',[175 175 175]/255, ...
-        'HeadStyle','none','LineStyle', 'none','Position',[.65 .97 0 0],'FontSize',14,'FontName','Arial');     
+        'HeadStyle','none','LineStyle', 'none','Position',[.65 .97 0 0],'FontSize',12,'FontName','Arial');     
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','65.00^oW','textcolor',[175 175 175]/255, ...
-        'HeadStyle','none','LineStyle', 'none','Position',[.37 .97 0 0],'FontSize',14,'FontName','Arial'); 
+        'HeadStyle','none','LineStyle', 'none','Position',[.37 .97 0 0],'FontSize',12,'FontName','Arial'); 
     
 % plot OIB flights
     cd([homepath,'../figures/1_StudyArea']);
@@ -113,8 +113,16 @@ save_figure = 1; % = 1 to save figure
 % plot centerline points
     plot(cl.X,cl.Y,'o','color','m','markerfacecolor','m',...
         'markeredgecolor','k','markersize',5,'displayname','Centerline');
+    
+% plot centerline distance markers
+    dist = 0:10e3:cl.x(end); Idist = dsearchn(cl.x',dist'); % ticks every 10 km
+    plot(cl.X(Idist),cl.Y(Idist),'o','markerfacecolor',[253,224,221]/255,...
+        'markeredgecolor','k','markersize',5,'handlevisibility','off');
+    labels = string(dist./10^3);
+    text(cl.X(Idist)+1500,cl.Y(Idist),labels,'color',[253,224,221]/255,...
+        'fontweight','bold','fontname','arial','fontsize',12);
 
-% Add colorbar
+% add colorbar
     c = colorbar('Position',[0.3 0.65 0.02 0.15],'fontsize',12,'fontweight',...
         'bold','color','w','fontname','arial');
     set(get(c,'Title'),'String','Speed (m a^{-1})','color','w','fontname',...
@@ -124,43 +132,43 @@ save_figure = 1; % = 1 to save figure
     % Crane
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Crane', ...
        'HeadStyle','none','LineStyle', 'none', 'TextRotation',70,'Position',[.55 0.65 0 0],...
-       'FontSize',14,'FontName','Arial','fontweight','bold','TextColor','w');
+       'FontSize',12,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);
     % Former Larsen B Ice Shelf
-    txt = sprintf('Former Larsen \n    B Ice Shelf');
-    text(-2.40e6,1.282e6,txt,'color','w','fontsize',14,'fontweight','bold');
+    %txt = sprintf('Former Larsen \n    B Ice Shelf');
+    %text(-2.405e6,1.282e6,txt,'color',[200 200 200]/255,'fontsize',12,'fontweight','bold');
     % Jorum
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Jorum', ...
         'HeadStyle','none','LineStyle', 'none', 'TextRotation',35,'Position',[.55 .88 0 0],...
-        'FontSize',16,'FontName','Arial','fontweight','bold','TextColor','w');    
+        'FontSize',12,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);    
     % Flask
-    %annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Flask', ...
-    %    'HeadStyle','none','LineStyle', 'none', 'TextRotation',45,'Position',[.9 .28 0 0],...
-    %    'FontSize',16,'FontName','Arial','fontweight','bold','TextColor','w');    
+    annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Flask', ...
+       'HeadStyle','none','LineStyle', 'none', 'TextRotation',55,'Position',[.8 .17 0 0],...
+       'FontSize',16,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);    
     % Mapple
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Mapple', ...
-        'HeadStyle','none','LineStyle', 'none', 'TextRotation',66,'Position',[.635 .6 0 0],...
-        'FontSize',12,'FontName','Arial','fontweight','bold','TextColor','w');    
+        'HeadStyle','none','LineStyle', 'none', 'TextRotation',66,'Position',[.645 .62 0 0],...
+        'FontSize',12,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);    
     % Melville
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Melville', ...
         'HeadStyle','none','LineStyle', 'none', 'TextRotation',70,'Position',[.7 .6 0 0],...
-        'FontSize',12,'FontName','Arial','fontweight','bold','TextColor','w');           
+        'FontSize',12,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);           
     % Pequod
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Pequod', ...
         'HeadStyle','none','LineStyle', 'none', 'TextRotation',66,'Position',[.75 .59 0 0],...
-        'FontSize',12,'FontName','Arial','fontweight','bold','TextColor','w');               
+        'FontSize',12,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);               
     % Starbuck
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Starbuck', ...
         'HeadStyle','none','LineStyle', 'none', 'TextRotation',38,'Position',[.78 .465 0 0],...
-        'FontSize',12,'FontName','Arial','fontweight','bold','TextColor','w');   
+        'FontSize',12,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);   
     % Tributary A
     txt = sprintf('A');
-        text(-2.412e6,1.233e6,txt,'color',[200 200 200]/255,'fontsize',14,'fontweight','bold','fontname','arial');       
+        text(-2.413e6,1.23e6,txt,'color',[200 200 200]/255,'fontsize',12,'fontweight','bold','fontname','arial');       
     % Tributary B
     txt = sprintf('B');
-        text(-2.415e6,1.238e6,txt,'color',[200 200 200]/255,'fontsize',14,'fontweight','bold','fontname','arial');    
+        text(-2.416e6,1.237e6,txt,'color',[200 200 200]/255,'fontsize',12,'fontweight','bold','fontname','arial');    
     % Tributary C
     txt = sprintf('C');
-        text(-2.417e6,1.251e6,txt,'color',[200 200 200]/255,'fontsize',14,'fontweight','bold','fontname','arial');       
+        text(-2.417e6,1.251e6,txt,'color',[200 200 200]/255,'fontsize',12,'fontweight','bold','fontname','arial');       
     
     % plot LIMA inset in figure
     ax4=axes('pos',[0.2 0.12 0.2 0.2]);
@@ -173,9 +181,9 @@ save_figure = 1; % = 1 to save figure
 if save_figure
     set(gcf,'InvertHardCopy','off'); % save colors as is
     cd([homepath,'../figures']);
-    saveas(gcf,'1_StudyArea.png','png');
+    saveas(gcf,'studyArea.png','png');
     cd([homepath,'../write-ups/Thesis/figures']);
-    saveas(gcf,'1_StudyArea.png','png');
+    saveas(gcf,'studyArea.png','png');
     disp('figure 1 saved.');
 end
 
@@ -269,9 +277,9 @@ subplot(2,2,4); hold on; % SMB
 % Save figure
 if save_figure
     cd([homepath,'../figures']);
-    saveas(gcf,'2_observedTimeSeries.png','png');
+    saveas(gcf,'observedTimeSeries.png','png');
     cd([homepath,'../write-ups/Thesis/figures']);
-    saveas(gcf,'2_observedTimeSeries.png','png');
+    saveas(gcf,'observedTimeSeries.png','png');
     disp('figure 2 saved.');
 end
 
@@ -279,9 +287,79 @@ end
 
 close all;
 
-save_figure = 0; % = 1 to save figure
+save_figure = 1; % = 1 to save figure
 
+% load betaSolutions
+cd([homepath,'inputs-outputs/']);
+beta = load('betaSolutions.mat').betaSolutions;
+RMSE = zeros(1,length(beta)); dx0 = zeros(1,length(beta));
+for i=1:length(beta)
+    RMSE(i) = beta(i).RMSE;
+    dx0(i) = beta(i).dx;
+end
 
+% load stress coupling length results
+load('Crane_SCL_results.mat');
+
+% load observed speed
+x0 = load('Crane_flowline_initialization.mat').x0;
+U0 = load('Crane_flowline_initialization.mat').U0;
+c0 = load('Crane_flowline_initialization.mat').c0;
+
+% determine best beta spatial resolution
+Ibest = find(abs(gradient(gradient(RMSE)))<0.1e-5,1,'first');
+if length(Ibest)>1 % if lowest RMSE exists for multiple dx, use lowest dx
+    Ibest(2:end)=[];
+end
+
+% plot results
+figure(3); clf
+set(gcf,'Position',[272 143 1063 654]);
+subplot(2,2,1);
+    set(gca,'fontsize',14,'fontname','arial','linewidth',2);
+    xlabel('Distance Along Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})'); 
+    hold on; grid on; xlim([0 45]);
+    plot(beta(Ibest).x./10^3,beta(Ibest).beta,'linewidth',2); 
+    text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' a ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,'backgroundcolor','w');     
+subplot(2,2,2);
+    set(gca,'fontsize',14,'fontname','arial','linewidth',2);
+    xlabel('dx (km)'); ylabel('RMSE (m a^{-1})'); 
+    hold on; plot(dx0./10^3,RMSE.*3.1536e7,'.','markersize',20); grid on;
+    plot(dx0(Ibest)/10^3,RMSE(Ibest)*3.1536e7,'*','markersize',20,'linewidth',2);  
+    text(1.9,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' b ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,'backgroundcolor','w');     
+subplot(2,2,3);
+    set(gca,'fontsize',14,'fontname','arial','linewidth',2);
+    xlabel('Distance Along Centerline (km)'); ylabel('U (m a^{-1})');
+    hold on; grid on; legend('Location','best'); xlim([0 45]);
+    plot(x0(1:c0)./10^3,U0(1:c0).*3.1536e7,'b','displayname','observed','linewidth',2);
+    plot(beta(Ibest).x./10^3,beta(Ibest).U.*3.1536e7,'displayname','solution','linewidth',2); 
+    text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' c ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,'backgroundcolor','w');     
+subplot(2,2,4);    
+    set(gca,'fontsize',14,'fontname','arial','linewidth',2);
+    xlabel('x (m along centerline)'); ylabel('U (m a^{-1})');
+    hold on; grid on; 
+    plot(x./10^3,Rxx./10^3,'k','linewidth',2); plot(x./10^3,f_Rxx./10^3,'color',[150 150 150]/255,'linewidth',2); 
+    for i=1:length(RxxTlocs)
+        plot([x(RxxTlocs(i)) x(RxxTlocs(i))]./10^3,[-2000 2000],'--','color',[136 86 167]/255,'linewidth',2);
+    end  
+    xlim([0 45]); ylim([0 2000]);
+    text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' d ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,'backgroundcolor','w');     
+    
+if save_figure
+    figure(3);
+    % save in figures folder
+    cd([homepath,'../figures/']);
+    saveas(gcf,'betaSolution.png','png');  
+    % save in thesis figures folder
+    cd([homepath,'../write-ups/Thesis/figures/']);
+    saveas(gcf,'betaSolution.png','png');
+    disp('figure 3 saved.');    
+end
+    
 %% Figure 4. Sensitivity Tests
 
 close all;
@@ -299,7 +377,7 @@ addpath([homepath,'../matlabFunctions/cmocean_v2.0/cmocean']);
 figure(4); clf % SMR
 set(gcf,'Position',[100 200 1300 1000]);
 subplot(2,3,1); hold on; grid on; % a) geometry
-    set(gca,'fontsize',14,'linewidth',2);
+    set(gca,'fontsize',14,'linewidth',2,'YTick',-1500:500:1500);
     xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m.a.s.l)'); 
     xlim([35 60]); ylim([-1200 600]);
     plot(x1./10^3,hb1,'-k','linewidth',2);
@@ -308,7 +386,7 @@ subplot(2,3,1); hold on; grid on; % a) geometry
         (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         ' a ','edgecolor','k','backgroundcolor','w','fontsize',16,'fontweight','bold','linewidth',1.5);  
 subplot(2,3,2); hold on; grid on; % b) speed
-    set(gca,'fontsize',14,'linewidth',2);
+    set(gca,'fontsize',14,'linewidth',2,'YTick',0:500:2500);        
     xlabel('Distance Along Centerline (km)'); ylabel('Speed (m a^{-1})');  
     xlim([0 60]); ylim([0 2200]);
     % add text label            
@@ -318,13 +396,13 @@ subplot(2,3,2); hold on; grid on; % b) speed
 subplot(2,3,3); hold on; grid on; % c) \Delta H
     set(gca,'fontsize',14,'linewidth',2);
     xlabel('\Delta SMR (m a^{-1})'); ylabel('\DeltaH_{mean} (m)');
-    xlim([-1.5 6.5]); ylim([-0.5 1]);
+    xlim([-1.5 6.5]); ylim([-0.5 1.5]);               
     % add text label            
     text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
         (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         ' c ','edgecolor','k','backgroundcolor','w','fontsize',16,'fontweight','bold','linewidth',1.5);         
 subplot(2,3,4); hold on; grid on; % d) geometry
-    set(gca,'fontsize',14,'linewidth',2);
+    set(gca,'fontsize',14,'linewidth',2,'YTick',-1500:500:1500);
     xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m.a.s.l)'); 
     xlim([35 60]); ylim([-1200 600]);        
     plot(x1./10^3,hb1,'-k','linewidth',2);
@@ -333,7 +411,7 @@ subplot(2,3,4); hold on; grid on; % d) geometry
         (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         ' d ','edgecolor','k','backgroundcolor','w','fontsize',16,'fontweight','bold','linewidth',1.5);         
 subplot(2,3,5); hold on; grid on; % e) speed
-    set(gca,'fontsize',14,'linewidth',2);
+    set(gca,'fontsize',14,'linewidth',2,'YTick',0:500:2500);        
     xlabel('Distance Along Centerline (km)'); ylabel('Speed (m a^{-1})');     
     xlim([0 60]); ylim([0 2200]); grid on;
     % add text label            
@@ -343,7 +421,7 @@ subplot(2,3,5); hold on; grid on; % e) speed
 subplot(2,3,6); hold on; grid on; % f) \Delta H
     set(gca,'fontsize',14,'linewidth',2);
     xlabel('\Delta SMB (m a^{-1})'); ylabel('\DeltaH_{mean} (m)');
-    xlim([-6.5 1.5]); ylim([-20 10]);
+    xlim([-6.5 1.5]); ylim([-40 15]);
     % add text label            
     text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.91+min(get(gca,'XLim')),...
         (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
@@ -353,13 +431,21 @@ subplot(2,3,6); hold on; grid on; % f) \Delta H
 files = dir('*geom.mat');
 for i=1:length(files)
     if contains(files(i).name,'SMB0') && contains(files(i).name,'_geom.mat')
-        files(i).change = -str2double(files(i).name(regexp(files(i).name,'R')+1:...
-            regexp(files(i).name,'_S')-1)).*3.1536e7; 
-        files(i).changeIn = 'SMR';
+        if contains(files(i).name,'SMR0') && contains(files(i).name,'SMB0')
+            files(i).change = 0; 
+            files(i).changeIn = 'SMR'; 
+            files(length(files)+1).change = 0;
+            files(length(files)).changeIn = 'SMB';
+            files(length(files)).name = files(i).name; 
+        else
+            files(i).change = -str2double(files(i).name(regexp(files(i).name,'R')+1:...
+                regexp(files(i).name,'_S')-1)).*3.1536e7; 
+        end
+        files(i).changeIn = 'SMR';                    
     elseif contains(files(i).name,'SMR0') && contains(files(i).name,'_geom.mat')
         files(i).change = str2double(files(i).name(regexp(files(i).name,'B')+1:...
-            regexp(files(i).name,'_g')-1)).*3.1536e7;  
-        files(i).changeIn = 'SMB';
+            regexp(files(i).name,'_geom')-1)).*3.1536e7; 
+        files(i).changeIn = 'SMB';                    
     end
 end
     
@@ -385,11 +471,9 @@ for i=1:length(Ismr)
         plot([x1(c2) x1(c2)]./10^3,[h2(c2) h2(c2)-H2(c2)],'color',col(i,:),'linewidth',2);
         % floating bed
         plot(x1(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col(i,:),'linewidth',2);
-        set(gca,'YTick',-1500:500:1500);                
     subplot(2,3,2); hold on; 
         % ice surface speed
         plot(x1(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col(i,:),'linewidth',2);
-        set(gca,'YTick',0:500:2500);        
     subplot(2,3,3); hold on; 
         % dH
         dH = nanmean(H2(1:c2))-nanmean(H1(1:c1)); 
@@ -411,11 +495,9 @@ for i=1:length(Ismb)
         plot([x2(c2) x2(c2)]./10^3,[h2(c2)-H2(c2) h2(c2)],'color',col(length(col)+1-i,:),'linewidth',2);
         % floating bed
         plot(x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col(length(col)+1-i,:),'linewidth',2);
-        set(gca,'YTick',-1500:500:1500);                        
     subplot(2,3,5); hold on; 
         % ice surface speed
         plot(x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col(length(col)+1-i,:),'linewidth',2);
-        set(gca,'YTick',0:500:2500);
     subplot(2,3,6); hold on;
         % dH
         dH = nanmean(H2(1:c2))-nanmean(H1(1:c1)); 

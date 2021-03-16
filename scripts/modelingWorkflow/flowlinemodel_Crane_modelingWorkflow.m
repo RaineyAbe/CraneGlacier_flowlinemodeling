@@ -99,7 +99,7 @@ E0 = ones(1,length(x0)); % enhancement factor
 %% 1. Run the flowline model for 100 years to allow the model to relax
 %       using 2009 observed conditions
   
-save_final = 1; % = 1 to save final glacier geometry
+save_final = 0; % = 1 to save final glacier geometry
 
 close all;
 
@@ -110,7 +110,7 @@ t_end = 100*3.1536e7;
 t = (t_start:dt:t_end);
     
 % initialize variables
-x=x0; H=H0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; E=E0; hb=hb0;
+x=x0; H=H0; U=U0; dUdx=dUdx0; A=A0; h=h0; E=E0; hb=hb0; gl=gl0; c=c0;
 
 % run flowline model
 for i=1:length(t)
@@ -119,7 +119,7 @@ for i=1:length(t)
     Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
     crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*fwd); % crevasse penetration depth (m)
     % calving front located where the inland-most crevasse intersects sea level
-    xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
+    xcf = interp1(feval(fit(x(gl:c)',(h(gl:c)-crev(gl:c))','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
     %xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)
     if i==1 % use observed calving front for first iteration
         xcf = x0(c0);
@@ -308,13 +308,10 @@ close all;
 
 save_Ebest = 1; % = 1 to save Ebest
     
-% load 100 yr output conditions
-%load('Crane_flowline_100yr_output.mat');
-    
 % define Efit values to tests 
 clear Efit
 ub_E = 1:4; % upper bound (minimum E near ice divide)
-lb_E = 2:4; % lower bound (maximum E at terminus)
+lb_E = 3:5; % lower bound (maximum E at terminus)
 deg_E = 1; % polynomial degrees
 col_E = winter(length(deg_E)*length(lb_E)*length(ub_E)); % color scheme for plotting
 % set up figure
@@ -355,10 +352,11 @@ for f=1:length(Efit)
     t = (t_start:dt:t_end);
     
     % initialize variables
-    x=x0; H=H0; U=U0; dUdx=dUdx0; A=A0; h=h0; hb=hb0;
+    x=x0; H=H0; U=U0; dUdx=dUdx0; A=A0; h=h0; hb=hb0; gl=gl0; c=c0;
     
     % define E
     E = Efit(f).E;
+    sigma_b=0;
     
     % run flowline model
     for i=1:length(t)
@@ -576,12 +574,9 @@ end
 close all;
 
 save_fwdbest = 0; % = 1 to save fwdbest
-    
-% load 100 yr output conditions
-%    load('Crane_flowline_100yr_output.mat');
 
 % define fwd values to test
-    fwd0 = 0:5:30; % fresh water depth in crevasses (m)
+    fwd0 = 0:5:40; % fresh water depth in crevasses (m)
     
 % pre-allocate misfit variables
     c_misfit = NaN.*zeros(length(fwd0),length(2009:2018));        
@@ -600,6 +595,7 @@ for f=1:length(fwd0)
     
     % load optimal parameters 
     E=load('Ebest.mat').Ebest;
+    sigma_b = 0;
     
     % define fwd
     fwd = fwd0(f); 
@@ -611,12 +607,10 @@ for f=1:length(fwd0)
         Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
         crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*fwd); % crevasse penetration depth (m)
         % calving front located where the inland-most crevasse intersects sea level
-        %xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
+        xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
         %xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)
         if i==1 % use observed calving front for first iteration
             xcf = x0(c0);
-        else
-            xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
         end
         
         % calculate the thickness required to remain grounded at each grid cell
@@ -856,12 +850,10 @@ for f=1:length(F10)
         Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
         crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*fwd); % crevasse penetration depth (m)
         % calving front located where the inland-most crevasse intersects sea level
-        %xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
+        xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
         %xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)
         if i==1 % use observed calving front for first iteration
             xcf = x0(c0);
-        else
-            xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
         end
         
         % calculate the thickness required to remain grounded at each grid cell
@@ -1068,11 +1060,8 @@ close all;
 
 save_sigma_bbest = 1; % = 1 to save sigma_bbest
     
-% load 100 yr output conditions
-%    load('Crane_flowline_100yr_output.mat');
-    
 % define sigma_b values to test
-    sigma_b0 = 60e3:10e3:100e3; % back pressure (Pa)
+    sigma_b0 = 0e3:10e3:50e3; % back pressure (Pa)
     
 % pre-allocate misfit variables
     c_misfit = NaN.*zeros(length(sigma_b0),length(2009:2018)); 
@@ -1106,7 +1095,7 @@ for f=1:length(sigma_b0)
         % calving front located where the inland-most crevasse intersects sea level
         xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
         %xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)
-        if i==1 % use observed calving front position for first iteration
+        if i==1 % use observed calving front for first iteration
             xcf = x0(c0);
         end
         
@@ -1326,16 +1315,15 @@ close all; cd([homepath,'inputs-outputs/']);
 save_figure = 1;    % = 1 to save resulting figure
 save_final = 1;     % = 1 to save final geometry and speed 
 
-% load 100 yr output and no change conditions
+% load no change conditions
     load('Crane_sensitivityTests_noChange.mat'); % load no change variables
-    %load('Crane_flowline_100yr_output.mat');
     
 % set up changes in SMB & SMR
 % note: decrease SMB & SMR in increments of 0.5 m a-1 (1.585e-8) starting
 %   from 1 m a-1 until reaching SMR found on at other Antarctic ice shelves: 
 %   ~6 m a^-1 (Adusumilli et al., 2020)
     delta_smb = 0/3.1536e7; % m/s change in SMB
-    delta_smr = 0/3.1536e7; % m/s change in SMR
+    delta_smr = -6/3.1536e7; % m/s change in SMR
     
 % define time stepping (s)
     dt = 0.01*3.1536e7;
@@ -1348,9 +1336,9 @@ save_final = 1;     % = 1 to save final geometry and speed
     
 % load optimal parameters 
     E=load('Ebest.mat').Ebest;
-    sigma_b = load('sigma_bbest.mat').sigma_bbest; 
-    F1 = load('F1best.mat').F1best;
-    fwd = load('fwdbest.mat').fwdbest;
+    fwd = load('fwdbest.mat').fwdbest;  
+    F1 = 0;%load('F1best.mat').F1best;    
+    sigma_b = 0;%load('sigma_bbest.mat').sigma_bbest; 
     
 % run flowline model
 for i=1:length(t)
@@ -1359,14 +1347,12 @@ for i=1:length(t)
     Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
     crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*fwd); % crevasse penetration depth (m)
     % calving front located where the inland-most crevasse intersects sea level
-    %xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
+    xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
     %xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)
     if i==1 % use observed calving front for first iteration
         xcf = x0(c0);
-    else
-        xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
     end
-
+        
     % calculate the thickness required to remain grounded at each grid cell
     Hf = -(rho_sw./rho_i).*hb; % flotation thickness (m)
     % find the location of the grounding line and use a floating

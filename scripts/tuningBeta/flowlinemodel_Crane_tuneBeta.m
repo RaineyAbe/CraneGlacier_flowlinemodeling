@@ -13,7 +13,7 @@ addpath([homepath,'../matlabFunctions/']); % add path to bestPolyFit.m
 cd([homepath,'inputs-outputs/']);
 
 % grid spacing
-dx0 = 500:100:5000;
+dx0 = 500:100:2000;
 
 % Load Crane Glacier initialization variables
 load('Crane_flowline_initialization.mat');
@@ -60,9 +60,9 @@ E0 = ones(1,length(x0)); % enhancement factor
 
 %% 1. run the flowline model
 
-save_betabest = 1; % = 1 to save the beta with the lowest U RMSE
+save_betabest = 1;  % = 1 to save the beta with the lowest U RMSE
+save_results = 1;   % = 1 to save solution results 
 
-RMSE = zeros(1,length(dx0)); % pre-allocate RMSE
 clear beta
 
 % loop through grid spatial resolutions
@@ -196,6 +196,7 @@ for j=1:length(dx0)
     end
 
     % Calculate RMSE of resulting speed using beta solution
+    beta(j).RMSE = sqrt((sum((Un_rev-U).^2)./length(U)));
     RMSE(j) = sqrt((sum((Un_rev-U).^2)./length(U)));
 
     % display results
@@ -205,7 +206,7 @@ for j=1:length(dx0)
 end 
 
 % plot RMSE results
-Ibest = find(RMSE==min(RMSE)); % index of lowest RMSE
+Ibest = find(abs(gradient(gradient(RMSE)))<0.1e-5,1,'first');
 if length(Ibest)>1 % if lowest RMSE exists for multiple dx, use lowest dx
     Ibest(2:end)=[];
 end
@@ -223,7 +224,7 @@ subplot(2,2,3);
     plot(dx0(Ibest)/10^3,RMSE(Ibest)*3.1536e7,'*','markersize',20,'linewidth',2);  
 subplot(2,2,4);
     set(gca,'fontsize',14,'fontname','arial','linewidth',2);
-    xlabel('x (m along centerline)'); ylabel('U (m a^{-1})'); title('U Solutions');
+    xlabel('x (m along centerline)'); ylabel('U (m a^{-1})'); title('U Solution');
     hold on; grid on; legend('Location','best');
     plot(x0(1:c0)./10^3,U0(1:c0).*3.1536e7,'b','displayname','observed','linewidth',2);
     plot(beta(Ibest).x./10^3,beta(Ibest).U.*3.1536e7,'displayname','solution','linewidth',2);    
@@ -236,6 +237,14 @@ if save_betabest
     betabest.dx = beta(Ibest).dx;
     save('betabest.mat','betabest');
     disp('betabest saved.');
+end
+
+% save solution results
+if save_results
+    cd([homepath,'inputs-outputs/']);
+    betaSolutions = beta; 
+    save('betaSolutions.mat','betaSolutions');
+    disp('betaSolutions saved.');
 end
 
 
