@@ -1,5 +1,5 @@
 %% Create model initialization file
-% RKA
+% Rainey aberle
 % Fall 2020
 % Script to save initialization variables for glacier flowline model using
 % 2009 conditions for most variables

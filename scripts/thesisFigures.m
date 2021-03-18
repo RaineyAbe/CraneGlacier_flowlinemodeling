@@ -1,10 +1,10 @@
-%% Make Figures!
+%% Create Figures for MS Thesis
 % RKA 2021
-% Script to plot and save figures for thesis
 
-% Figure 1. Map of the study area - THIS VERSION NOT USED
+% Figure 1. Map of the study area
 % Figure 2. Observed Conditions Time Series
-% Figure 3. Sensitivity Tests
+% Figure 3. Beta Solution
+% Figure 4. Sensitivity Tests
 
 close all; clear all;
 homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
@@ -315,21 +315,21 @@ end
 % plot results
 figure(3); clf
 set(gcf,'Position',[272 143 1063 654]);
-subplot(2,2,1);
+ax1=axes; set(gca,'position',[0.08 0.58 0.4 0.4]);
     set(gca,'fontsize',14,'fontname','arial','linewidth',2);
     xlabel('Distance Along Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})'); 
     hold on; grid on; xlim([0 45]);
     plot(beta(Ibest).x./10^3,beta(Ibest).beta,'linewidth',2); 
     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         ' a ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,'backgroundcolor','w');     
-subplot(2,2,2);
+ax2=axes; set(gca,'position',[0.58 0.58 0.4 0.4]);
     set(gca,'fontsize',14,'fontname','arial','linewidth',2);
     xlabel('dx (km)'); ylabel('RMSE (m a^{-1})'); 
     hold on; plot(dx0./10^3,RMSE.*3.1536e7,'.','markersize',20); grid on;
     plot(dx0(Ibest)/10^3,RMSE(Ibest)*3.1536e7,'*','markersize',20,'linewidth',2);  
     text(1.9,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         ' b ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,'backgroundcolor','w');     
-subplot(2,2,3);
+ax3=axes; set(gca,'position',[0.08 0.08 0.4 0.4]);
     set(gca,'fontsize',14,'fontname','arial','linewidth',2);
     xlabel('Distance Along Centerline (km)'); ylabel('U (m a^{-1})');
     hold on; grid on; legend('Location','best'); xlim([0 45]);
@@ -337,18 +337,26 @@ subplot(2,2,3);
     plot(beta(Ibest).x./10^3,beta(Ibest).U.*3.1536e7,'displayname','solution','linewidth',2); 
     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         ' c ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,'backgroundcolor','w');     
-subplot(2,2,4);    
+ax4=axes; set(gca,'position',[0.58 0.08 0.4 0.4]);
     set(gca,'fontsize',14,'fontname','arial','linewidth',2);
-    xlabel('x (m along centerline)'); ylabel('U (m a^{-1})');
+    xlabel('Distance Along Centerline (km)'); ylabel('R_{xx} (kPa)');
     hold on; grid on; 
-    plot(x./10^3,Rxx./10^3,'k','linewidth',2); plot(x./10^3,f_Rxx./10^3,'color',[150 150 150]/255,'linewidth',2); 
-    for i=1:length(RxxTlocs)
-        plot([x(RxxTlocs(i)) x(RxxTlocs(i))]./10^3,[-2000 2000],'--','color',[136 86 167]/255,'linewidth',2);
+    plot(x./10^3,Rxx./10^3,'color',[110 110 110]/255,'linewidth',2); 
+    ax=get(gca); % get current axes
+    for i=1:length(ITRxx)
+        plot([x(ITRxx(i)) x(ITRxx(i))]./10^3,[ax.YLim(1) ax.YLim(2)],'-k','linewidth',1);
     end  
-    xlim([0 45]); ylim([0 2000]);
+    xlim([0 45]);
+    text(5,-1000,['\Deltax_{mean} = ',num2str(round(mean(diff(x(ITRxx))))/10^3),'km'],...
+        'edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,...
+        'backgroundcolor','w','color','k');    
     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
-        ' d ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,'backgroundcolor','w');     
-    
+        ' d ','edgecolor','k','fontsize',13,'fontweight','bold','linewidth',1.5,'backgroundcolor','w');    
+    text(28,-200,'\Deltax','fontsize',13,'fontweight','bold','color','k');
+    annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','}', ...
+       'HeadStyle','none','LineStyle', 'none', 'TextRotation',90,'Position',[0.835 0.25 0 0],...
+       'FontSize',28,'FontName','Arial','TextColor','k');
+        
 if save_figure
     figure(3);
     % save in figures folder
@@ -513,10 +521,10 @@ if save_figure
     figure(4);
     % save in figures folder
     cd([homepath,'../figures/']);
-    saveas(gcf,'4_Crane_sensitivityTests.png','png');  
+    saveas(gcf,'Crane_sensitivityTests.png','png');  
     % save in thesis figures folder
     cd([homepath,'../write-ups/Thesis/figures/']);
-    saveas(gcf,'4_Crane_sensitivityTests.png','png');
+    saveas(gcf,'Crane_sensitivityTests.png','png');
     disp('figure 4 saved.');
 end
 

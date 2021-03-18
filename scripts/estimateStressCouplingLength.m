@@ -7,7 +7,7 @@
 
 clear all; close all;
 
-save_results = 1; % = 1 to save results
+save_results = 0; % = 1 to save results
 
 homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
 cd([homepath,'inputs-outputs/']);
@@ -15,16 +15,28 @@ cd([homepath,'inputs-outputs/']);
 % 1. Load centerline observations of ice speed, ice thickness, glacier width
 % and define constants
 
-    x = load('Crane_flowline_initialization.mat').x0; % spatial grid (m along centerline)
-    hb = load('Crane_flowline_initialization.mat').hb0; % glacier bed elevation (m)
-    h = load('Crane_flowline_initialization.mat').h0; % ice surface elevation (m)
-    W = load('Crane_flowline_initialization.mat').W0; % glacier width (m)
-    U = load('Crane_flowline_initialization.mat').U0; % ice surface speed (m/s)
-    A = load('Crane_flowline_initialization.mat').A0; % rate factor (Pa^-n s^-1)
-    c = load('Crane_flowline_initialization.mat').c0; % calving front position
-    x(c+1:end)=[]; hb(c+1:end)=[]; h(c+1:end)=[]; W(c+1:end)=[];
-    U(c+1:end)=[]; A(c+1:end)=[];
-    H = h-hb; % ice thickness (m)
+    x0 = load('Crane_flowline_initialization.mat').x0'; % spatial grid (m along centerline)
+    hb0 = load('Crane_flowline_initialization.mat').hb0'; % glacier bed elevation (m)
+    h0 = load('Crane_flowline_initialization.mat').h0'; % ice surface elevation (m)
+    W0 = load('Crane_flowline_initialization.mat').W0'; % glacier width (m)
+    U0 = load('Crane_flowline_initialization.mat').U0'; % ice surface speed (m/s)
+    A0 = load('Crane_flowline_initialization.mat').A0'; % rate factor (Pa^-n s^-1)
+    c0 = load('Crane_flowline_initialization.mat').c0; % calving front position
+    % end variables at observed calving front location
+    x0(c0+1:end)=[]; hb0(c0+1:end)=[]; h0(c0+1:end)=[]; W0(c0+1:end)=[];
+    U0(c0+1:end)=[]; A0(c0+1:end)=[];
+    H0 = h0-hb0; % ice thickness (m)
+    
+    % regrid using equal spatial resolution
+    dx = 300; % grid spacing (m)
+    x = 0:dx:x0(end);
+    hb = interp1(x0,hb0,x);
+    h = interp1(x0,h0,x);
+    W = interp1(x0,W0,x);
+    U = interp1(x0,U0,x);
+    A = interp1(x0,A0,x);
+    H = interp1(x0,H0,x);
+    c = dsearchn(x',x0(c0));
     
     % Define constants
     n = 3; % flow law exponent (unitless)
@@ -33,7 +45,6 @@ cd([homepath,'inputs-outputs/']);
     rho_sw = 1028; % ocean water density (kg m^-3)
     g = 9.81; % gravitational acceleration (m/s^2)
     E = 1; % enhancement factor (unitless)
-    beta = 2; % basal roughness factor (s^(1/m) m^(-1/m))
     
     % Define averaging window
     w = [30 105]; % indices of spatial grid to use in averaging
@@ -86,16 +97,10 @@ cd([homepath,'inputs-outputs/']);
         plot(x,dhdx_lin,'--r','linewidth',2,'displayname','\partialh/\partialx_{lin}');
         xlabel('distance along centerline (km)'); ylabel('m m^{-1}');    
     
-% 3. Calculate resistive stress
-
-    % calculate spatial grid spacing dx (m)
-    dx = zeros(1,length(x));
-    dx(1) = x(2)-x(1); % forward difference
-    dx(2:end-1) = x(3:end)-x(1:end-2); % central difference
-    dx(end) = x(end)-x(end-1); % backward difference   
+% 3. Calculate resistive stress 
     
     % estimate effective viscosity v (Pa s)
-    v = ((E.*A).^(-1/n)).*(abs(dUdx_lin)).^((1-n)/n);
+    v = ((E.*A).^(-1/n)).*((abs(dUdx_lin)).^((1-n)/n));
     
     % calculate the effective pressure N (ice overburden pressure minus water
     % pressure) assuming an easy & open connection between the ocean and
@@ -117,20 +122,11 @@ cd([homepath,'inputs-outputs/']);
     Rxx = Tlon+Tb;  % (Pa) 
         Rxx(end-2:end)=Rxx(end-3);
     
-    % fit a fourier transform to the data to estimate period
-    fitmethod = 'poly7';
-    f_Rxx = feval(fit(x',Rxx',fitmethod),x);
-    f_H = feval(fit(x',H',fitmethod),x);
-    [~,RxxTlocs]=findpeaks(f_Rxx);
-    T_Rxx = mean(diff(x(RxxTlocs))*0.1); 
-    if any(isnan(T_Rxx))
-        T_Rxx = x(RxxTlocs);
-    end
-    [~,Hlocs]=findpeaks(f_H);
-    T_H = mean(diff(x(Hlocs))*0.1);    
-    if isnan(T_H)
-        T_H = x(Hlocs);
-    end
+    % estimate period of Rxx and H sequences
+    ITRxx = find(islocalmax(Rxx)); % indices to Rxx local maxima
+    T_Rxx = mean(diff(x(ITRxx))); % (m)
+    ITH = find(islocalmax(H)); % indices to H local maxima
+    T_H = mean(diff(x(ITH))); % (m)
     % display
     disp(['T_Rxx = ',num2str(round(T_Rxx)),' m']);
     disp(['T_H = ',num2str(round(T_H)),'m']);   
@@ -142,20 +138,18 @@ cd([homepath,'inputs-outputs/']);
     subplot(2,1,1);
         set(gca,'fontsize',14,'fontname','arial','linewidth',2);
         hold on; grid on; 
-        plot(x/10^3,Rxx./10^3,'linewidth',2);
-        plot(x/10^3,f_Rxx/10^3,'linewidth',2);
-        for i=1:length(RxxTlocs)
-            plot([x(RxxTlocs(i)) x(RxxTlocs(i))]/10^3,[-2000 2000],'--','color',[136 86 167]/255,'linewidth',2);
+        plot(x/10^3,Rxx./10^3,'k','linewidth',2);
+        for i=1:length(ITRxx)
+            plot([x(ITRxx(i)) x(ITRxx(i))]/10^3,[min(Rxx) max(Rxx)],'-','color',[136 86 167]/255,'linewidth',1);
         end
         ylim([min(Rxx)/10^3 max(Rxx)/10^3]);
         ylabel('R_{xx} (kPa)');
     subplot(2,1,2);
         set(gca,'fontsize',14,'fontname','arial','linewidth',2);
         hold on; grid on; 
-        plot(x/10^3,H,'linewidth',2); 
-        plot(x/10^3,f_H,'linewidth',2);
-        for i=1:length(RxxTlocs)
-            plot([x(RxxTlocs(i)) x(RxxTlocs(i))]/10^3,[-2000 2000],'--','color',[136 86 167]/255,'linewidth',2);
+        plot(x/10^3,H,'k','linewidth',2); 
+        for i=1:length(ITRxx)
+            plot([x(ITRxx(i)) x(ITRxx(i))]/10^3,[-2000 2000],'-','color',[136 86 167]/255,'linewidth',1);
         end
         ylim([min(H)-100 max(H)+100]);
         xlabel('distance along centerline (km)'); ylabel('Thickness (m)'); 
@@ -163,7 +157,7 @@ cd([homepath,'inputs-outputs/']);
 % save resulting resistive stress, peaks, fit        
 if save_results
     cd([homepath,'inputs-outputs/']);
-    save('Crane_SCL_results.mat','x','Rxx','RxxTlocs','f_Rxx');
+    save('Crane_SCL_results.mat','x','Rxx','ITRxx');
     disp('results saved.');
 end
 
