@@ -35,7 +35,7 @@ dxmax = 1000; % target max grid spacing (m)
 % time stepping (s)
 dt = 0.1*86400*365;
 t_start = 0*86400*365;
-t_end = 2000*86400*365;
+t_end = 100*86400*365;
 t = [t_start:dt:t_end];
 
 % glacier geometry

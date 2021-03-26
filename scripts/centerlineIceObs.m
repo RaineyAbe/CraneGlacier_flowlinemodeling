@@ -292,12 +292,12 @@ if velocity_save
     cd([homepath,'CraneGlacier_modeling/data/velocities']);
     
     % load ANT speeds
-    ANTfiles = dir('ANT*');
+    ANTfiles = dir('ANT*.nc');
     % Loop through all files, interpolate along centerline
     for i=1:length(ANTfiles)
         
         [X,Y] = meshgrid(ncread(ANTfiles(i).name,'x'),ncread(ANTfiles(i).name,'y'));
-        u = transpose(ncread(ANTfiles(i).name,'v')); % m/y
+        u = ncread(ANTfiles(i).name,'v')'; % m/y
         u_err = transpose(ncread(ANTfiles(i).name,'v_err'));
         u(u==-32767) = NaN; %Replace no data values with NaN
         
@@ -308,6 +308,9 @@ if velocity_save
         U(i).source = "ITS-LIVE";                                       % speed data source
         U(i).numPts = length(U(i).speed(~isnan(U(i).speed)));           % number of data points
         
+        % display mean error
+        disp([num2str(nanmean(U(i).date)),' mean error = ',num2str(nanmean(U(i).speed_err)),...
+            ' m/s']);
     end
     
     % load TSX speeds

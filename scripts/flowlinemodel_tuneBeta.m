@@ -423,4 +423,3 @@ function [beta,dUdx,Un_rev] = betaSolve(H,c,x,U,n,A,E,m,dx,rho_i,g,h,rho_sw,sigm
             
 end 
 
-
