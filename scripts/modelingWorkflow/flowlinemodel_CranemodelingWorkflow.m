@@ -22,7 +22,7 @@ clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
 % define home path in directory and add necessary paths
-homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
+homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
 addpath([homepath,'scripts/modelingWorkflow/']); % add path to U_convergence
 cd([homepath,'inputs-outputs/']);
 
@@ -30,13 +30,13 @@ cd([homepath,'inputs-outputs/']);
 dx0 = 200;
 
 % Load Crane Glacier initialization variables
-load('Crane_flowline_initialization.mat');
+load('Crane_flowlineModelInitialization.mat');
     
 % Load observed conditions
 % dH
 dH_obs = load('Crane_dHdt_2009-2018.mat').dHdt.dH_total; % (m) total change in thickness 2009-2018
 % terminus position 
-term = load('Crane_TerminusPosition_2002-2019.mat').term;
+term = load('Crane_terminusPositions_2002-2019.mat').term;
 for i=1:length(term)
     termx_obs(i) = term(i).x;
     termDate_obs(i) = term(i).decidate;
@@ -46,7 +46,7 @@ termx_obs = feval(fit(termDate_obs',termx_obs','poly2'),termDate_obs');
 term_obs = interp1(termDate_obs',termx_obs,2009:2017);
 clear term 
 % ice speed
-U_obsi = load('Crane_CenterlineSpeeds_2007-2017.mat').U;
+U_obsi = load('Crane_centerlineSpeeds_2007-2017.mat').U;
 u = [6 8 9 14 15:19]; % indices of speeds to use annually (2009-2017)
 for i=1:length(u)
     U_obs(i).U = U_obsi(u(i)).speed;
@@ -96,38 +96,9 @@ E0 = ones(1,length(x0)); % enhancement factor
 
 close all; 
 
-save_Ebest = 1; % = 1 to save Ebest
-    
-% define Efit values to tests 
-% clear Efit
-% ub_E = 5:7; % upper bound (minimum E near ice divide)
-% lb_E = 5:7; % lower bound (maximum E at terminus)
-% deg_E = 1; % polynomial degrees
-% col_E = winter(length(deg_E)*length(lb_E)*length(ub_E)); % color scheme for plotting
-% % set up figure
-% figure(11); clf
-% set(gca,'fontsize',14,'linewidth',2);
-% xlabel('distance along centerline (km)'); ylabel('enhancement factor');
-% grid on; hold on; title('Enhancement Factor Fits');
-% count = 0; % counter
-% % loop through polynomial degrees
-% for i=1:length(deg_E)
-%     % loop through upper bounds
-%     for j=1:length(ub_E)
-%         % loop through lower bounds
-%         for k=1:length(lb_E)
-%             count=count+1;
-%             Efit(count).degree = deg_E(i);
-%             Efit(count).fit = polyfit([x0(1) x0(end)],[ub_E(j) lb_E(k)],deg_E(i));
-%             Efit(count).E = polyval(Efit(count).fit,x0);
-%             figure(11); hold on;
-%             plot(x0./10^3,Efit(count).E,'color',col_E(count,:),'linewidth',2);
-%         end
-%     end
-% end
-% clear ub_E lb_E deg_E
-
-Efit = [5:10]'.*ones(1,length(x0));
+save_optE = 1; % = 1 to save Ebest
+   
+Efit = (5:9)'.*ones(1,length(x0));
 
 % pre-allocate misfit variables
 dH_tot = NaN.*zeros(length(Efit(:,1)),length(x0)); % total dH for each point along centerline
@@ -343,30 +314,29 @@ end
 misfit = nanmean(dH_RMSE,2).*nanmean(U_RMSE,2);
 
 % plot results for optimal E
-IEbest = find(abs(misfit)==min(abs(misfit)),1,'first');
-%Ebest = Efit(IEbest).E; 
-Ebest = Efit(IEbest,:);
+IoptE = find(abs(misfit)==min(abs(misfit)),1,'first');
+optE = Efit(IoptE,:);
 figure(10); clf
     hold on; grid on; 
     set(gca,'fontsize',14,'linewidth',2); 
     xlabel('Efit'); ylabel('misfit (m*m/s)');
     %title(['E_{best} = ',num2str(Efit(IEbest).fit(2)),'+',num2str(Efit(IEbest).fit(1)),'x']);
-    title(['E_{best} = ',num2str(Ebest)]);
+    title(['E_{best} = ',num2str(optE(1))]);
     plot(Efit(:,1),misfit,'.','markersize',20);
-    plot(Efit(IEbest,1),misfit(IEbest),'*','markersize',15,'linewidth',2);
+    plot(Efit(IoptE,1),misfit(IoptE),'*','markersize',15,'linewidth',2);
 
 % save Ebest
-if save_Ebest
+if save_optE
     cd([homepath,'inputs-outputs']);
-    save('Ebest.mat','Ebest','x0');
-    disp('Ebest saved');
+    save('optimalE.mat','optE','x0');
+    disp('optimal E saved');
 end
 
 %% 2. Tune fresh water depth in crevasses fwd (via c)
 
 close all;
 
-save_fwdbest = 1; % = 1 to save fwdbest
+save_optfwd = 1; % = 1 to save fwdbest
 
 % define fwd values to test
 fwd0 = 22:28; % fresh water depth in crevasses (m)
@@ -387,7 +357,7 @@ for f=1:length(fwd0)
     x=x0; H=H0; U=U0; dUdx=dUdx0; A=A0; h=h0; hb=hb0;
     
     % load optimal parameters 
-    E=load('Ebest.mat').Ebest; % unitless
+    E=load('optimalE.mat').optE; % unitless
     
     % define fwd
     fwd = fwd0(f); 
@@ -584,26 +554,26 @@ end
 misfit = nanmean(c_misfit,2); %mean(c_misfit,2);
 
 % plot results
-Ifwdbest = find(abs(misfit)==min(abs(misfit)),1,'first');
-fwdbest = fwd0(Ifwdbest); % m.w.e.
+Ioptfwd = find(abs(misfit)==min(abs(misfit)),1,'first');
+optfwd = fwd0(Ioptfwd); % m.w.e.
 figure(10); clf
     set(gca,'fontsize',14,'fontname','Arial','linewidth',2);
     grid on; xlabel('fwd (m)'); ylabel('misfit'); hold on;
     plot(fwd0,misfit,'.','markersize',20);
-    plot(fwdbest,misfit(Ifwdbest),'*','markersize',15,'linewidth',2);
+    plot(optfwd,misfit(Ioptfwd),'*','markersize',15,'linewidth',2);
 
 % save results
-if save_fwdbest
+if save_optfwd
     cd([homepath,'inputs-outputs']);
-    save('fwdbest.mat','fwdbest');
-    disp(['Best fwd = ',num2str(fwdbest),' m saved.']);
+    save('optimalfwd.mat','optfwd');
+    disp(['Optimal fwd = ',num2str(optfwd),' m saved.']);
 end
 
 %% 3. Tune for the back pressure sigma_b (via c) 
 
 close all; 
 
-save_sigma_bbest = 1; % = 1 to save sigma_bbest
+save_optSigma_b = 1; % = 1 to save sigma_bbest
     
 % define sigma_b values to test
 sigma_b0 = 0e3:1e3:5e3; % back pressure (Pa)
@@ -624,8 +594,8 @@ for f=1:length(sigma_b0)
     x=x0; H=H0; U=U0; dUdx=dUdx0; A=A0; h=h0; hb=hb0;
     
     % load optimal parameters 
-    E=load('Ebest.mat').Ebest; % unitless
-    fwd=load('fwdbest.mat').fwdbest; % m 
+    E=load('optimalE.mat').optE; % unitless
+    fwd=load('optimalfwd.mat').optfwd; % m 
     
     % define sigma_b
     sigma_b = sigma_b0(f);
@@ -828,19 +798,19 @@ end
 misfit = mean(c_misfit,2);
 
 % plot results for optimal sigma_b
-sigma_bbest = sigma_b0(abs(misfit)==min(abs(misfit)));
+optSigma_b = sigma_b0(abs(misfit)==min(abs(misfit)));
 figure(10); clf; hold on;
     plot(sigma_b0./10^3,misfit,'.','markersize',20);
-    plot(sigma_bbest./10^3,misfit(abs(misfit)==min(abs(misfit))),'*','markersize',15,'linewidth',2);
+    plot(optSigma_b./10^3,misfit(abs(misfit)==min(abs(misfit))),'*','markersize',15,'linewidth',2);
     set(gca,'fontsize',14,'fontname','Arial','linewidth',2);
     grid on; xlabel('\sigma_b (kPa)'); ylabel('misfit (m)');
     title('Calving Front Position Misfit');
 
 % save sigma_bbest
-if save_sigma_bbest
+if save_optSigma_b
     cd([homepath,'inputs-outputs']);
-    save('sigma_bbest.mat','sigma_bbest');
-    disp(['Best sigma_b = ',num2str(sigma_bbest./10^3),' kPa saved.']);
+    save('optimalSigma_b.mat','optSigma_b');
+    disp(['Optimal sigma_b = ',num2str(optSigma_b./10^3),' kPa saved.']);
 end
 
 %% 4. Conduct sensitivity tests for SMB & SMR
@@ -865,7 +835,7 @@ load('Crane_2100_noChange.mat'); % load no change variables
 %   ~6 m a^-1 (Adusumilli et al., 2020)
 delta_smr = 0/3.1536e7; % m/s change in SMR
 delta_smb = 0/3.1536e7; % m/s change in SMB
-delta_fwd = -3; % m change in fwd
+delta_fwd = 0; % m change in fwd
     
 % define time stepping (s)
 dt = 0.001*3.1536e7;
@@ -877,16 +847,16 @@ t = (t_start:dt:t_end);
 x=x0; H=H0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; hb=hb0;
 
 % load optimal parameters 
-E=load('Ebest.mat').Ebest; % unitless
-fwd = load('fwdbest.mat').fwdbest; % m 
-sigma_b = load('sigma_bbest.mat').sigma_bbest; % Pa
+E=load('optimalE.mat').optE; % unitless
+fwd = load('optimalfwd.mat').optfwd; % m 
+sigma_b = load('optimalSigma_b.mat').optSigma_b; % Pa
     
 % run flowline model
 for i=1:length(t)
     
     % implement change to fwd after 10 model years
     if t(i)>10*3.1536e7
-        fwd = load('fwdbest.mat').fwdbest + delta_fwd; % m
+        fwd = load('optimalfwd.mat').optfwd + delta_fwd; % m
     end 
     
     % find the calving front location (based on Benn et al., 2007 & Nick et al., 2010)
@@ -1145,7 +1115,7 @@ end
 
 % save figure
 if save_figure && ishandle(10)
-    cd([homepath,'scripts/modelingWorkflow/results']);
+    cd([homepath,'scripts/modelingWorkflow/results/']);
     % Save figure for test
     if delta_fwd==0
         fileName = ['SMR',num2str(delta_smr),'_SMB',num2str(delta_smb)];

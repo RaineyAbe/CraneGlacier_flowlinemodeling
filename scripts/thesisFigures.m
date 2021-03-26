@@ -7,21 +7,23 @@
 % Figure 4. Sensitivity Tests
 
 close all; clear all;
+
+% Define home path
 homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
 
 % Load Crane centerline
-    cd([homepath,'inputs-outputs']);
-    cl.Xi = load('Crane_centerline.mat').x; cl.Yi = load('Crane_centerline.mat').y;
-    
-    % Define x as distance along centerline
-    cl.xi = zeros(1,length(cl.Xi));
-    for i=2:(length(cl.Xi))
-        cl.xi(i)=sqrt((cl.Xi(i)-cl.Xi(i-1))^2+(cl.Yi(i)-cl.Yi(i-1))^2)+cl.xi(i-1);
-    end
-    
-    % Regrid the centerline to 300m equal spacing between points
-    cl.x = 0:300:cl.xi(end);
-    cl.X = interp1(cl.xi,cl.Xi,cl.x); cl.Y = interp1(cl.xi,cl.Yi,cl.x);
+cd([homepath,'inputs-outputs']);
+cl.Xi = load('Crane_centerline.mat').x; cl.Yi = load('Crane_centerline.mat').y;
+
+% Define x as distance along centerline
+cl.xi = zeros(1,length(cl.Xi));
+for i=2:(length(cl.Xi))
+    cl.xi(i)=sqrt((cl.Xi(i)-cl.Xi(i-1))^2+(cl.Yi(i)-cl.Yi(i-1))^2)+cl.xi(i-1);
+end
+
+% Regrid the centerline to 300m equal spacing between points
+cl.x = 0:300:cl.xi(end);
+cl.X = interp1(cl.xi,cl.Xi,cl.x); cl.Y = interp1(cl.xi,cl.Yi,cl.x);
         
 %% Figure 1. Map of the study area
 

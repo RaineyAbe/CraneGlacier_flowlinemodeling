@@ -1,9 +1,10 @@
-%Rainey Aberle
-%Spring 2020
-%Grab RACMO2.3 climate variables and downscale SMB for elevation-dependence
-%at Crane Glacier, Antarctic Peninsula
+%% Script to load RACMO2.3 climate variables and downscale SMB for elevation-dependence
+% using methods adapted from Noel et al. (2016) 
+% along the Crane Glacier centerline
+% Rainey Aberle
+% Spring 2020
 
-%Order of operations:
+% Walk through SMB downscaling method for one year
 %   1. Load Crane centerline & mean 2011 RACMO variables 
 %       (sf, sm, ro, smb, height), plot
 %   2. Load RACMO height, interpolate along Crane centerline
@@ -12,16 +13,21 @@
 %   4. Use linear trendlines of sf and sm to calculate smb along centerline
 %   5. Adjust air temperature T along Crane centerline using a 
 %       dry adiabatic lapse rate
-%   6. Complete the above steps for 2011-2016
+% Estimate mean annual SMB for 2009-2019
+%   6. Complete the above steps for 2009-2019
 
 close all; clear all;  
 
-homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
+% Define homepath
+homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
 cd(homepath);
 
-% Add path with MATLAB functions (ps2wgs, etc.), data, inputs/outputs
-addpath('/Users/raineyaberle/Desktop/Research/general_matlabcodes/');
-addpath([homepath,'data/RACMO2.3']); addpath([homepath,'inputs-outputs']);
+% Add path with necessary functions, data, inputs/outputs
+addpath([homepath,'matlabFunctions']);
+addpath([homepath,'data/RACMO2.3']); 
+addpath([homepath,'inputs-outputs']);
+
+save_smb = 1; % = 1 to save resulting SMB
 
 %% 1. Load centerline, 2011 Snowfall (sf), Snowmelt (sm), Runoff (ro),
 %Surface Mass Balance (SMB), Air Temperature (airtemp) along centerline
@@ -250,7 +256,7 @@ close all;
 [smb.X,smb.Y] = wgs2ps(smb.Lon,smb.Lat,'StandardParallel',-71,'StandardMeridian',0);
 
 %Load 2011 Crane ice surface
-h_cl_11 = load("Crane_SurfaceObservations_2009-2018.mat").h(3).surface';
+h_cl_11 = load("Crane_surfaceElevationObs.mat").h(3).surface';
 
 maxDist = 9e3; 
    
@@ -502,35 +508,32 @@ figure(2); clf; hold on;
     set(gca,'FontSize',14,'FontName','Arial'); legend('Location','south');
     title('RACMO Air Temperature');
     hold off;
-    
-%% 6. Save adjusted variables
 
-cd([homepath,'data/RACMO2.3/']);
-save('Crane_downscaledSMB_2011.mat','x','h_cl_11','smb.interp','smb.linear');
+if save_smb
+    cd([homepath,'data/RACMO2.3/']);
+    save_smb('Crane_downscaledSMB_2011.mat','x','h_cl_11','smb.interp','smb.linear');
+    save_smb('Crane_adjustedAirTemp_2011.mat','T.cl_11');
+    disp('downscaled SMB and air temperature saved for one year.');
+end 
 
-save('Crane_adjustedAirTemp_2011.mat','T.cl_11');
+%% 6. Repeat above steps to load smb for 2009-2019
 
-%% 7. Repeat above steps to load smb for 2009-2019
+close all; 
 
-close all; clear all;
+figure_save = 1;    % = 1 to save figure
+save_smb = 1;       % = 1 to save final downscaled SMB
 
-figure_save = 0; % =1 to save figure
-smb_save = 0; % =1 to save final downscaled SMB
-
-years = 2009:2019;
-col = parula(length(years)+1);
+years = 2009:2019; % Define years
+col = parula(length(years)+1); % color scheme for plotting
 
 %Load centerline
-    homepath='/Users/raineyaberle/Desktop/Research/';
-    addpath([homepath,'matlabFunctions']);
-    addpath([homepath,'CraneGlacier_modeling/data/RACMO2.3']);
-    cl.X = load('Crane_centerline.mat','x').x; 
-    cl.Y = load('Crane_centerline.mat','y').y;
-    cd([homepath,'CraneGlacier_modeling/inputs-outputs']);
+cl.X = load('Crane_centerline.mat','x').x; 
+cl.Y = load('Crane_centerline.mat','y').y;
+cd([homepath,'inputs-outputs/']);
     
     % Load most advanced terminus position (2019)
-    term = dsearchn([cl.X cl.Y],[load('Crane_TerminusPosition_2002-2019.mat').term(61).X ...
-    load('Crane_TerminusPosition_2002-2019.mat').term(61).Y]); 
+    term = dsearchn([cl.X cl.Y],[load('Crane_terminusPositions_2002-2019.mat').term(61).X ...
+    load('Crane_terminusPositions_2002-2019.mat').term(61).Y]); 
     % clip centerline at this point
     %cl.X = cl.X(1:term); cl.Y = cl.Y(1:term);
 
@@ -585,8 +588,8 @@ col = parula(length(years)+1);
     [smb.X,smb.Y] = wgs2ps(smb.Lon,smb.Lat,'StandardParallel',-71,'StandardMeridian',0);
     
     %Load 2011 Crane ice surface
-     cd([homepath,'CraneGlacier_modeling/inputs-outputs']);
-     h_cl_11 = load("Crane_SurfaceObservations_2009-2018.mat").h(3).surface';
+     cd([homepath,'inputs-outputs/']);
+     h_cl_11 = load("Crane_surfaceElevationObs.mat").h(3).surface';
     
     maxDist = 200e3;     
     
@@ -611,19 +614,19 @@ for i=1:length(years)
         set(gcf,'units','centimeters','position',[5 0 40 30]);
         subplot(2,2,1); hold on;  % adjusted snowfall
             set(gca,'FontName','Arial','FontSize',14);
-            xlabel('Distance Along Centerline (m)'); ylabel('(m yr^{-1})'); 
+            xlabel('Distance Along Centerline (m)'); ylabel('(m a^{-1})'); 
             title('Adjusted Snowfall');grid on; legend;
         subplot(2,2,2); hold on; % adjusted snowmelt
             set(gca,'FontName','Arial','FontSize',14);
-            xlabel('Distance Along Centerline (m)'); ylabel('(m yr^{-1})'); 
+            xlabel('Distance Along Centerline (m)'); ylabel('(m a^{-1})'); 
             title('Adjusted Snowmelt');grid on; legend;
         subplot(2,2,3); hold on; % adjusted SMB
             set(gca,'FontName','Arial','FontSize',14);
-            xlabel('Distance Along Centerline (m)'); ylabel('(m yr^{-1})'); 
+            xlabel('Distance Along Centerline (m)'); ylabel('(m a^{-1})'); 
             title('Adjusted SMB');grid on; legend;        
         subplot(2,2,4); hold on; % linearized SMB
             set(gca,'FontName','Arial','FontSize',14);
-            xlabel('Distance Along Centerline (m)'); ylabel('(m yr^{-1})'); 
+            xlabel('Distance Along Centerline (m)'); ylabel('(m a^{-1})'); 
             title('Linearized SMB');grid on; legend; 
     end 
 
@@ -636,7 +639,7 @@ if years(i)<=2016
                 sf.Yr(j,k) = nanmean(sf.sf(j,k,mo_start:mo_end));
             end     
         end 
-        sf.Yr = sf.Yr./rho_i.*365; %m yr^-1
+        sf.Yr = sf.Yr./rho_i.*365; %m a^-1
 
     %Interpolate mean annual sf along Crane centerline
         sf.cl=[];
@@ -650,7 +653,7 @@ if years(i)<=2016
         sf.cl(:,1:(mo_start-1))=[]; %Delete empty columns
         sf.cl(:,1) = nanmean(sf.cl,2);
         sf.cl(:,2:end) = []; %kg m-2 day-1
-        sf.cl = sf.cl.*365./rho_i; %m yr-1
+        sf.cl = sf.cl.*365./rho_i; %m a-1
 
    %Adjust snowfall (sf) for elevation-dependence
 
@@ -696,7 +699,7 @@ if years(i)<=2016
                 sm.Yr(j,k,1) = nanmean(sm.sm(j,k,mo_start:mo_end)); % kg m^2 / day
             end     
         end 
-        sm.Yr = sm.Yr./rho_i.*365; %m yr^-1
+        sm.Yr = sm.Yr./rho_i.*365; %m a^-1
         
     %Interpolate mean annual sm along Crane centerline
         sm.cl=zeros(length(RACMOy),length(mo_start:mo_end));
@@ -710,7 +713,7 @@ if years(i)<=2016
         sm.cl(:,1:(mo_start-1))=[]; %Delete empty columns
         sm.cl(:,1) = nanmean(sm.cl,2);
         sm.cl(:,2:end) = []; %kg m-2 day-1
-        sm.cl = sm.cl.*365./rho_i; %m yr-1
+        sm.cl = sm.cl.*365./rho_i; %m a-1
         
     %Ajust snowmelt for elevation-dependence
     
@@ -752,10 +755,10 @@ end
         smb.Yr = zeros(length(smb.smb(:,1,1)),length(smb.smb(1,:,1)));
         for j = 1:length(smb.smb(:,1,1))
             for k=1:length(smb.smb(1,:,1))
-                smb.Yr(j,k,1) = nanmean(smb.smb(j,k,mo_start:mo_end)); % kg /yr
+                smb.Yr(j,k,1) = nanmean(smb.smb(j,k,mo_start:mo_end)); % kg a^-1
             end     
         end 
-        smb.Yr = smb.Yr./rho_i.*365;  % m yr^-1
+        smb.Yr = smb.Yr./rho_i.*365;  % m a^-1
             
         %Interpolate mean annual smb along Crane centerline (RACMO Months 385:396)
         smb.cl=zeros(length(RACMOy),length(mo_start:mo_end));
@@ -769,7 +772,7 @@ end
         smb.cl(:,1:(mo_start-1))=[]; %Delete empty columns
         smb.cl(:,1) = nanmean(smb.cl,2);
         smb.cl(:,2:end) = []; %kg m-2 day-1
-        smb.cl = smb.cl.*365./rho_i; %m yr-1    
+        smb.cl = smb.cl.*365./rho_i; %m a-1    
 
     %Ajust surface mass balance for elevation-dependence
 
@@ -814,20 +817,20 @@ end
     
     % Save in structure
     SMB(i).year = years(i); % Year
-    SMB(i).smb_linear = smb.linear(:,i); % linear trendline smb (m/yr)
+    SMB(i).smb_linear = smb.linear(:,i); % linear trendline smb (m/a)
         sigma_h_cl_11 = 25; % uncertainty in ice surface (m) - two points
 
-    SMB(i).smb_interp = smb.interp; % interpolated smb (m/yr)
+    SMB(i).smb_interp = smb.interp; % interpolated smb (m/a)
     
     % Calculate uncertainty in final SMB vector: 
     % sigma_smb: [10% SMB raw product] &
-    %           [0.49 mWE/yr from mean bias for downscaled product vs.
+    %           [0.49 mWE/a from mean bias for downscaled product vs.
     %           smb observed for eight transects in GrIS (Noel et al., 2016)] 
     %           & [uncertainty in ice surface elevation]
     %           = 0.1.*smb_interp + 0.49*(rho_w/rho_i*sigma_smbWE)
-    % mWE/yr -> m ice/yr: rho_w*H_w = rho_i*H_i
+    % mWE/a -> m ice/a: rho_w*H_w = rho_i*H_i
     %                   ->  H_i = rho_w/rho_i/H_w
-    H_w = 0.49; % mWE/yr mean bias vs. observations (Noel et al., 2016)
+    H_w = 0.49; % mWE/a mean bias vs. observations (Noel et al., 2016)
     rho_i = 917; rho_w = 1000; % kg/m^3
     for j=1:length(x)
         SMB(i).sigma_smb(j) = SMB(i).smb_interp(j).*sqrt((0.1.*smb.interp(j)/smb.interp(j))^2 ...
@@ -836,13 +839,16 @@ end
     
 end 
         
+% save figure
 if figure_save
-    cd([homepath,'figures']);
-    saveas(fig1,'Crane_AdjustedRACMOVariables_2011-2019.png','png');
+    cd([homepath,'figures/']);
+    saveas(fig1,'Crane_adjustedRACMOVariables_2011-2019.png','png');
     disp('Figure 1 saved');
 end 
-if smb_save
-    cd([homepath,'CraneGlacier_modeling/inputs-outputs']);
+
+% save downscaled SMB
+if save_smb
+    cd([homepath,'inputs-outputs/']);
     save('Crane_downscaledSMB_2009-2019.mat','SMB');
     disp('SMB saved');
 end 
