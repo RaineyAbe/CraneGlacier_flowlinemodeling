@@ -16,8 +16,6 @@
 %   4. Run sensitivity tests for surface mass balance (SMB) & submarine
 %       melting rate (SMR). 
 
-%% 0. define time and space independent variables
-  
 clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
@@ -25,6 +23,8 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
 homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
 addpath([homepath,'scripts/modelingWorkflow/']); % add path to U_convergence
 cd([homepath,'inputs-outputs/']);
+
+%% 0. define time and space independent variables
 
 % grid spacing
 dx0 = 200;
