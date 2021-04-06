@@ -9,6 +9,7 @@
 %   2. Ice surface (PGC & OIB), bed elevation profile (OIB), and surface speeds
 %   (ITS_LIVE & TSX)
 %   3. Terminus positions
+%   4. OIB bed picks
 
 %% 1. Initial setup
 
@@ -25,7 +26,7 @@ bed_save = 0;           % = 1 to save bed
 surface_save = 0;       % = 1 to save surface
 velocity_save = 0;      % = 1 to save velocity
 terminus_save = 0;      % = 1 to save terminus positions
-dHdt_save = 1;          % = 1 to save dHdt
+dHdt_save = 0;          % = 1 to save dHdt
 figures_save = 0;       % = 1 to save figures 
 
 % Load Crane centerline
@@ -259,11 +260,11 @@ dHdt.dt_total = (datenum(h(36).date)-datenum(h(1).date)).*8.64e3; % s
 dHdt.dH_total = dHdt.h1-dHdt.h2;
 dHdt.dHdt_total = (dHdt.h1-dHdt.h2)./(dHdt.dt_total); % m/s
 figure(3); clf; set(gcf,'Position',[386 285 1028 520]);
-hold on; grid on;
-yyaxis left; ylabel('ice surface (m)'); title('dH_{tot}');
-plot(x./10^3,h(1).surface,x./10^3,h(36).surface,'-b','linewidth',2);
-yyaxis right; plot(x./10^3,dHdt.dH_total,'--m','linewidth',2);
-set(gca,'fontsize',11,'linewidth',2); ylabel('dH (m)');
+    hold on; grid on;
+    yyaxis left; ylabel('ice surface (m)'); title('dH_{tot}');
+    plot(x./10^3,h(1).surface,x./10^3,h(36).surface,'-b','linewidth',2);
+    yyaxis right; plot(x./10^3,dHdt.dH_total,'--m','linewidth',2);
+    set(gca,'fontsize',11,'linewidth',2); ylabel('dH (m)');
 
 % save dHdt
 if dHdt_save
@@ -406,7 +407,7 @@ subplot(1,2,2); % Terminus positions over time
     hold on;
     title('Terminus Position Over Time');
     set(gca,'FontSize',14,'FontName','Arial','LineWidth',2);
-    xlabel('Year'); ylabel('Distance Along Centerline (m)');
+    xlabel('Year'); ylabel('Distance Along Centerline (km)');
     xlim([2000 2020]);
     grid on;
 
@@ -420,10 +421,10 @@ for i=1:length(centerline.termx)
     xn = dsearchn(cl.Y,termy);
     if mod(i-1,10) == 0 % Only include every 10 in legend
         subplot(1,2,1); hold on; plot(termx,termy,'.','color',col(i,:),'markersize',30,'displayname',num2str(termDate));
-        subplot(1,2,2); hold on; plot(termDate,x(xn),'.','color',col(i,:),'markersize',30);
+        subplot(1,2,2); hold on; plot(termDate,x(xn)/10^3,'.','color',col(i,:),'markersize',30);
     else
         subplot(1,2,1); hold on; plot(termx,termy,'.','color',col(i,:),'markersize',30,'handlevisibility','off');
-        subplot(1,2,2); hold on; plot(termDate,x(xn),'.','color',col(i,:),'markersize',30);
+        subplot(1,2,2); hold on; plot(termDate,x(xn)/10^3,'.','color',col(i,:),'markersize',30);
     end
     
     x_term(i,:) = ([termDate x(xn)]);
@@ -448,3 +449,35 @@ if figures_save
     saveas(gcf,'Crane_terminusPositions_2002-2019.png');
     disp('figure 4 saved');
 end
+
+%% 4. OIB bed picks
+
+close all;
+
+cd([homepath,'inputs-outputs/']);
+
+% load OIB picks from previous years
+OIB16_1 = load('CraneOIBPicks_2016_005.mat').CraneOIBPicks_2016;
+OIB16_2 = load('CraneOIBPicks_2016_2.mat').CraneOIBPicks_2016;
+OIB17 = load('CraneOIBPicks_2017_006.mat').CraneOIBPicks_2017;
+% interpolate coordinates to centerline
+OIB16_1.x = x(dsearchn([cl.X cl.Y],[OIB16_1.Easting OIB16_1.Northing]))';
+OIB16_2.x = x(dsearchn([cl.X cl.Y],[OIB16_2.Easting OIB16_2.Northing]))';
+OIB17.x = x(dsearchn([cl.X cl.Y],[OIB17.Easting OIB17.Northing]))';
+
+% plot with 2018 bed
+figure(5); clf; hold on; grid on;
+    set(gca,'fontname','Arial','fontsize',12,'linewidth',2,'fontweight','bold');
+    ylabel('Elevation (m)'); xlabel('Distance Along Centerline (km)');
+    xlim([0 70]); title('OIB Bed Picks');
+    set(gcf,'Units','centimeters','position',[5 7.8 30 20]); grid on; legend;
+    col = winter(4); % color scale for plotting bed elevation lines
+    plot(x/10^3,hb,'color',col(1,:),'linewidth',2,'displayname','2018');
+    plot(OIB17.x/10^3,OIB17.hb_geoid,'color',col(2,:),'linewidth',2,'displayname','2017');
+    plot(OIB16_1.x/10^3,OIB16_1.hb_geoid,'color',col(3,:),'linewidth',2,'displayname','2016 (1)');
+    plot(OIB16_2.x/10^3,OIB16_2.hb_geoid,'color',col(4,:),'linewidth',2,'displayname','2016 (2)');
+    
+
+    
+    
+    

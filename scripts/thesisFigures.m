@@ -5,11 +5,12 @@
 % Figure 2. Observed Conditions Time Series
 % Figure 3. Beta Solution
 % Figure 4. Sensitivity Tests
+% Figure 5. Regional glacier terminus time series
 
 close all; clear all;
 
 % Define home path
-homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_modeling/';
+homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
 
 % Load Crane centerline
 cd([homepath,'inputs-outputs']);
@@ -652,5 +653,321 @@ if save_figure
     saveas(gcf,'fig4.1_sensitivityTests.png','png');    
     disp('figure 4 saved.');
 end
+
+%% Figure 5. Regional Glacier Terminus Time Series
+
+close all;
+
+cd([homepath,'data/terminus/regional/']);
+
+save_figure = 0; % = 1 to save figure
+fontsize = 16; 
+fontname = 'Arial';
+linewidth = 3; 
+
+% add path to matlab functions
+addpath([homepath,'matlabFunctions/']);
+
+% load Landsat images
+cd([homepath,'data/Imagery/']);
+% LSA 
+landsatA = dir('*216105*B8.TIF');
+    [LSA.im,LSA.R] = readgeoraster(landsatA.name); [LSA.ny,LSA.nx] = size(LSA.im);
+    % polar stereographic coordinates of image boundaries
+    LSA.x = linspace(min(LSA.R.XWorldLimits),max(LSA.R.XWorldLimits),LSA.nx); 
+    LSA.y = linspace(min(LSA.R.YWorldLimits),max(LSA.R.YWorldLimits),LSA.ny);
+% LSB
+landsatB = dir('*218106*B8.TIF');
+    [LSB.im,LSB.R] = readgeoraster(landsatB.name); [LSB.ny,LSB.nx] = size(LSB.im);
+    % polar stereographic coordinates of image boundaries
+    LSB.x = linspace(min(LSB.R.XWorldLimits),max(LSB.R.XWorldLimits),LSB.nx); 
+    LSB.y = linspace(min(LSB.R.YWorldLimits),max(LSB.R.YWorldLimits),LSB.ny);
+
+% load LIMA
+LIMA = imread('LIMA.jpg');
+
+% load terminus coordinate shapefiles
+cd([homepath,'data/terminus/regional/']);
+
+% set up figure, subplots, and plot
+figure(6); clf; 
+set(gcf,'Position',[100 200 1000 1000]); 
+% a) Drygalski
+cd('Drygalski'); % enter folder 
+    files = dir('*.shp'); % load file
+    % loop through files to grab centerline
+    for j=1:length(files)
+        if contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            cl.lon = file.X; % Lon
+            cl.lat = file.Y; % Lat
+            [cl.X,cl.Y] = wgs2ps(cl.lon,cl.lat,'StandardParallel',-71,'StandardMeridian',0);
+            % define x as distance along centerline
+            x = zeros(1,length(cl.X));
+            for k=2:length(x)
+                x(k) = sqrt((cl.X(k)-cl.X(k-1))^2+(cl.Y(k)-cl.Y(k-1))^2)+x(k-1); %(m)
+            end
+        end
+    end
+    % initialize f
+    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    % loop through files to grab terminus positions
+    for j=1:length(files)
+        if ~contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            % loop through file
+            for k=1:length(file)
+                f(length(f)+1).lon = file(k).X; % Lon
+                f(length(f)).lat = file(k).Y; % Lat
+                % convert to polar stereographic coordinates
+                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+            end
+        end 
+    end
+    % plot
+    col = parula(length(f)); % color scheme for plotting
+    ax1=axes('position',[0.08 0.58 0.23 0.4]); hold on; grid on;      
+        set(gca,'fontname',fontname,'fontsize',fontsize);
+        xlabel('Easting (km)'); ylabel('Northing (km)');
+        % plot landsat image
+        colormap(ax1,'gray');
+        imagesc(LSA.x/10^3,LSA.y/10^3,flipud(LSA.im*1.1)); 
+        % plot centerline
+        plot(cl.X(4:7)/10^3,cl.Y(4:7)/10^3,'k','linewidth',linewidth);
+        annotation('textarrow',[0.236 0.237],[0.85 0.8516],'headwidth',18,'headlength',16);
+        % plot terminus positions
+        for j=1:length(f)
+            plot(f(j).X/10^3,f(j).Y/10^3,'color',col(j,:),'linewidth',linewidth);
+        end
+        axis tight; text((ax1.XLim(2)-ax1.XLim(1))*0.88+ax1.XLim(1),(max(ax1.YLim)-min(ax1.YLim))*0.925+min(ax1.YLim),...
+            ' a ','edgecolor','k','fontsize',fontsize,'fontweight','bold','linewidth',linewidth-1,'backgroundcolor','w'); 
+        cd .. % exit folder
+% b) Hektoria & Green
+cd('HekGreen'); % enter folder 
+    files = dir('*.shp'); % load file
+    % loop through files to grab centerline
+    for j=1:length(files)
+        if contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            cl.lon = file.X; % Lon
+            cl.lat = file.Y; % Lat
+            [cl.X,cl.Y] = wgs2ps(cl.lon,cl.lat,'StandardParallel',-71,'StandardMeridian',0);
+            % define x as distance along centerline
+            x = zeros(1,length(cl.X));
+            for k=2:length(x)
+                x(k) = sqrt((cl.X(k)-cl.X(k-1))^2+(cl.Y(k)-cl.Y(k-1))^2)+x(k-1); %(m)
+            end
+        end
+    end
+    % initialize f
+    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    % loop through files to grab terminus positions
+    for j=1:length(files)
+        if ~contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            % loop through file
+            for k=1:length(file)
+                f(length(f)+1).lon = file(k).X; % Lon
+                f(length(f)).lat = file(k).Y; % Lat
+                % convert to polar stereographic coordinates
+                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+            end
+        end 
+    end
+    % plot
+    col = parula(length(f)); % color scheme for plotting
+    ax2=axes('position',[0.39 0.58 0.24 0.4]); hold on; grid on;      
+        set(gca,'fontname',fontname,'fontsize',fontsize);
+        xlabel('Easting (km)'); ylabel('Northing (km)');
+        % plot centerline
+        plot(cl.X(2:8)/10^3,cl.Y(2:8)/10^3,'k','linewidth',linewidth);
+        annotation('textarrow',[0.633 0.635],[0.807 0.808],'headwidth',18,'headlength',16);
+        % plot terminus positions
+        for j=1:length(f)
+            plot(f(j).X/10^3,f(j).Y/10^3,'color',col(j,:),'linewidth',linewidth);
+        end
+        axis tight; text((ax2.XLim(2)-ax2.XLim(1))*0.88+ax2.XLim(1),(max(ax2.YLim)-min(ax2.YLim))*0.925+min(ax2.YLim),...
+            ' b ','edgecolor','k','fontsize',fontsize,'fontweight','bold','linewidth',linewidth-1,'backgroundcolor','w'); 
+        cd .. % exit folder
+% c) Jorum
+cd('Jorum'); % enter folder 
+    files = dir('*.shp'); % load file
+    % loop through files to grab centerline
+    for j=1:length(files)
+        if contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            cl.lon = file.X; % Lon
+            cl.lat = file.Y; % Lat
+            [cl.X,cl.Y] = wgs2ps(cl.lon,cl.lat,'StandardParallel',-71,'StandardMeridian',0);
+            % define x as distance along centerline
+            x = zeros(1,length(cl.X));
+            for k=2:length(x)
+                x(k) = sqrt((cl.X(k)-cl.X(k-1))^2+(cl.Y(k)-cl.Y(k-1))^2)+x(k-1); %(m)
+            end
+        end
+    end
+    % initialize f
+    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    % loop through files to grab terminus positions
+    for j=1:length(files)
+        if ~contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            % loop through file
+            for k=1:length(file)
+                f(length(f)+1).lon = file(k).X; % Lon
+                f(length(f)).lat = file(k).Y; % Lat
+                % convert to polar stereographic coordinates
+                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+            end
+        end 
+    end
+    % plot
+    col = parula(length(f)); % color scheme for plotting
+    ax3=axes('position',[0.72 0.58 0.23 0.4]); hold on; grid on;      
+        set(gca,'fontname',fontname,'fontsize',fontsize);
+        xlabel('Easting (km)'); ylabel('Northing (km)'); ylim([1277.5 1281.5])
+        % plot centerline
+        plot(cl.X(5:10)/10^3,cl.Y(5:10)/10^3,'k','linewidth',linewidth);
+        annotation('arrow',[0.888 0.889],[0.983 0.985],'headwidth',18,'headlength',16);
+        % plot terminus positions
+        for j=1:length(f)
+            plot(f(j).X/10^3,f(j).Y/10^3,'color',col(j,:),'linewidth',linewidth);
+        end
+        axis tight; text((ax3.XLim(2)-ax3.XLim(1))*0.88+ax3.XLim(1),(max(ax3.YLim)-min(ax3.YLim))*0.925+min(ax3.YLim),...
+            ' c ','edgecolor','k','fontsize',fontsize,'fontweight','bold','linewidth',linewidth-1,'backgroundcolor','w'); 
+        cd .. % exit folder
+% regional map
+ax4 = axes; hold on; imshow(LIMA);
+    xlim([0.8056e3 1.4356e3]); ylim([4.146e3 4.846e3]);
+    % plot borders around image
+    plot([ax4.XLim(1) ax4.XLim(1)],ax4.YLim,'k','linewidth',linewidth-1);
+    plot([ax4.XLim(2) ax4.XLim(2)],ax4.YLim,'k','linewidth',linewidth-1);    
+    plot(ax4.XLim,[ax4.YLim(1) ax4.YLim(1)],'k','linewidth',linewidth-1);   
+    plot(ax4.XLim,[ax4.YLim(2) ax4.YLim(2)],'k','linewidth',linewidth-1);   
+    set(gca,'position',[0.11 0.08 0.25 0.4]);
+    % plot location text labels
+    text(869,4247,' a ','edgecolor','k','fontsize',fontsize-3,'fontweight','bold','linewidth',1,'backgroundcolor','w');
+    text(890,4356,' b ','edgecolor','k','fontsize',fontsize-3,'fontweight','bold','linewidth',1,'backgroundcolor','w');
+    text(960,4560,' c ','edgecolor','k','fontsize',fontsize-3,'fontweight','bold','linewidth',1,'backgroundcolor','w');    
+    text(1030,4712,' d ','edgecolor','k','fontsize',fontsize-3,'fontweight','bold','linewidth',1,'backgroundcolor','w');    
+    text(1170,4767,' e ','edgecolor','k','fontsize',fontsize-3,'fontweight','bold','linewidth',1,'backgroundcolor','w');    
+    ax4.Position=[0.0 0.05 0.4 0.4];
+    % add colorbar
+    colormap = parula; c = colorbar('southoutside'); 
+    c.FontName=fontname; c.FontSize = fontsize-1;
+    c.Ticks = [0 0.5  1]; c.TickLabels = [{'2014'},{'2017'},{'2021'}];
+% d) Crane
+cd('Crane'); % enter folder 
+    files = dir('*.shp'); % load file
+    % loop through files to grab centerline
+    for j=1:length(files)
+        if contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            cl.lon = file.X; % Lon
+            cl.lat = file.Y; % Lat
+            [cl.X,cl.Y] = wgs2ps(cl.lon,cl.lat,'StandardParallel',-71,'StandardMeridian',0);
+            % define x as distance along centerline
+            x = zeros(1,length(cl.X));
+            for k=2:length(x)
+                x(k) = sqrt((cl.X(k)-cl.X(k-1))^2+(cl.Y(k)-cl.Y(k-1))^2)+x(k-1); %(m)
+            end
+        end
+    end
+    % initialize f
+    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    % loop through files to grab terminus positions
+    for j=1:length(files)
+        if ~contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            % loop through file
+            for k=1:length(file)
+                f(length(f)+1).lon = file(k).X; % Lon
+                f(length(f)).lat = file(k).Y; % Lat
+                % convert to polar stereographic coordinates
+                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+            end
+        end 
+    end
+    % plot
+    col = parula(length(f)); % color scheme for plotting
+    ax5=axes('position',[0.39 0.08 0.23 0.4]); hold on; grid on;      
+        set(gca,'fontname',fontname,'fontsize',fontsize);
+        xlabel('Easting (km)'); ylabel('Northing (km)');
+        % plot landsat image
+        imagesc(LS.x/10^3,LS.y/10^3,flipud(LS.im*1.2)); colormap('gray'); 
+        % plot centerline
+        plot(cl.X(8:12)/10^3,cl.Y(8:12)/10^3,'k','linewidth',linewidth);
+        %annotation('arrow',[0.515 0.52],[0.45 0.465],'headwidth',18,'headlength',16);
+        %xlim([-2.4114e3  -2.4019e3]); ylim([1.264e3 1.2636e3]);
+        % plot terminus positions
+        for j=1:length(f)
+            plot(f(j).X/10^3,f(j).Y/10^3,'color',col(j,:),'linewidth',linewidth);
+        end
+        axis tight; text((ax5.XLim(2)-ax5.XLim(1))*0.88+ax5.XLim(1),(max(ax5.YLim)-min(ax5.YLim))*0.925+min(ax5.YLim),...
+            ' d ','edgecolor','k','fontsize',fontsize,'fontweight','bold','linewidth',linewidth-1,'backgroundcolor','w'); 
+        cd .. % exit folder
+% e) Flask
+cd('Flask'); % enter folder 
+    files = dir('*.shp'); % load file
+    % loop through files to grab centerline
+    for j=1:length(files)
+        if contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            cl.lon = file.X; % Lon
+            cl.lat = file.Y; % Lat
+            [cl.X,cl.Y] = wgs2ps(cl.lon,cl.lat,'StandardParallel',-71,'StandardMeridian',0);
+            % define x as distance along centerline
+            x = zeros(1,length(cl.X));
+            for k=2:length(x)
+                x(k) = sqrt((cl.X(k)-cl.X(k-1))^2+(cl.Y(k)-cl.Y(k-1))^2)+x(k-1); %(m)
+            end
+        end
+    end
+    % initialize f
+    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    % loop through files to grab terminus positions
+    for j=1:length(files)
+        if ~contains(files(j).name,'CL')
+            file = shaperead(files(j).name);
+            % loop through file
+            for k=1:length(file)
+                f(length(f)+1).lon = file(k).X; % Lon
+                f(length(f)).lat = file(k).Y; % Lat
+                % convert to polar stereographic coordinates
+                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+            end
+        end 
+    end
+    % plot
+    col = parula(length(f)); % color scheme for plotting
+    ax6=axes('position',[0.72 0.08 0.23 0.4]); hold on; grid on;      
+        set(gca,'fontname',fontname,'fontsize',fontsize);
+        xlabel('Easting (km)'); ylabel('Northing (km)');
+        % plot centerline
+        plot(cl.X(9:12)/10^3,cl.Y(9:12)/10^3,'k','linewidth',linewidth);
+        annotation('arrow',[0.804 0.803],[0.472 0.482],'headwidth',18,'headlength',16);
+        % plot terminus positions
+        for j=1:length(f)
+            plot(f(j).X/10^3,f(j).Y/10^3,'color',col(j,:),'linewidth',linewidth);
+        end
+        axis tight; 
+        text((ax6.XLim(2)-ax6.XLim(1))*0.88+ax6.XLim(1),(max(ax6.YLim)-min(ax6.YLim))*0.925+min(ax6.YLim),...
+            ' e ','edgecolor','k','fontsize',fontsize,'fontweight','bold','linewidth',linewidth-1,'backgroundcolor','w'); 
+        cd .. % exit folder
+
+% save figure
+if save_figure
+    cd([homepath,'figures']);
+    saveas(gcf,'regionalTermini.png','png');
+    cd([homepath,'../write-ups/Thesis/figures/']);
+    saveas(gcf,'regionalTermini.png','png');
+    disp('figure 6 saved');
+end
+
 
 
