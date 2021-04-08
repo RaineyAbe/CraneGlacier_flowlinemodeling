@@ -29,7 +29,7 @@ rho_fw = 1000; % fresh water density (kg m^-3)
 g = 9.81; % acceleration (m s^-2)
 
 % stress parameters (unitless)
-m = 1; % basal sliding exponent
+m = 3; % basal sliding exponent
 n = 3; % flow law exponent
 
 % calving parameters

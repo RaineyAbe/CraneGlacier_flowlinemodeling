@@ -26,8 +26,7 @@ cd([homepath,'inputs-outputs/']);
 
 %% 0. define time and space independent variables
 
-% grid spacing
-dx0 = 200;
+dx0 = 200; % grid spacing (m)
 
 % Load Crane Glacier initialization variables
 load('Crane_flowlineModelInitialization.mat');
@@ -61,12 +60,12 @@ rho_fw = 1000; % fresh water density (kg m^-3)
 g = 9.81; % acceleration (m s^-2)
 
 % stress parameters (unitless)
-m = 1; % basal sliding exponent
+m = 3; % basal sliding exponent
 n = 3; % flow law exponent
 
 % calving parameters
 Hc = 400; % m -> set the calving front to a default minimum ice thickness value if calving criteria is not met
-fwd = 30; % fresh water depth in crevasses (m)
+fwd = 5; % fresh water depth in crevasses (m) - similar to RACMO modeled and downscaled snowfall at the terminus for 2016
 sigma_b = 0; % back pressure (Pa) - similar to that employed at Helheim Glacier (Nick et al., 2009)
 
 % maximum & minimum thickness & speed cut-off to check for instability
@@ -85,6 +84,7 @@ H0(H0>=(h0-hb0))=h0(H0>=(h0-hb0))-hb0(H0>=(h0-hb0)); % thickness can't go beneat
 H0(c0+1:end) = 0; % zero ice thickness past calving front
 
 % extend variables to model length if necessary (set extended points to last value)
+
 A0(find(isnan(A0),1,'first'):end) = A0(find(isnan(A0),1,'first')-1);
 U0(find(isnan(U0),1,'first'):end) = U0(find(isnan(U0),1,'first')-1);
 beta0(find(isnan(beta0),1,'first'):end) = beta0(find(isnan(beta0),1,'first')-1);
@@ -98,7 +98,7 @@ close all;
 
 save_optE = 1; % = 1 to save Ebest
    
-Efit = (5:9)'.*ones(1,length(x0));
+Efit = (25:30)'.*ones(1,length(x0));
 
 % pre-allocate misfit variables
 dH_tot = NaN.*zeros(length(Efit(:,1)),length(x0)); % total dH for each point along centerline
@@ -269,7 +269,7 @@ for f=1:length(Efit(:,1))
         
         % implement SMB & SMR
         smr = zeros(1,length(x));
-        smr(gl+1:length(x)) = feval(fit([x(gl);x(c)],[0;smr0],'poly1'),x(gl+1:end));
+        smr(gl+1:length(x)) = feval(fit([x(gl);x(gl+1);x(c)],[0;smr0;0.95*smr0],'pchip'),x(gl+1:end));
         smb = interp1(x0,smb0+Q0,x);
         
         % calculate the  change in ice thickness from continuity
@@ -339,7 +339,7 @@ close all;
 save_optfwd = 1; % = 1 to save fwdbest
 
 % define fwd values to test
-fwd0 = 22:28; % fresh water depth in crevasses (m)
+fwd0 = 16:1:20; % fresh water depth in crevasses (m)
     
 % pre-allocate misfit variables
 c_misfit = NaN.*zeros(length(fwd0),length(2009:2018)); % calving front misfit for each model year        
@@ -511,7 +511,7 @@ for f=1:length(fwd0)
         
         % implement SMB & SMR
         smr = zeros(1,length(x));
-        smr(gl+1:length(x)) = feval(fit([x(gl);x(c)],[0;smr0],'poly1'),x(gl+1:end));
+        smr(gl+1:length(x)) = feval(fit([x(gl);x(gl+1);x(c)],[0;smr0;0.95*smr0],'pchip'),x(gl+1:end));
         smb = interp1(x0,smb0+Q0,x);
         
         % calculate the  change in ice thickness from continuity
@@ -748,7 +748,7 @@ for f=1:length(sigma_b0)
         
         % implement SMB & SMR
         smr = zeros(1,length(x));
-        smr(gl+1:length(x)) = feval(fit([x(gl);x(c)],[0;smr0],'poly1'),x(gl+1:end));
+        smr(gl+1:length(x)) = feval(fit([x(gl);x(gl+1);x(c)],[0;smr0;0.95*smr0],'pchip'),x(gl+1:end));
         smb = interp1(x0,smb0+Q0,x);
         
         % calculate the  change in ice thickness from continuity
@@ -835,10 +835,10 @@ load('Crane_2100_noChange.mat'); % load no change variables
 %   ~6 m a^-1 (Adusumilli et al., 2020)
 delta_smr = 0/3.1536e7; % m/s change in SMR
 delta_smb = 0/3.1536e7; % m/s change in SMB
-delta_fwd = 0; % m change in fwd
+delta_fwd = -2.5; % m change in fwd
     
 % define time stepping (s)
-dt = 0.001*3.1536e7;
+dt = 0.01*3.1536e7;
 t_start = 0*3.1536e7;
 t_end = 91*3.1536e7;
 t = (t_start:dt:t_end);
@@ -856,7 +856,9 @@ for i=1:length(t)
     
     % implement change to fwd after 10 model years
     if t(i)>10*3.1536e7
-        fwd = load('optimalfwd.mat').optfwd + delta_fwd; % m
+        % linearly increase fwd to reach delta_fwd by 2100
+        delta_fwdi = delta_fwd/(2100-2019)*t(i)/3.1536e7; % total increase in fwd at this time increment
+        fwd = load('optimalfwd.mat').optfwd + delta_fwdi; % m
     end 
     
     % find the calving front location (based on Benn et al., 2007 & Nick et al., 2010)
@@ -1007,7 +1009,7 @@ for i=1:length(t)
     % implement SMB, SMR, delta_SMB, & dela_SMR
     if t(i)/3.1536e7<10 % use original SMB & SMR for first 10 model years
         smr = zeros(1,c);
-        smr(gl+1:c) = feval(fit([x(gl);x(c)],[0;smr0],'poly1'),x(gl+1:c));
+        smr(gl+1:length(x)) = feval(fit([x(gl);x(gl+1);x(c)],[0;smr0;0.95*smr0],'pchip'),x(gl+1:end));
         smb = interp1(x0,smb0+Q0,x);  
         % plot
         if i==1
@@ -1025,10 +1027,13 @@ for i=1:length(t)
         end        
     elseif t(i)/3.1536e7>=10 % implement changes after 10 model years
         smr = zeros(1,c);
-        smr(gl+1:length(x)) = feval(fit([x(gl);x(c)],[0;smr0+delta_smr],'poly1'),x(gl+1:end));
-        smb = interp1(x0,smb0+Q0+delta_smb,x);
+        % increase SMR linearly at each time increment to reach delta_smr by 2100
+        delta_smri = delta_smr/(2100-2019)*t(i)/3.1536e7; % total increase in smr from 2019 rate
+        smr(gl+1:length(x)) = feval(fit([x(gl);x(gl+1);x(c)],[0;smr0+delta_smri;0.95*smr0+delta_smri],'pchip'),x(gl+1:end));
+        delta_smbi = delta_smb/(2100-2019)*t(i)/3.1536e7; % total increase in smr from 2019 rate        
+        smb = interp1(x0,smb0+Q0+delta_smbi,x);
         % plot
-        if t(i)/3.1536e7==10
+        if mod(t(i)/3.1536e7,10)==0
             figure(2);
             subplot(1,2,1);
                 plot(x,smb.*3.1536e7,'color',col(i,:),'linewidth',2);
@@ -1132,7 +1137,7 @@ end
 
 % save geometry & speed
 if save_final
-    cd([homepath,'scripts/modelingWorkflow/results']);
+    cd([homepath,'scripts/modelingWorkflow/results2']);
     if delta_fwd==0 && delta_smr==0 && delta_smb==0 
         save(['SMR0_SMB0_geom.mat'],'h2','H2','c2','c2','U2','gl2','x2','fwd2');
         save(['fwd_',num2str(fwd),'_geom.mat'],'h2','H2','c2','c2','U2','gl2','x2','fwd2');
