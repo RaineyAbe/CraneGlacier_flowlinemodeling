@@ -835,7 +835,7 @@ load('Crane_2100_noChange.mat'); % load no change variables
 %   ~6 m a^-1 (Adusumilli et al., 2020)
 delta_smr = 0/3.1536e7; % m/s change in SMR
 delta_smb = 0/3.1536e7; % m/s change in SMB
-delta_fwd = -2.5; % m change in fwd
+delta_fwd = -0.5; % m change in fwd
     
 % define time stepping (s)
 dt = 0.01*3.1536e7;
@@ -857,7 +857,7 @@ for i=1:length(t)
     % implement change to fwd after 10 model years
     if t(i)>10*3.1536e7
         % linearly increase fwd to reach delta_fwd by 2100
-        delta_fwdi = delta_fwd/(2100-2019)*t(i)/3.1536e7; % total increase in fwd at this time increment
+        delta_fwdi = delta_fwd/(2100-2019)*(t(i)/3.1536e7-10); % total increase in fwd at this time increment
         fwd = load('optimalfwd.mat').optfwd + delta_fwdi; % m
     end 
     
@@ -1028,9 +1028,9 @@ for i=1:length(t)
     elseif t(i)/3.1536e7>=10 % implement changes after 10 model years
         smr = zeros(1,c);
         % increase SMR linearly at each time increment to reach delta_smr by 2100
-        delta_smri = delta_smr/(2100-2019)*t(i)/3.1536e7; % total increase in smr from 2019 rate
+        delta_smri = delta_smr/(2100-2019)*(t(i)/3.1536e7-10); % total increase in smr from 2019 rate
         smr(gl+1:length(x)) = feval(fit([x(gl);x(gl+1);x(c)],[0;smr0+delta_smri;0.95*smr0+delta_smri],'pchip'),x(gl+1:end));
-        delta_smbi = delta_smb/(2100-2019)*t(i)/3.1536e7; % total increase in smr from 2019 rate        
+        delta_smbi = delta_smb/(2100-2019)*(t(i)/3.1536e7-10); % total increase in smr from 2019 rate        
         smb = interp1(x0,smb0+Q0+delta_smbi,x);
         % plot
         if mod(t(i)/3.1536e7,10)==0
