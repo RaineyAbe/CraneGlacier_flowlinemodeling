@@ -13,6 +13,15 @@ homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/'
 % add path to necessary functions
 addpath([homepath,'matlabFunctions/']);    
 
+% Define temporal averaging window for air temperature 
+year_start = 1996;
+year_end = 2016; 
+
+% Convert to RACMO months
+% RACMO month = (year - 1979)*12 + (mo. # in year)
+mo_start = (year_start-1979)*12+1; % Jan
+mo_end = (year_end-1979)*12+12; % Dec
+
 % Load centerline
 cd([homepath,'inputs-outputs/']);
 x_cl = load('Crane_centerline.mat').x; y_cl = load('Crane_centerline.mat').y;
@@ -26,7 +35,7 @@ for i=2:length(x_cl)
 end 
 
 % calculate mean long-term annual air temp and interpolate
-% along Crane centerline (RACMO 2000-2015)
+% along Crane centerline (RACMO 1996-2016)
 
 % load 2011 OIB Crane surface elevation
 h_cl_11 = load('Crane_surfaceElevationObs.mat').h(3);
@@ -54,25 +63,25 @@ h_cl_RACMO = griddata(h_lon,h_lat,h,cl_lonlat(:,1),cl_lonlat(:,2));
         [RACMOy(i),RACMOx(i)] = ind2sub(size(squeeze(nanmean(T(:,:,270:450),4))),RACMO_ref);
     end
 
-% calculate mean annual air temp for full RACMO grid (2000-2015)
+% calculate mean annual air temp for full RACMO grid
 T_m=zeros(length(T(:,1,1)),length(T(1,:,1)));
 for i=1:length(T(:,1,1))  
     for j=1:length(T(1,:,1))
-        T_m(i,j) = nanmean(T(i,j,253:444))-273.15;
+        T_m(i,j) = nanmean(T(i,j,mo_start:mo_end))-273.15;
     end 
 end
 
-figure; hold on; set(gcf,'Units','centimeters','Position',[0 8 18 16]);
+figure(1); clf; 
+hold on; set(gcf,'Units','centimeters','Position',[0 8 18 16]);
 surf(T_lon,T_lat,T_m); view(2);
 plot3(cl_lonlat(:,1),cl_lonlat(:,2),ones(length(cl_lonlat(:,1)))*3000,'-m','LineWidth',4,'DisplayName','Crane Centerline');
 set(gca,'FontName','Arial','FontSize',12);
-xlabel('Lon'); ylabel('Lat'); title('RACMO 2000-15 Mean Air Temp'); 
+xlabel('Lon'); ylabel('Lat'); title(['RACMO ',num2str(year_start),'-',num2str(year_end),' Mean Air Temp']); 
 c = colorbar; set(get(c,'title'),'string','^oC');
 ylim([-66 -65]); xlim([-63.5 -61.5]); 
 hold off;
 
-% interpolate mean 2000-2015 air temperature along Crane centerline
-% (RACMO months 253:444)
+% interpolate mean air temperature along Crane centerline
 T_cl=[];
 for i=1:length(RACMOy)
     for j=253:444
@@ -127,11 +136,11 @@ h_cl_m = movmean(h_cl_11,10,'omitnan');
 T_cl_11 = (h_cl_RACMO-transpose(h_cl_11))*lr+T_cl;        
 
 % plot
-figure; hold on; set(gcf,'Units','centimeters','Position',[17 8 17 16]);
+figure(2); clf; hold on; set(gcf,'Units','centimeters','Position',[17 8 17 16]);
     plot(x,T_cl_11,'-b','linewidth',2);
     grid on; set(gca,'fontname','Arial','fontsize',12);
     xlabel('Distance Along Centerline (m)'); ylabel('Temperature (^oC)');
-    title('Mean 2000-15 Air Temp Along Crane Centerline');
+    title(['Mean ',num2str(year_start),'-',num2str(year_end),' Air Temp Along Crane Centerline']);
     hold off;
 
 % calculate rate factor A assuming an Arrhenius relationship
@@ -140,7 +149,7 @@ Q = 115; %J/mol
 R = 8.314; %J/(K*mol)
 A = (3.5*10^-25).*exp(-Q./(R.*(T_cl_m))); %Pa^-3 s^-1
 % plot
-figure; set(gcf,'Units','centimeters','Position',[34 8 17 16]);
+figure(3); clf; set(gcf,'Units','centimeters','Position',[34 8 17 16]);
     plot(x,A,'-m','LineWidth',3); grid on;
     set(gca,'FontSize',12,'FontName','Arial'); 
     xlabel('Distance Along Centerline (m)'); ylabel('A (Pa^-^3 s^-^1)');

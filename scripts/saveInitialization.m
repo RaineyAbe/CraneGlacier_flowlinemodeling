@@ -24,7 +24,7 @@ homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/'
 cd([homepath,'inputs-outputs/']);
 
 save_initial = 1; % = 1 to save initialization file
-regrid = 1;       % = 1 to regrid to 200m resolution
+regrid = 0;       % = 1 to regrid to 200m resolution
 
 L = 70e3; % length of model domain
 
@@ -77,9 +77,10 @@ end
     end
 
 % 6. rate factor, A & adjusted rate factor
-A = load('Crane_rateFactorA.mat').A;
-%A0 = polyval(polyfit(x0,A_adj(1,:),1),x0);
-A0 = polyval(polyfit(x0,A,1),x0);
+A0 = load('Crane_adjustedAnnualRateFactor_2009-2019.mat').A_adj(1).A_adj;
+%A0 = polyval(polyfit(x0,A0,1),x0);
+%A = load('Crane_rateFactorA.mat').A;
+%A0 = polyval(polyfit(x0,A,1),x0);
 if size(A0)==[186 1]
     A0=A0';
 end
@@ -99,9 +100,9 @@ smb0_err = [smb_err smb_err(end).*ones(1,length(x0)-length(smb_err))]./3.1536e7;
 % increase smb slope to incorporate potential runoff
 for i=1:length(smb0)
     if i<135
-        smb0(i) = smb0(i)-5/3.1536e7-5/3.1536e7/x0(135)*x0(i);
+        smb0(i) = smb0(i)-15/3.1536e7;%-5/3.1536e7/x0(135)*x0(i);
     else
-        smb0(i) = smb0(i)-10/3.1536e7;        
+        smb0(i) = smb0(i)-15/3.1536e7;        
     end
 end
 
@@ -143,6 +144,8 @@ if regrid
     Q0 = interp1(x0,Q0,xi); Q0(find(isnan(Q0),1,'first'):end) = Q0(find(isnan(Q0),1,'first')-1);
     c0 = dsearchn(xi',x0(c0));
     x0=xi;
+else
+    beta0 = interp1(beta0x,beta0,x0);
 end
 
 % Save resulting variables

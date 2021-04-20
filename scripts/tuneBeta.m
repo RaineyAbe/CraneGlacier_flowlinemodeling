@@ -17,7 +17,7 @@ save_betabest = 1;  % = 1 to save the beta with the best U RMSE
 save_results = 1;   % = 1 to save all solution results 
 
 % grid spacing
-dx0 = 500:100:2000;
+dx0 = 500:50:2000;
 
 % Load Crane Glacier initialization variables
 load('Crane_flowlineModelInitialization.mat');
@@ -57,7 +57,7 @@ A0(find(isnan(A0),1,'first'):end) = A0(find(isnan(A0),1,'first')-1);
 U0(find(isnan(U0),1,'first'):end) = U0(find(isnan(U0),1,'first')-1);
 hb0(find(isnan(hb0),1,'first'):end) = hb0(find(isnan(hb0),1,'first')-1);
 W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);    
-E0 = ones(1,length(x0)); % enhancement factor
+E0 = 1*ones(1,length(x0)); % enhancement factor
 
 %% 1. run the flowline model
 
@@ -65,19 +65,19 @@ clear beta
 
 % loop through grid spatial resolutions
 for j=1:length(dx0)
-
-    % save dx
+    
+    % set dx
     beta(j).dx = dx0(j);
     
     % initialize variables
-    x=x0; h=h0; H=H0; hb=hb0; U=U0; A=A0; E=E0; dUdx=dUdx0;
+    x=x0; H=H0; hb=hb0; U=U0; A=A0; E=E0; dUdx=dUdx0;
     
     % find the calving front location (based on Benn et al., 2007 & Nick et al., 2010)
     Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
     crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*fwd); % crevasse penetration depth (m)
     % calving front located where the inland-most crevasse intersects sea level
-    xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)
-
+    xcf = x(c0);
+    
     % calculate the thickness required to remain grounded at each grid cell
     Hf = -(rho_sw./rho_i).*hb; % flotation thickness (m)
     % find the location of the grounding line and use a floating
@@ -91,8 +91,8 @@ for j=1:length(dx0)
     end
     if xgl>xcf % grounding line can't be past calving front
         xgl=xcf;
-    end 
-
+    end
+    
     % create coordinate system that hits cf and gl exactly
     % has resolution dxmax near the ice divide
     % has resolution dxmin from gl to c
@@ -101,35 +101,35 @@ for j=1:length(dx0)
     dx = xgl/xl; %new grid spacing (should be ~dx0)
     xn = 0:dx:xgl; %new distance vector
     if xcf-xgl > 0
-        xl = round((xcf-xgl)/dx0);
+        xl = round((xcf-xgl)/dx0(j));
         dx = (xcf-xgl)/xl;
         xn = [xn xn(end)+dx:dx:xcf];
     end
     clear dx; dxn = [xn(2:end)-xn(1:end-1) xn(end)-xn(end-1)];
-
+    
     % get geometry on new coordinates
     c = length(xn); gl = dsearchn(xn',xgl); % indeces for cf and gl
     %if the crevasses never intersect sea level
     if isempty(c) == 1 %set the calving front to a default minimum ice thickness value
-        c = find(H<Hc,1,'first'); 
+        c = find(H<Hc,1,'first');
     end
     if isempty(c)==1 % set c to length of x if criteria still not met
         c=length(x);
         disp('calving criteria not met');
     end
-    hb = interp1(x0,hb0,xn,'pchip'); 
-    W = interp1(x0,W0,xn,'pchip'); 
-    H = interp1(x,H,xn,'pchip'); 
-    U = interp1(x,U,xn,'pchip'); 
-    A = interp1(x0,A0,xn,'pchip'); 
-    E = interp1(x,E,xn,'pchip'); 
+    hb = interp1(x0,hb0,xn,'pchip');
+    W = interp1(x0,W0,xn,'pchip');
+    H = interp1(x,H,xn,'pchip');
+    U = interp1(x,U,xn,'pchip');
+    A = interp1(x0,A0,xn,'pchip');
+    E = interp1(x,E,xn,'pchip');
     x = xn; dx = dxn;
-
+    
     % calculate surface elevation
     h = hb+H; % surface elevation (m a.s.l.)
     h(gl+1:c) = (1-rho_i/rho_sw).*H(gl+1:c); %adjust the surface elevation of ungrounded ice to account for buoyancy
     H(h<0)=0-hb(h<0); h(h<0)=0; % surface cannot go below sea level
-
+    
     % calculate the effective pressure (ice overburden pressure minus water
     % pressure) assuming an easy & open connection between the ocean and
     % ice-bed interface
@@ -138,10 +138,10 @@ for j=1:length(dx0)
     N_marine = rho_i*g*H(sl+1:length(x))+(rho_sw*g*hb(sl+1:length(x))); % effective pressure where the bed is below sea level (Pa)
     N = [N_ground N_marine];
     N(N<0)=0; % cannot have negative values
-
+    
     % solve for new beta, save results
-    [beta(j).beta,dUdx,Un_rev] = betaSolve(H,c,x,U,n,A,E,m,dx,rho_i,g,h,rho_sw,sigma_b,W,N);    
-    beta(j).x = x; beta(j).U = Un_rev; 
+    [beta(j).beta,dUdx,Un_rev] = betaSolve(H,c,x,U,n,A,E,m,dx,rho_i,g,h,rho_sw,sigma_b,W,N);
+    beta(j).x = x; beta(j).U = Un_rev;
     
     % plot geometry, speed, & calving front position
     if j==1
@@ -149,36 +149,36 @@ for j=1:length(dx0)
         figure(1); clf
         set(gcf,'Position',[0 100 1300 400]);
         ax1 = axes('Position',[0.05 0.1 0.25 0.8]); % glacier geometry
-            hold on; grid on; set(gca,'FontSize',12,'linewidth',2,'fontweight','bold');
-            title('Glacier Geometry'); xlim([0 50]); ylim([min(hb)-100 max(h)+200]);
-            xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
-            % ice surface
-            plot(x(1:c)./10^3,h(1:c),'color',col(j,:),'linewidth',2,'displayname',num2str(dx0(j)));
-            % calving front
-            plot(x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(j,:),'linewidth',2,'HandleVisibility','off');
-            % floating bed
-            plot(x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(j,:),'linewidth',2,'HandleVisibility','off');
-            % bed elevation
-            plot(x0./10^3,hb0,'k','linewidth',2,'HandleVisibility','off');
-            % mean sea level
-            plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
+        hold on; grid on; set(gca,'FontSize',12,'linewidth',2,'fontweight','bold');
+        title('Glacier Geometry'); xlim([0 50]); ylim([min(hb)-100 max(h)+200]);
+        xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
+        % ice surface
+        plot(x(1:c)./10^3,h(1:c),'color',col(j,:),'linewidth',2,'displayname',num2str(dx0(j)));
+        % calving front
+        plot(x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(j,:),'linewidth',2,'HandleVisibility','off');
+        % floating bed
+        plot(x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(j,:),'linewidth',2,'HandleVisibility','off');
+        % bed elevation
+        plot(x0./10^3,hb0,'k','linewidth',2,'HandleVisibility','off');
+        % mean sea level
+        plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
         ax2 = axes('Position',[0.35 0.1 0.25 0.8]); % ice speed
-            hold on; grid on; set(gca,'FontSize',12,'linewidth',2,'fontweight','bold');
-            title('Ice Speed'); xlim([0 50]); ylim([0 2500]);
-            xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})');
-            plot(x(1:c)./10^3,Un_rev(1:c).*3.1536e7,'color',col(j,:),'linewidth',2);
+        hold on; grid on; set(gca,'FontSize',12,'linewidth',2,'fontweight','bold');
+        title('Ice Speed'); xlim([0 50]); ylim([0 2500]);
+        xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})');
+        plot(x(1:c)./10^3,Un_rev(1:c).*3.1536e7,'color',col(j,:),'linewidth',2);
         ax3 = axes('Position',[0.7 0.1 0.25 0.8]); % beta
-            hold on; grid on; set(gca,'FontSize',12,'linewidth',2,'fontweight','bold');
-            title('Basal Roughness Factor \beta'); xlim([0 50]);
-            xlabel('Distance Along Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})');
-            plot(x(1:c-1)./10^3,beta(j).beta(1:c-1),'color',col(j,:),'linewidth',2);
+        hold on; grid on; set(gca,'FontSize',12,'linewidth',2,'fontweight','bold');
+        title('Basal Roughness Factor \beta'); xlim([0 50]);
+        xlabel('Distance Along Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})');
+        plot(x(1:c-1)./10^3,beta(j).beta(1:c-1),'color',col(j,:),'linewidth',2);
     else
         % ice surface
         plot(ax1,x(1:c)./10^3,h(1:c),'color',col(j,:),'linewidth',2);
         % calving front
         plot(ax1,x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(j,:),'linewidth',2);
         % floating bed
-        plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(j,:),'linewidth',2);        
+        plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(j,:),'linewidth',2);
         % ice speed
         plot(ax2,x(1:c)./10^3,Un_rev(1:c).*3.1536e7,'color',col(j,:),'linewidth',2);
         % beta
@@ -189,22 +189,22 @@ for j=1:length(dx0)
         % colorbar
         colormap(parula(length(col))); cb=colorbar('Ticks',[0 0.5 1],...
             'YTickLabel',[{num2str(dx0(1)/10^3)} {num2str(dx0(round(length(dx0)/2))/10^3)} {num2str(dx0(end)/10^3)}],...
-            'Position',[.96 .35 .025 .3410],'Fontname','arial','fontweight','bold');  
-            cb.Title.String = 'dx (km)';        
+            'Position',[.96 .35 .025 .3410],'Fontname','arial','fontweight','bold');
+        cb.Title.String = 'dx (km)';
     end
-
+    
     % Calculate RMSE of resulting speed using beta solution
     beta(j).RMSE = sqrt((sum((Un_rev-U).^2)./length(U)));
     RMSE(j) = sqrt((sum((Un_rev-U).^2)./length(U)));
-
+    
     % display results
     disp(['dx = ',num2str(dx0(j)),' m: ']);
     disp(['RMSE = ',num2str(RMSE(j)),' m/s']);
-
-end 
+    
+end
 
 % plot RMSE results
-Ibest = find(abs(gradient(gradient(RMSE)))<0.1e-5,1,'first');
+Ibest = find(RMSE==min(RMSE)); %find(abs(gradient(gradient(RMSE)))<1e-7,1,'first');
 if length(Ibest)>1 % if lowest RMSE exists for multiple dx, use lowest dx
     Ibest(2:end)=[];
 end
@@ -341,7 +341,7 @@ function [beta,dUdx,Un_rev] = betaSolve(H,c,x,U,n,A,E,m,dx,rho_i,g,h,rho_sw,sigm
         -(2.*gamma(2:c).*H(2:c)./W(2:c)).*((5./(A(2:c).*W(2:c))).^(1/n)))./(N(2:c).*eta(2:c));            
     beta(1) = beta(2); beta(c)=0;
     beta(beta<0)=0; % beta cannot be less than 0
-   
+    
     % Run the forward U_convergence with the resulting beta to check success
         %set-up coefficient vectors for the linearized stress terms over the calving front
         %[C(k)*U(k-1)+E(k)*U(k)+G(k)*U(k+1)=Td]  
@@ -399,28 +399,12 @@ function [beta,dUdx,Un_rev] = betaSolve(H,c,x,U,n,A,E,m,dx,rho_i,g,h,rho_sw,sigm
             dUndx_rev=dUndx_rev';
         end
 
-        %check if the difference in speed between iteratons (U vs. Un_rev) meets a set tolerance
+        %check if the difference in speed between iteratons (U vs. Un_rev) meets a set tolerance   
         if abs(sum(U)-sum(Un_rev))<0.1*abs(sum(U))==0 %determine if U has converged sufficiently
             %use sufficiently converged values for speeds & strain rates
-               disp('U did not converge sufficiently.');
+           disp('U did not converge sufficiently.');
         end
-        
-        figure(3); clf
-        set(gcf,'Position',[1   350   560   420]);
-        subplot(2,1,1);
-            set(gca,'fontsize',12,'fontweight','bold');
-            hold on; legend('Location','southeast'); grid on; title('G terms');
-            plot(x,G,'b','displayname','fwd','linewidth',2); 
-            plot(x,G_plus,'b','handlevisibility','off','linewidth',2); 
-            plot(x,G_minus,'b','handlevisibility','off','linewidth',2);
-            plot(x,G_rev,'m','displayname','rev','linewidth',2); 
-            plot(x,G_plus_rev,'m','handlevisibility','off','linewidth',2); 
-            plot(x,G_minus_rev,'m','handlevisibility','off','linewidth',2);
-        subplot(2,1,2);
-            set(gca,'fontsize',12,'fontweight','bold');
-            hold on; legend('Location','southeast'); grid on; title('T');
-            plot(x,T_rev,'m','displayname','rev','linewidth',2); 
-            plot(x,T,'b','displayname','fwd','linewidth',2);
+               
             
 end 
 

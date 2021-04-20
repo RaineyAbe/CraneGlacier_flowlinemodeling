@@ -99,7 +99,9 @@ close all;
 
 save_optE = 1; % = 1 to save Ebest
         
-Efit = 10.*ones(1,length(x0));
+Efit = [2:10]'.*ones(1,length(x0));
+
+cd([homepath,'inputs-outputs']);
 
 % pre-allocate misfit variables
 dH_tot = NaN.*zeros(length(Efit(:,1)),length(x0)); % total dH for each point along centerline
@@ -308,11 +310,8 @@ for f=1:length(Efit(:,1))
             % calculate RMSE of surface speed and elevation change at the
             % final model time
             if t(i)==t_end
-                %U_RMSE(f) = sqrt(nansum(interp1(x(1:gl),U(1:gl),x0(1:135))-U_obs(9).U(1:135)').^2/length(x0));
-                U_RMSE(f) = nanmean(U)-nanmean(U_obs(9).U);
-                %dH_tot(f,:) = interp1(x,h,x0)-h0;
-                %dH_RMSE(f) = sqrt((nansum(dH_tot(f,:)-dH_obs).^2)/length(x0));
-                dH_RMSE(f) = sqrt(nansum(interp1(x,h,x0)-h_obs_2019).^2)/length(x0);
+                U_RMSE(f) = nanmean(nansum([U;-1*interp1(x0,U_obs(9).U,x)]));
+                dH_RMSE(f) = nanmean(sqrt(nansum(interp1(x,h,x0)-h_obs_2019).^2)/length(x0));
             end
 
         end
@@ -322,7 +321,7 @@ for f=1:length(Efit(:,1))
 end
 
 % calculate mean misfit
-misfit = dH_RMSE.*U_RMSE';
+misfit = sqrt((dH_RMSE./nanmean(h)).^2+(U_RMSE./nanmean(U)).^2);
 
 % plot results for optimal E
 IoptE = find(abs(misfit)==min(abs(misfit)),1,'first');
@@ -349,8 +348,10 @@ close all;
 
 save_optfwd = 1; % = 1 to save fwdbest
 
+cd([homepath,'inputs-outputs']);
+
 % define fwd values to test
-fwd0 = 17.5:0.5:18.5; % fresh water depth in crevasses (m)
+fwd0 = 10.5:0.5:19.5; % fresh water depth in crevasses (m)
     
 % pre-allocate misfit variables
 c_misfit = NaN.*zeros(length(fwd0),length(2009:2018)); % calving front misfit for each model year        
@@ -368,7 +369,7 @@ for f=1:length(fwd0)
     x=x0; H=H0; U=U0; dUdx=dUdx0; A=A0; h=h0; hb=hb0;
     
     % load optimal parameters 
-    E=15*ones(1,length(x0));%load('optimalE.mat').optE; % unitless
+    E=load('optimalE.mat').optE; % unitless
     
     % define fwd
     fwd = fwd0(f); 
@@ -382,9 +383,10 @@ for f=1:length(fwd0)
             crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*fwd); % crevasse penetration depth (m)
             % calving front located where the inland-most crevasse intersects sea level
             %xcf = interp1(feval(fit(x',(h-crev)','poly1'),x),x,0,'linear','extrap'); % (m along centerline)
-            xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)
             if i==1 % use observed calving front for first iteration
                 xcf = x0(c0);
+            else
+                xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)                
             end
 
             % calculate the thickness required to remain grounded at each grid cell
@@ -561,6 +563,7 @@ for f=1:length(fwd0)
             end
 
         end 
+        
     catch
     end
 end
@@ -588,10 +591,10 @@ end
 
 close all; 
 
-save_optSigma_b = 1; % = 1 to save sigma_bbest
+save_optSigma_b = 0; % = 1 to save sigma_bbest
     
 % define sigma_b values to test
-sigma_b0 = 0e3;%:10e3:50e3; % back pressure (Pa)
+sigma_b0 = 0e3:10e3:50e3; % back pressure (Pa)
 
 % pre-allocate misfit variables
 c_misfit = NaN.*zeros(length(sigma_b0),length(2009:2018)); % calving front misfit for each model year 
@@ -622,9 +625,10 @@ for f=1:length(sigma_b0)
         Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
         crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*fwd); % crevasse penetration depth (m)
         % calving front located where the inland-most crevasse intersects sea level
-        xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)
         if i==1 % use observed calving front for first iteration
             xcf = x0(c0);
+        else
+            xcf = interp1(h-crev,x,0,'linear','extrap'); % (m along centerline)            
         end
         
         % calculate the thickness required to remain grounded at each grid cell
@@ -844,15 +848,15 @@ save_figure = 0;    % = 1 to save resulting figure
 save_final = 1;     % = 1 to save final geometry and speed 
 
 % load no change conditions
-load('Crane_2100_noChange_runoff.mat'); % load no change variables
+load('Crane_2100_noChange.mat'); % load no change variables
     
 % set up changes in SMB, SMR, & fwd
 % note: decrease SMB & SMR in increments of 0.5 m a-1 (1.585e-8) starting
 %   from 1 m a-1 until reaching max SMR found at other Antarctic ice shelves: 
 %   ~6 m a^-1 (Adusumilli et al., 2020)
-delta_smr = 0/3.1536e7; % m/s change in SMR
+delta_smr = -10/3.1536e7; % m/s change in SMR
 delta_smb = 0/3.1536e7; % m/s change in SMB
-delta_fwd = -2.5; % m change in fwd
+delta_fwd = 0; % m change in fwd
     
 % define time stepping (s)
 dt = 0.01*3.1536e7;
@@ -864,9 +868,9 @@ t = (t_start:dt:t_end);
 x=x0; H=H0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; hb=hb0;
 
 % load optimal parameters 
-E=load('optimalE.mat').optE; % unitless
+E=6*ones(1,length(x0));%load('optimalE.mat').optE; % unitless
 fwd = load('optimalfwd.mat').optfwd; % m 
-sigma_b = 0;%load('optimalSigma_b.mat').optSigma_b; % Pa
+sigma_b = load('optimalSigma_b.mat').optSigma_b; % Pa
     
 % run flowline model
 for i=1:length(t)

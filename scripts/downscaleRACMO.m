@@ -1,4 +1,4 @@
-%% Script to load RACMO2.3 climate variables and downscale SMB for elevation-dependence
+%% Script to load RACMO2.3 climate variables and statistically downscale SMB for elevation-dependence
 % using methods adapted from Noel et al. (2016) 
 % along the Crane Glacier centerline
 % Rainey Aberle
