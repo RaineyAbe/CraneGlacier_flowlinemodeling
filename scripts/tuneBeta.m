@@ -17,7 +17,7 @@ save_betabest = 1;  % = 1 to save the beta with the best U RMSE
 save_results = 1;   % = 1 to save all solution results 
 
 % grid spacing
-dx0 = 500:50:2000;
+dx0 = 100:50:3000;
 
 % Load Crane Glacier initialization variables
 load('Crane_flowlineModelInitialization.mat');
@@ -203,8 +203,14 @@ for j=1:length(dx0)
     
 end
 
-% plot RMSE results
-Ibest = find(RMSE==min(RMSE)); %find(abs(gradient(gradient(RMSE)))<1e-7,1,'first');
+% define best spatial resolution as the minimum spatial resolution where
+% the gradient is less than the velocity spatial resolution
+for i=1:length(beta)
+    if all(abs(gradient(RMSE(i:end)*3.1536e7))<=240)
+        Ibest=i;
+        break;
+    end
+end
 if length(Ibest)>1 % if lowest RMSE exists for multiple dx, use lowest dx
     Ibest(2:end)=[];
 end

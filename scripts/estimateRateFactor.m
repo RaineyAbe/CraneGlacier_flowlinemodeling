@@ -5,7 +5,7 @@
 
 clear all; close all;
 
-save_A = 1;     % = 1 to save rate factor A
+save_A = 0;     % = 1 to save rate factor A
 
 % define home path
 homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';

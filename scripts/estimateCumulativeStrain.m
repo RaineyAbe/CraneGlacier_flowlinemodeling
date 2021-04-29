@@ -5,7 +5,7 @@
 
 clear all; close all;
 
-save_A_adj = 1; % = 1 to save adjusted rate factor 
+save_A_adj = 0; % = 1 to save adjusted rate factor 
 
 % Define homepath in directory
 homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
@@ -89,7 +89,7 @@ set(gcf,'Position',[200 100 1000 400]);
 % 4. Save adjusted rate factor
 if save_A_adj
     cd([homepath,'inputs-outputs']);
-    save('Crane_adjustedAnnualRateFactor_2009-2019.mat','A_adj');
+    save('Crane_adjustedAnnualRateFactor_2009-2019.mat','A_adj','eta_dot_cum');
     disp(['Adjusted rate factor saved in: ',pwd]);
 end 
     

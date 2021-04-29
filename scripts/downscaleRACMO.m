@@ -24,12 +24,13 @@ cd(homepath);
 
 % Add path with necessary functions, data, inputs/outputs
 addpath([homepath,'matlabFunctions']);
+addpath([homepath,'../matlabFunctions/cmocean_v2.0/cmocean/']);
 addpath([homepath,'data/RACMO2.3']); 
 addpath([homepath,'inputs-outputs']);
 
-save_smb = 1; % = 1 to save resulting SMB
+save_smb = 0; % = 1 to save resulting SMB
 
-%% 1. Load centerline, 2011 Snowfall (sf), Snowmelt (sm), Runoff (ro),
+%% 1. Load centerline, Annual Snowfall (sf), Snowmelt (sm), Runoff (ro),
 %Surface Mass Balance (SMB), Air Temperature (airtemp) along centerline
     
 %Load centerline
@@ -45,6 +46,9 @@ rho_w = 1000;   % kg/m^3
 %Plot full gridded RACMO variables for  2011 and Crane centerline
 %Note: RACMO month # = (year - 1979)*12 + (mo. # in year)
 %Ex: Feb/2000 = (2000-1979)*12 + 2 = 254
+yr = 2009;
+mo_start = (yr-1979)*12 + 1;
+mo_end = (yr-1979)*12 + 12;
         
 %2011 SNOWFALL (sf)
     sf.Lat = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lat'); %degrees north
@@ -56,11 +60,10 @@ rho_w = 1000;   % kg/m^3
     sf_11 = zeros(length(sf.sf(:,1,1)),length(sf.sf(1,:,1)),1); % initialize
     for i = 1:length(sf.sf(:,1,1))
         for j=1:length(sf.sf(1,:,1))
-            sf_11(i,j,1) = nanmean(sf.sf(i,j,385:396)); % m/s
+            sf_11(i,j,1) = nanmean(sf.sf(i,j,mo_start:mo_end)); % m/s
         end     
     end 
     sf_11 = sf_11./rho_i.*365; %m yr^-1
-        
         
     %Interpolate 2011 mean annual sf along Crane centerline (RACMO Months 385:396)
     %Grab RACMO grid
@@ -75,23 +78,24 @@ rho_w = 1000;   % kg/m^3
 
     sf.cl=[];
     for i=1:length(RACMOy)
-        for j=385:396
+        for j=mo_start:mo_end
             sf.cl(i,j) = sf.sf(RACMOy(i),RACMOx(i),1,j);
         end    
     end  
 
     %Take the average at each point along centerline
-    sf.cl(:,1:384)=[]; %Started adding points in column 385
+    sf.cl(:,1:mo_start-1)=[]; %Started adding points in column mo_start
     sf.cl(:,1) = nanmean(sf.cl,2);
     sf.cl(:,2:end) = []; %kg m-2 day-1
     sf.cl = sf.cl.*365./rho_i; %m yr-1
         
     figure(1); clf; hold on; 
+        colormap(cmocean('algae'));
         set(gcf,'Units','centimeters','Position',[5 20 18 13]);
         surf(sf.Lon,sf.Lat,sf_11); view(2);
         plot3(cl.Lon,cl.Lat,ones(length(cl.Lon))*3000,'-m','LineWidth',4,'DisplayName','Crane Centerline');
         set(gca,'FontName','Arial','FontSize',14,'linewidth',2);
-        xlabel('Lon'); ylabel('Lat'); title('RACMO Mean 2011 Snowfall'); 
+        xlabel('Lon'); ylabel('Lat'); title(['RACMO Mean ',num2str(yr),' Snowfall']); 
         h = colorbar; set(get(h,'title'),'string','m yr^-^1');
         ylim([-66 -65]); xlim([-63.5 -61.5]);
         hold off;
@@ -106,7 +110,7 @@ rho_w = 1000;   % kg/m^3
     sm_11 = zeros(length(sm.sm(:,1,1)),length(sm.sm(1,:,1))); % initialize
     for i = 1:length(sm.sm(:,1,1))
         for j=1:length(sm.sm(1,:,1))
-            sm_11(i,j,1) = nanmean(sm.sm(i,j,385:396));
+            sm_11(i,j,1) = nanmean(sm.sm(i,j,mo_start:mo_end));
         end     
     end 
     sm_11 = sm_11./rho_i.*365; %m yr^-1
@@ -114,22 +118,23 @@ rho_w = 1000;   % kg/m^3
     %Interpolate 2011 mean annual sm along Crane centerline (RACMO Months 385:396)
     sm.cl=zeros(1,length(RACMOy));
     for i=1:length(RACMOy)
-        for j=385:396
+        for j=mo_start:mo_end
             sm.cl(i,j) = sm.sm(RACMOy(i),RACMOx(i),j);
         end    
     end  
 
    %Take the average at each point along centerline
-    sm.cl(:,1:384)=[]; %Started adding points in column 385
+    sm.cl(:,1:mo_start-1)=[]; %Started adding points in column 385
     sm.cl(:,1) = nanmean(sm.cl,2);
     sm.cl(:,2:end) = []; %kg m-2 day-1
     sm.cl = sm.cl.*365./rho_i; %m yr-1
         
     figure(2); clf; hold on; set(gcf,'Units','centimeters','Position',[5 0 18 13]);
+        colormap(cmocean('algae'));
         surf(sm.Lon,sm.Lat,sm_11); view(2);
         plot3(cl.Lon,cl.Lat,ones(length(cl.Lon))*3000,'-m','LineWidth',4,'DisplayName','Crane Centerline');
         set(gca,'FontName','Arial','FontSize',14,'linewidth',2);
-        xlabel('Lon'); ylabel('Lat'); title('RACMO Mean 2011 Snowmelt'); 
+        xlabel('Lon'); ylabel('Lat'); title(['RACMO Mean ',num2str(yr),' Snowmelt']);  
         h = colorbar; set(get(h,'title'),'string','m yr^-^1');
         ylim([-66 -65]); xlim([-63.5 -61.5]);
         hold off;
@@ -144,7 +149,7 @@ rho_w = 1000;   % kg/m^3
     ro_11 = zeros(length(ro.ro(:,1,1)),length(ro.ro(1,:,1))); % initialize
     for i = 1:length(ro.ro(:,1,1))
         for j=1:length(ro.ro(1,:,1))
-            ro_11(i,j,1) = nanmean(ro.ro(i,j,385:396));
+            ro_11(i,j,1) = nanmean(ro.ro(i,j,mo_start:mo_end));
         end     
     end 
     ro_11 = ro_11./rho_i.*365; %m yr^-1
@@ -152,22 +157,23 @@ rho_w = 1000;   % kg/m^3
     %Interpolate 2011 mean annual ro along Crane centerline (RACMO Months 385:396)
     ro.cl=zeros(length(RACMOy),length(385:396)); % initialize
     for i=1:length(RACMOy)
-        for j=385:396
+        for j=mo_start:mo_end
             ro.cl(i,j) = ro.ro(RACMOy(i),RACMOx(i),j);
         end    
     end  
 
     %Take the average at each point along centerline
-    ro.cl(:,1:384)=[]; %Started adding points in column 385
+    ro.cl(:,1:mo_start-1)=[]; %Started adding points in column mo_start
     ro.cl(:,1) = nanmean(ro.cl,2);
     ro.cl(:,2:end) = []; %kg m-2 day-1
     ro.cl = ro.cl.*365./rho_i; %m yr-1
 
     figure(3); clf; hold on; set(gcf,'Units','centimeters','Position',[25 20 18 13]);
+        colormap(cmocean('algae'));        
         surf(ro.Lon,ro.Lat,ro_11); view(2);
         plot3(cl.Lon,cl.Lat,ones(length(cl.Lon))*3000,'-m','LineWidth',4,'DisplayName','Crane Centerline');
         set(gca,'FontName','Arial','FontSize',14,'linewidth',2);
-        xlabel('Lon'); ylabel('Lat'); title('RACMO Mean 2011 Runoff'); 
+        xlabel('Lon'); ylabel('Lat'); title(['RACMO Mean ',num2str(yr),' Runoff']);  
         h = colorbar; set(get(h,'title'),'string','m yr^-^1');
         ylim([-66 -65]); xlim([-63.5 -61.5]); 
         hold off;    
@@ -188,25 +194,26 @@ rho_w = 1000;   % kg/m^3
     smb_11 = smb_11./rho_i.*365; %m yr^-1
 
     %Interpolate 2011 mean annual smb along Crane centerline (RACMO Months 385:396)
-    smb.cl=zeros(length(RACMOy),length(385:396)); % initialize
+    smb.cl=zeros(length(RACMOy),length(mo_start:mo_end)); % initialize
     for i=1:length(RACMOy)
-        for j=385:396
+        for j=mo_start:mo_end
             smb.cl(i,j) = smb.smb(RACMOy(i),RACMOx(i),j);
         end    
     end  
 
     %Take the average at each point along centerline
-    smb.cl(:,1:384)=[]; %Started adding points in column 385
+    smb.cl(:,1:mo_start-1)=[]; %Started adding points in column mo_start
     smb.cl(:,1) = nanmean(smb.cl,2);
     smb.cl(:,2:end) = []; %kg m-2 day-1
     smb.cl = smb.cl.*365./rho_i; %m yr-1
 
     figure(4); clf; hold on; set(gcf,'Units','centimeters','Position',[25 0 18 13]);
+        colormap(cmocean('algae'));
         surf(smb.Lon,smb.Lat,smb_11); view(2);
         plot3(cl.Lon,cl.Lat,ones(length(cl.Lon))*3000,'-m','LineWidth',4,'DisplayName','Crane Centerline');
         set(gca,'FontName','Arial','FontSize',14);
-        xlabel('Lon'); ylabel('Lat'); title('RACMO Mean 2011 SMB'); 
-        h = colorbar; set(get(h,'title'),'string','m yr^-^1');
+        xlabel('Lon'); ylabel('Lat'); title(['RACMO Mean ',num2str(yr),' SMB']);  
+        h = colorbar; set(get(h,'title'),'string','m/yr');
         ylim([-66 -65]); xlim([-63.5 -61.5]);
         hold off;
 
@@ -238,10 +245,10 @@ figure(1); clf; hold on;
 
 figure(2); clf; hold on; 
     set(gcf,'Units','centimeters','Position',[28 8 21 18]);
-    plot(x,h_cl_RACMO,'-b','LineWidth',3); grid on; 
+    plot(x/10^3,h_cl_RACMO,'-k','LineWidth',3,'displayname','RACMO height'); grid on; 
     set(gca,'FontName','Arial','FontSize',14,'LineWidth',2); 
     title('RACMO height at Crane Centerline');
-    xlabel('Distance Along Centerline (m)'); ylabel('RACMO height (m)'); 
+    xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)'); 
     hold off;
         
 %% 3. Adjust SF, SM, & SMB  along centerline 
@@ -258,7 +265,7 @@ close all;
 %Load 2011 Crane ice surface
 h_cl_11 = load("Crane_surfaceElevationObs.mat").h(3).surface';
 
-maxDist = 9e3; 
+maxDist = 10e3; 
    
 %Adjust snowfall (sf) 
     
@@ -357,7 +364,7 @@ maxDist = 9e3;
         smb.interp(i) = m*h_cl_11(i)+b; 
         
         if i==1
-            figure; hold on; grid on; set(gcf,'Units','centimeters','Position',[3 8 21 18]);
+            figure(1); clf; hold on; grid on; set(gcf,'Units','centimeters','Position',[3 8 21 18]);
             set(gca,'FontSize',14,'FontName','Arial'); 
             title('Regression Calculation for SMB, i=1');
             plot(smbfit(:,1),smbfit(:,2),'-b','LineWidth',2,'DisplayName','a');            
@@ -372,7 +379,7 @@ maxDist = 9e3;
     end 
 
 %Plot adjusted climate variables
-figure(1); clf; hold on; set(gcf,'Units','centimeters','Position',[28 8 21 18]);
+figure(2); clf; hold on; set(gcf,'Units','centimeters','Position',[28 8 21 18]);
     plot(h_cl_11,sf.interp,'.b','MarkerSize',15,'DisplayName','Snowfall'); 
     plot(h_cl_11,sm.interp,'.m','MarkerSize',15,'DisplayName','Snowmelt');
     plot(h_cl_11,smb.interp,'.g','MarkerSize',15,'DisplayName','SMB');
@@ -520,8 +527,8 @@ end
 
 close all; 
 
-figure_save = 1;    % = 1 to save figure
-save_smb = 1;       % = 1 to save final downscaled SMB
+figure_save = 0;    % = 1 to save figure
+save_smb = 0;       % = 1 to save final downscaled SMB
 
 years = 2009:2019; % Define years
 col = parula(length(years)+1); % color scheme for plotting
@@ -591,7 +598,7 @@ cd([homepath,'inputs-outputs/']);
      cd([homepath,'inputs-outputs/']);
      h_cl_11 = load("Crane_surfaceElevationObs.mat").h(3).surface';
     
-    maxDist = 200e3;     
+    maxDist = 8e3;     
     
         %Grab points within a certain distance from centerline, interpolate
         nearbyPts = []; %Hold points within a certain distance
@@ -849,7 +856,7 @@ end
 % save downscaled SMB
 if save_smb
     cd([homepath,'inputs-outputs/']);
-    save('Crane_downscaledSMB_2009-2019.mat','SMB');
+    save('Crane_downscaledSMB_2009-2019_2.mat','SMB');
     disp('SMB saved');
 end 
 

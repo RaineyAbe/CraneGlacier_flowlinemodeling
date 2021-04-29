@@ -40,7 +40,7 @@ for i=2:(length(cl.X))
 end
 
 % Convert to lon/lat, load geoidheight at each pt along centerline
-[cl.Lon,cl.Lat] = ps2wgs(cl.X,cl.Y);
+[cl.Lon,cl.Lat] = ps2wgs(cl.X,cl.Y,'StandardParallel',-71,'StandardMeridian',0);
 h_geoid = geoidheight(cl.Lat,cl.Lon);
 
 %% 2. Glacier ice surface elevation (PGC & OIB), bed (OIB), and surface speeds (ITS_LIVE & TSX)
