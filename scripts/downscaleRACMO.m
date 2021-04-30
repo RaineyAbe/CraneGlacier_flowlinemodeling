@@ -46,7 +46,7 @@ rho_w = 1000;   % kg/m^3
 %Plot full gridded RACMO variables for  2011 and Crane centerline
 %Note: RACMO month # = (year - 1979)*12 + (mo. # in year)
 %Ex: Feb/2000 = (2000-1979)*12 + 2 = 254
-yr = 2009;
+yr = 2016;
 mo_start = (yr-1979)*12 + 1;
 mo_end = (yr-1979)*12 + 12;
         
@@ -262,15 +262,15 @@ close all;
 [sm.X,sm.Y] = wgs2ps(sm.Lon,sm.Lat,'StandardParallel',-71,'StandardMeridian',0);
 [smb.X,smb.Y] = wgs2ps(smb.Lon,smb.Lat,'StandardParallel',-71,'StandardMeridian',0);
 
-%Load 2011 Crane ice surface
-h_cl_11 = load("Crane_surfaceElevationObs.mat").h(3).surface';
+%Load Crane ice surface
+h_cl = load("Crane_surfaceElevationObs.mat").h(28).surface';
 
 maxDist = 10e3; 
    
 %Adjust snowfall (sf) 
     
     %Loop through each point along centerline
-    sf.interp = ones(length(h_cl_11),1);
+    sf.interp = ones(length(h_cl),1);
     for i=1:length(x)
         
         %Grab points within a certain distance from centerline, interpolate
@@ -295,14 +295,14 @@ maxDist = 10e3;
     
         %Apply regression slope to current grid cell, solve for eqn
         b = sf.cl(i)-P(1)*h_cl_RACMO(i);
-        sf.interp(i) = P(1)*h_cl_11(i)+b; 
+        sf.interp(i) = P(1)*h_cl(i)+b; 
         
     end 
     
 %Ajust snowmelt (sm)
     
     %Loop through each point along centerline
-    sm.interp = ones(length(h_cl_11),1);
+    sm.interp = ones(length(h_cl),1);
     for i=1:length(x)
     
         %Grab points within a certain distance from centerline, interpolate
@@ -328,14 +328,14 @@ maxDist = 10e3;
         %Apply regression slope to current grid cell, solve for eqn
         m = P(1); b = sm.cl(i)-m*h_cl_RACMO(i);
         smfit = [h_cl_RACMO m.*h_cl_RACMO+b];
-        sm.interp(i) = m*h_cl_11(i)+b; 
+        sm.interp(i) = m*h_cl(i)+b; 
         
     end 
 
 %Ajust surface mass balance (smb)
 
     %Loop through each point along centerline
-    smb.interp = ones(length(h_cl_11),1);
+    smb.interp = ones(length(h_cl),1);
     for i=1:length(x)
     
         %Grab points within a certain distance from centerline, interpolate
@@ -361,7 +361,7 @@ maxDist = 10e3;
         %Apply regression slope to current grid cell, solve for eqn
         m = P(1); b = smb.cl(i)-m*h_cl_RACMO(i);
         smbfit = [h_cl_RACMO m.*h_cl_RACMO+b];
-        smb.interp(i) = m*h_cl_11(i)+b; 
+        smb.interp(i) = m*h_cl(i)+b; 
         
         if i==1
             figure(1); clf; hold on; grid on; set(gcf,'Units','centimeters','Position',[3 8 21 18]);
@@ -371,7 +371,7 @@ maxDist = 10e3;
             plot(yfit,'-r','LineWidth',2,'DisplayName','b'); 
             plot(h_cl_RACMO(i),smb.cl(i),'.b','MarkerSize',30,'DisplayName','Current grid cell');
             plot(nearbyPts(:,1),nearbyPts(:,2),'.r','MarkerSize',30,'DisplayName','Adjacent grid cells');
-            plot(h_cl_11(i),smb.interp(i),'*b','MarkerSize',25,'DisplayName','Resulting SMB');
+            plot(h_cl(i),smb.interp(i),'*b','MarkerSize',25,'DisplayName','Resulting SMB');
             xlabel('Height (m)'); ylabel('SMB (m yr^-^1)');
             legend('Location','southeast');
             hold off; 
@@ -380,9 +380,9 @@ maxDist = 10e3;
 
 %Plot adjusted climate variables
 figure(2); clf; hold on; set(gcf,'Units','centimeters','Position',[28 8 21 18]);
-    plot(h_cl_11,sf.interp,'.b','MarkerSize',15,'DisplayName','Snowfall'); 
-    plot(h_cl_11,sm.interp,'.m','MarkerSize',15,'DisplayName','Snowmelt');
-    plot(h_cl_11,smb.interp,'.g','MarkerSize',15,'DisplayName','SMB');
+    plot(h_cl,sf.interp,'.b','MarkerSize',15,'DisplayName','Snowfall'); 
+    plot(h_cl,sm.interp,'.m','MarkerSize',15,'DisplayName','Snowmelt');
+    plot(h_cl,smb.interp,'.g','MarkerSize',15,'DisplayName','SMB');
     grid on; title('Adjusted Climate Variables');
     set(gca,'FontSize',14,'FontName','Arial');
     xlabel('Height (m)'); legend; ylabel('(m yr^-^1)');
@@ -393,22 +393,23 @@ figure(2); clf; hold on; set(gcf,'Units','centimeters','Position',[28 8 21 18]);
 close all;
 
 %Linear trend in adjusted climate variables
-sf.linear = fit(h_cl_11(~isnan(h_cl_11)),sf.interp(~isnan(h_cl_11)),'poly1'); 
-    sf.linear = feval(sf.linear,h_cl_11);
-sm.linear = fit(h_cl_11(~isnan(h_cl_11)),sm.interp(~isnan(h_cl_11)),'poly1');
-    sm.linear = feval(sm.linear,h_cl_11);
-smb.linear = fit(h_cl_11(~isnan(h_cl_11)),smb.interp(~isnan(h_cl_11)),'poly1');
-    smb.linear = feval(smb.linear,h_cl_11);
+sf.linear = fit(h_cl(~isnan(h_cl)),sf.interp(~isnan(h_cl)),'poly1'); 
+    sf.linear = feval(sf.linear,h_cl);
+sm.linear = fit(h_cl(~isnan(h_cl)),sm.interp(~isnan(h_cl)),'poly1');
+    sm.linear_eval = sm.linear.p1*h_cl+sm.linear.p2; 
+    sm.linear = feval(sm.linear,h_cl);
+smb.linear = fit(h_cl(~isnan(h_cl)),smb.interp(~isnan(h_cl)),'poly1');
+    smb.linear = feval(smb.linear,h_cl);
 smb.linear2 = sf.linear-sm.linear;
 
 %Plot Results
 figure(1); clf; hold on; 
     grid on; set(gcf,'Units','centimeters','Position',[3 8 21 18]);
     set(gca,'FontName','Arial','FontSize',14,'linewidth',2); 
-    plot(h_cl_11,sf.linear,'.c','MarkerSize',12,'DisplayName','Snowfall');
-    plot(h_cl_11,sm.linear,'.m','MarkerSize',12,'DisplayName','Snowmelt');
-    plot(h_cl_11,smb.linear,'.b','MarkerSize',12,'DisplayName','SMB');
-    plot(h_cl_11,smb.linear2,'.-r','MarkerSize',10,'DisplayName','SMB (SF-SM)');
+    plot(h_cl,sf.linear,'.c','MarkerSize',12,'DisplayName','Snowfall');
+    plot(h_cl,sm.linear,'.m','MarkerSize',12,'DisplayName','Snowmelt');
+    plot(h_cl,smb.linear,'.b','MarkerSize',12,'DisplayName','SMB');
+    plot(h_cl,smb.linear2,'.-r','MarkerSize',10,'DisplayName','SMB (SF-SM)');
     xlabel('Height (m)'); ylabel('m yr^-^1'); title('Linear Trends in Adjusted Climate Variables');
     legend('Location','east');
     hold off;
@@ -458,7 +459,7 @@ T.cl(:,2:end) = []; %deg K
 T.cl = T.cl - 273.15; %degrees C
 
 %Loop through each point along centerline
-T.interp = ones(length(h_cl_11),1);
+T.interp = ones(length(h_cl),1);
 for i=1:length(x)
 
     %Grab points within a certain distance from centerline, interpolate
@@ -485,7 +486,7 @@ for i=1:length(x)
     %Apply regression slope to current grid cell, solve for eqn
     m = P(1); b = T.cl(i)-m*h_cl_RACMO(i);
     T.fit = [h_cl_RACMO m.*h_cl_RACMO+b];
-    T.interp(i) = m*h_cl_11(i)+b; 
+    T.interp(i) = m*h_cl(i)+b; 
 end 
 
 %Dry adiabatic lapse rate    
@@ -493,14 +494,14 @@ lr = 9.8e-3; %lapse rate (degrees C m^-1)
 
 %Calculate new air temperature using lapse rate and RACMO reference height
 T.cl_m = movmean(T.cl,10,'omitnan');
-h_cl_m = movmean(h_cl_11,10,'omitnan');
+h_cl_m = movmean(h_cl,10,'omitnan');
 T.cl_11 = (h_cl_RACMO-h_cl_m)*lr+T.cl_m; 
 
 %Plot height profiles
 figure(1); clf; hold on; 
     set(gcf,'Units','centimeters','Position',[2 10 22 20]);
     plot(x,h_cl_RACMO,'-b','LineWidth',3,'DisplayName','RACMO height'); 
-    plot(x,h_cl_11,'-m','LineWidth',3,'DisplayName','2011 Crane Surface');
+    plot(x,h_cl,'-m','LineWidth',3,'DisplayName','2011 Crane Surface');
     grid on; xlabel('Distance Along Centerline (m)'); ylabel('Elevation (m)');
     set(gca,'FontSize',14,'FontName','Arial'); legend('Location','south'); 
     title('Height Profiles');
@@ -596,7 +597,7 @@ cd([homepath,'inputs-outputs/']);
     
     %Load 2011 Crane ice surface
      cd([homepath,'inputs-outputs/']);
-     h_cl_11 = load("Crane_surfaceElevationObs.mat").h(3).surface';
+     h_cl = load("Crane_surfaceElevationObs.mat").h(3).surface';
     
     maxDist = 8e3;     
     
@@ -665,7 +666,7 @@ if years(i)<=2016
    %Adjust snowfall (sf) for elevation-dependence
 
     %Loop through each point along centerline
-    sf.interp = ones(length(h_cl_11),1);
+    sf.interp = ones(length(h_cl),1);
     for j=1:length(x)
 
         %Grab points within a certain distance from centerline, interpolate
@@ -688,7 +689,7 @@ if years(i)<=2016
         int = -500:2000; 
         yfit = P(1)*int+P(2);
 
-        sf.interp(j) = interp1(int,yfit,h_cl_11(j));
+        sf.interp(j) = interp1(int,yfit,h_cl(j));
 
     end        
 
@@ -725,7 +726,7 @@ if years(i)<=2016
     %Ajust snowmelt for elevation-dependence
     
         %Loop through each point along centerline
-        sm.interp = ones(length(h_cl_11),1);
+        sm.interp = ones(length(h_cl),1);
         for j=1:length(x)
     
             %Grab points within a certain distance from centerline, interpolate
@@ -747,7 +748,7 @@ if years(i)<=2016
             P = polyfit(nearbyPts(:,1),nearbyPts(:,2),1);
             int = -20:1600; 
             yfit = P(1)*int+P(2);
-            sm.interp(j) = interp1(int,yfit,h_cl_11(j));
+            sm.interp(j) = interp1(int,yfit,h_cl(j));
         
         end 
     
@@ -784,7 +785,7 @@ end
     %Ajust surface mass balance for elevation-dependence
 
     %Loop through each point along centerline
-    smb.interp = ones(length(h_cl_11),1);
+    smb.interp = ones(length(h_cl),1);
     for j=1:length(x)
     
         %Grab points within a certain distance from centerline, interpolate
@@ -804,7 +805,7 @@ end
         
         %Calculate a linear trendline for nearby points
         smb.interp(j) = polyval(polyfit(nearbyPts(:,1),...
-            nearbyPts(:,2),1),h_cl_11(j));
+            nearbyPts(:,2),1),h_cl(j));
        
     end 
     
@@ -813,9 +814,9 @@ end
     drawnow 
     
     %Calculate smb linear trendline    
-    n = find(~isnan(h_cl_11) & ~isnan(smb.interp));
-    smb.P = polyval(polyfit(h_cl_11(n),...
-        smb.interp(n),1),h_cl_11(n));
+    n = find(~isnan(h_cl) & ~isnan(smb.interp));
+    smb.P = polyval(polyfit(h_cl(n),...
+        smb.interp(n),1),h_cl(n));
         smb.lin(i,1:2) = polyfit(transpose(x(n)),smb.P,1);
         smb.linear(:,i) = polyval(smb.lin(i,:),x);
         
@@ -841,7 +842,7 @@ end
     rho_i = 917; rho_w = 1000; % kg/m^3
     for j=1:length(x)
         SMB(i).sigma_smb(j) = SMB(i).smb_interp(j).*sqrt((0.1.*smb.interp(j)/smb.interp(j))^2 ...
-        +(rho_w/rho_i*H_w/H_w)^2+(sigma_h_cl_11/h_cl_11(j))^2);
+        +(rho_w/rho_i*H_w/H_w)^2+(sigma_h_cl_11/h_cl(j))^2);
     end 
     
 end 
