@@ -91,20 +91,12 @@ beta0x = load('optimalBeta.mat').optBeta.x;
 %beta0 = interp1(beta0x,beta0,x0);
 
 % 8. surface mass balance w/ uncertainty, smb and smb_err
-smb = load('Crane_downscaledSMB_2009-2019.mat').SMB(11).smb_interp; % m/a
+smb = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).smb_adj; % m/a
 smb_err = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).sigma_smb; % m/a
 smb0 = [smb' smb(end).*ones(1,length(x0)-length(smb))]./3.1536e7; % m/s
 % replace NaN values with the last SMB value near the terminus
 smb0(isnan(smb0)) = smb0(find(isnan(smb0),1,'first')-1); 
 smb0_err = [smb_err smb_err(end).*ones(1,length(x0)-length(smb_err))]./3.1536e7; % m/s
-% increase smb slope to incorporate potential runoff
-for i=1:length(smb0)
-    if i<135
-        smb0(i) = smb0(i)-15/3.1536e7;%-5/3.1536e7/x0(135)*x0(i);
-    else
-        smb0(i) = smb0(i)-15/3.1536e7;        
-    end
-end
 
 % 9. submarine melting rate, smr
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:
@@ -116,7 +108,7 @@ end
 %   Adusumilli et al. (2018):
 %       Larsen C basal melt rate (1994-2016) = 0.5+/-1.4 m/a = 1.59e-8 m/s
 %       Larsen C net mass balance (1994-2016)= -0.4+/-1.3 m/a = 1.27e-8 m/s
-smr0 = -1.5/3.1536e7; % m/s SMR
+smr0 = -5.29/3.1536e7; % m/s SMR - max found at Crane
 
 % 10. tributary ice volume flux
 Q = load('tributaryFluxes.mat').tribFlux.Q; % m/a

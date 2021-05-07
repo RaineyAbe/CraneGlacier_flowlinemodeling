@@ -194,7 +194,7 @@ day_end = (yr-1950)*365 + 365;
             smb_yr(i,j,1) = nanmean(smb.smb(i,j,Iday_start:Iday_end));
         end     
     end 
-    smb_yr = smb_yr./rho_i.*365; %m yr^-1
+    %smb_yr = smb_yr./rho_i.*365; %m yr^-1
 
     % Interpolate mean annual SMB along Crane centerline (RACMO days day_start:day_end)
     smb.cl=zeros(length(RACMOy),length(Iday_start:Iday_end)); % initialize
@@ -208,7 +208,7 @@ day_end = (yr-1950)*365 + 365;
     smb.cl(:,1:Iday_start-1)=[]; % Started adding points in column Iday_start
     smb.cl(:,1) = nanmean(smb.cl,2);
     smb.cl(:,2:end) = []; % kg m-2 day-1
-    smb.cl = smb.cl.*365./rho_i; % m yr-1
+    smb.cl = smb.cl./rho_i; % m yr-1
 
     figure(4); clf; hold on; set(gcf,'Units','centimeters','Position',[25 0 18 13]);
         colormap(cmocean('algae'));
@@ -216,8 +216,9 @@ day_end = (yr-1950)*365 + 365;
         plot3(cl.Lon,cl.Lat,ones(length(cl.Lon))*3000,'-m','LineWidth',4,'DisplayName','Crane Centerline');
         set(gca,'FontName','Arial','FontSize',14);
         xlabel('Lon'); ylabel('Lat'); title(['RACMO Mean ',num2str(yr),' SMB']);  
-        h = colorbar; set(get(h,'title'),'string','m/yr');
-        ylim([-66 -65]); xlim([-63.5 -61.5]); caxis([0 100]);
+        h = colorbar; set(get(h,'title'),'string','kg/m^2/d');
+        ylim([-66 -65]); xlim([-63.5 -61.5]); 
+        caxis([0 500]);
         hold off;
 
 %% 2. Load RACMO height, linearly interpolate along centerline
@@ -532,8 +533,8 @@ end
 
 close all; 
 
-figure_save = 0;    % = 1 to save figure
-save_smb = 0;       % = 1 to save final downscaled SMB
+figure_save = 1;    % = 1 to save figure
+save_smb = 1;       % = 1 to save final downscaled SMB
 
 years = 2009:2019; % Define years
 col = parula(length(years)+1); % color scheme for plotting
@@ -868,8 +869,8 @@ end
         SMB(i).smb_adj = P.p1*h_cl+P.p2;
     else
         P = fit(h_cl(~isnan(h_cl)),smb.linear(i,~isnan(h_cl))','poly1');        
-        SMB(i).adj = P.p1*h_cl+P.p2;
-        SMB(i).adj(find(isnan(SMB(i).adj),1,'first')+1:end) = SMB(i).adj(find(isnan(SMB(i).adj),1,'first')-1);
+        SMB(i).smb_adj = P.p1*h_cl+P.p2;
+        SMB(i).smb_adj(find(isnan(SMB(i).adj),1,'first')+1:end) = SMB(i).adj(find(isnan(SMB(i).adj),1,'first')-1);
     end
     subplot(2,3,[4,4.5]);
     plot(x/10^3,SMB(i).smb_adj,'linewidth',2,'color',col(i,:));

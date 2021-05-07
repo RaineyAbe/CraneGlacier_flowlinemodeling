@@ -62,20 +62,20 @@ while b
     %[C(k)*U(k-1)+E(k)*U(k)+G(k)*U(k+1)=Td] 
     % upper boundary condition
     G(1) = -(beta(1).*N(1).*eta(1))-...
-            (((2*gamma(1).*H(1))./W(1)).*((5/(E(1)*A(1).*W(1))).^(1/n))); 
+            (((2*gamma(1).*H(1))./W(1)).*((5/(E*A(1).*W(1))).^(1/n))); 
     T(1) = U(1).*0.9/G(1); %*(rho_i.*g.*H(1).*(h(1)-h(2))./(x(1)-x(2)));     
     % coefficients up to calving front
     G_minus(2:c-1) = (2./(dx(2:c-1).^2)).*Hm(1:c-2).*vm(1:c-2); %for U(k-1)
     G(2:c-1) = (-2./(dx(2:c-1).^2)).*(Hm(1:c-2).*vm(1:c-2)+Hm(2:c-1).*vm(2:c-1))-...
             (beta(2:c-1).*N(2:c-1).*eta(2:c-1))-...
-            (((2.*gamma(2:c-1).*H(2:c-1))./W(2:c-1)).*((5./(E(2:c-1).*A(2:c-1).*W(2:c-1))).^(1/n))); %for U(k)
+            (((2.*gamma(2:c-1).*H(2:c-1))./W(2:c-1)).*((5./(E.*A(2:c-1).*W(2:c-1))).^(1/n))); %for U(k)
     G_plus(2:c-1) = (2./(dx(2:c-1).^2)).*Hm(2:c-1).*vm(2:c-1); %for U(k+1)
     T(2:c-1) = (rho_i.*g.*H(2:c-1).*(h(1:c-2)-h(3:c))./(x(1:c-2)-x(3:c))); %gravitational driving stress     
     % calving front condition
     G_minus(c) = -1;
     G(c) = 1;
     G_plus(c) = 0;
-    T(c) = (E(c)*A(c).*(((rho_i.*g./4).*((H(c).*(1-(rho_i./rho_sw))-sigma_b./(rho_i.*g)))).^n)).*dx(c); %SOMETHING WRONG HERE
+    T(c) = (E*A(c).*(((rho_i.*g./4).*((H(c).*(1-(rho_i./rho_sw))-sigma_b./(rho_i.*g)))).^n)).*dx(c); 
     %remove any NaNs from the coefficient vectors
     G_minus(isnan(G_minus)) = 0;
     G_plus(isnan(G_plus)) = 0;
