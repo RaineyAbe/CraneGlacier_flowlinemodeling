@@ -47,7 +47,7 @@ rho_w = 1000;   % kg/m^3
 % Plot full gridded RACMO variables for year and Crane centerline
 % Note: RACMO day # = (year - 1950)*365 + (day # in year)
 % Ex: Feb 1, 2000 = (2000-1950)*365 + 1
-yr = 2016;
+yr = 2019;
 day_start = (yr-1950)*365 + 1;
 day_end = (yr-1950)*365 + 365;
         
@@ -55,7 +55,7 @@ day_end = (yr-1950)*365 + 365;
     sf.Lat = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lat'); % degrees north
     sf.Lon = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lon'); % degrees east
     sf.h = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','height'); % m above surface   
-    sf.sf = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','snowfall'); % kg m-2 d-1 
+    sf.sf = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','snowfall'); % kg m-2 mo-1 
     time = ncread('RACMO2.3p2_ANT27_snowfall_monthly_1979_2016.nc','time'); % days since 1950/01/01
     Iday_start = dsearchn(time,day_start); % index of day start in RACMO time
     Iday_end = dsearchn(time,day_end); % index of day start in RACMO time
@@ -64,11 +64,11 @@ day_end = (yr-1950)*365 + 365;
     sf_yr = zeros(length(sf.sf(:,1,1)),length(sf.sf(1,:,1)),1); % initialize
     for i = 1:length(sf.sf(:,1,1))
         for j=1:length(sf.sf(1,:,1))
-            sf_yr(i,j,1) = nanmean(sf.sf(i,j,Iday_start:Iday_end)); % kg/m^2/d
+            sf_yr(i,j,1) = nanmean(sf.sf(i,j,Iday_start:Iday_end))*12; % kg/m^2/yr
         end     
     end 
-    % kg/m^2/d / (917 kg/m^3) * (365 d/yr) = m/yr
-    sf_yr = sf_yr./rho_i.*365; % m/yr
+    % kg/m^2/yr / (917 kg/m^3) = m/yr
+    sf_yr = sf_yr./rho_i; % m/yr
         
     % Interpolate mean annual sf along Crane centerline (RACMO days day_start:day_end)
     % Grab RACMO grid
@@ -89,8 +89,8 @@ day_end = (yr-1950)*365 + 365;
     % Take the average at each point along centerline
     sf.cl(:,1:Iday_start-1)=[]; % Started adding points in column mo_start
     sf.cl(:,1) = nanmean(sf.cl,2);
-    sf.cl(:,2:end) = []; % kg m-2 day-1
-    sf.cl = sf.cl.*365./rho_i; % m yr-1
+    sf.cl(:,2:end) = []; % kg m-2 yr-1
+    sf.cl = sf.cl./rho_i; % m yr-1
         
     figure(1); clf; hold on; 
         colormap(cmocean('algae'));
@@ -100,23 +100,23 @@ day_end = (yr-1950)*365 + 365;
         set(gca,'FontName','Arial','FontSize',14,'linewidth',2);
         xlabel('Lon'); ylabel('Lat'); title(['RACMO Mean ',num2str(yr),' Snowfall']); 
         h = colorbar; set(get(h,'title'),'string','m yr^-^1');
-        ylim([-66 -65]); xlim([-63.5 -61.5]); caxis([0 100]);
+        ylim([-66 -65]); xlim([-63.5 -61.5]); caxis([0 0.9.*max(sf_yr(:))]);
         hold off;
     
 % 2011 SNOWMELT (sm)
     sm.Lat = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lat'); % degrees north
     sm.Lon = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lon'); % degrees east
     sm.h = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','height'); % m above surface   
-    sm.sm = squeeze(ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','snowmelt')); % kg m-2 d-1
+    sm.sm = squeeze(ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','snowmelt')); % kg m-2 mo-1
     
      %Grab mean sm for every month in year (RACMO days day_start:day_end)
     sm_yr = zeros(length(sm.sm(:,1,1)),length(sm.sm(1,:,1))); % initialize
     for i = 1:length(sm.sm(:,1,1))
         for j=1:length(sm.sm(1,:,1))
-            sm_yr(i,j,1) = nanmean(sm.sm(i,j,Iday_start:Iday_end));
+            sm_yr(i,j,1) = nanmean(sm.sm(i,j,Iday_start:Iday_end))*12; % kg/m2/yr
         end     
     end 
-    sm_yr = sm_yr./rho_i.*365; %m yr^-1
+    sm_yr = sm_yr./rho_i; % m yr^-1
 
     % Interpolate mean annual sm along Crane centerline (RACMO days day_start:day_end)
     sm.cl=zeros(1,length(RACMOy));
@@ -129,8 +129,8 @@ day_end = (yr-1950)*365 + 365;
    % Take the average at each point along centerline
     sm.cl(:,1:Iday_start-1)=[]; % Started adding points in column Iday_start
     sm.cl(:,1) = nanmean(sm.cl,2);
-    sm.cl(:,2:end) = []; % kg m-2 day-1
-    sm.cl = sm.cl.*365./rho_i; % m yr-1
+    sm.cl(:,2:end) = []; % kg m-2 yr-1
+    sm.cl = sm.cl./rho_i; % m yr-1
         
     figure(2); clf; hold on; set(gcf,'Units','centimeters','Position',[5 0 18 13]);
         colormap(cmocean('algae'));
@@ -139,37 +139,37 @@ day_end = (yr-1950)*365 + 365;
         set(gca,'FontName','Arial','FontSize',14,'linewidth',2);
         xlabel('Lon'); ylabel('Lat'); title(['RACMO Mean ',num2str(yr),' Snowmelt']);  
         h = colorbar; set(get(h,'title'),'string','m yr^-^1');
-        ylim([-66 -65]); xlim([-63.5 -61.5]); caxis([0 100]);
+        ylim([-66 -65]); xlim([-63.5 -61.5]); caxis([0 0.9.*max(sm_yr(:))]);
         hold off;
     
 % 2011 RUNOFF (ro)
     ro.Lat = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lat'); % degrees north
     ro.Lon = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lon'); % degrees east
     ro.h = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','height'); % m above surface   
-    ro.ro = squeeze(ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','runoff')); % kg m-2 d-1
+    ro.ro = squeeze(ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','runoff')); % kg m-2 mo-1
     
     % Grab mean annual ro for full RACMO grid (RACMO days day_start:day_end)
     ro_yr = zeros(length(ro.ro(:,1,1)),length(ro.ro(1,:,1))); % initialize
     for i = 1:length(ro.ro(:,1,1))
         for j=1:length(ro.ro(1,:,1))
-            ro_yr(i,j,1) = nanmean(ro.ro(i,j,Iday_start:Iday_end));
+            ro_yr(i,j,1) = nanmean(ro.ro(i,j,Iday_start:Iday_end))*12; % kg/m^2/yr
         end     
     end 
-    ro_yr = ro_yr./rho_i.*365; %m yr^-1
+    ro_yr = ro_yr./rho_i; % m yr^-1
 
     % Interpolate mean annual ro along Crane centerline (RACMO days day_start:day_end)
     ro.cl=zeros(length(RACMOy),length(Iday_start:Iday_end)); % initialize
     for i=1:length(RACMOy)
         for j=Iday_start:Iday_end
-            ro.cl(i,j) = ro.ro(RACMOy(i),RACMOx(i),j);
+            ro.cl(i,j) = ro.ro(RACMOy(i),RACMOx(i),j)*12; % kg/m^2/yr
         end    
     end  
 
     % Take the average at each point along centerline
     ro.cl(:,1:Iday_start-1)=[]; % Started adding points in column mo_start
     ro.cl(:,1) = nanmean(ro.cl,2);
-    ro.cl(:,2:end) = []; % kg m-2 day-1
-    ro.cl = ro.cl.*365./rho_i; % m yr-1
+    ro.cl(:,2:end) = []; % kg m-2 yr-1
+    ro.cl = ro.cl./rho_i; % m yr-1
 
     figure(3); clf; hold on; set(gcf,'Units','centimeters','Position',[25 20 18 13]);
         colormap(cmocean('algae'));        
@@ -178,23 +178,27 @@ day_end = (yr-1950)*365 + 365;
         set(gca,'FontName','Arial','FontSize',14,'linewidth',2);
         xlabel('Lon'); ylabel('Lat'); title(['RACMO Mean ',num2str(yr),' Runoff']);  
         h = colorbar; set(get(h,'title'),'string','m yr^-^1');
-        ylim([-66 -65]); xlim([-63.5 -61.5]); caxis([0 100]);
+        ylim([-66 -65]); xlim([-63.5 -61.5]); caxis([0 0.9.*max(ro_yr(:))]);
         hold off;    
 
 % SURFACE MASS BALANCE (SMB)
     smb.Lat = ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','lat'); %degrees north
     smb.Lon = ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','lon'); %degrees east
     smb.h = ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','height'); %m above the surface   
-    smb.smb = squeeze(ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','smb')); %kg m-2 d-1
+    smb.smb = squeeze(ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','smb')); %kg m-2 mo-1
     
     % Grab mean smb for every month in year (RACMO days Iday_start:Iday_end)
     smb_yr = zeros(length(smb.smb(:,1,1)),length(smb.smb(1,:,1))); % initialize
     for i = 1:length(smb.smb(:,1,1))
         for j=1:length(smb.smb(1,:,1))
-            smb_yr(i,j,1) = nanmean(smb.smb(i,j,Iday_start:Iday_end));
+            smb_yr(i,j,1) = nanmean(smb.smb(i,j,Iday_start:Iday_end))*12; % kg/m^2/yr
         end     
     end 
-    %smb_yr = smb_yr./rho_i.*365; %m yr^-1
+    smb_yr = smb_yr./rho_i; %m yr^-1
+    smb_yr_cl = zeros(1,length(RACMOx));
+    for i=1:length(RACMOx)
+        smb.cl_yr(i) = smb_yr(RACMOy(i),RACMOx(i));
+    end
 
     % Interpolate mean annual SMB along Crane centerline (RACMO days day_start:day_end)
     smb.cl=zeros(length(RACMOy),length(Iday_start:Iday_end)); % initialize
@@ -207,7 +211,7 @@ day_end = (yr-1950)*365 + 365;
     % Take the average at each point along centerline
     smb.cl(:,1:Iday_start-1)=[]; % Started adding points in column Iday_start
     smb.cl(:,1) = nanmean(smb.cl,2);
-    smb.cl(:,2:end) = []; % kg m-2 day-1
+    smb.cl(:,2:end) = []; % kg m-2 yr-1
     smb.cl = smb.cl./rho_i; % m yr-1
 
     figure(4); clf; hold on; set(gcf,'Units','centimeters','Position',[25 0 18 13]);
@@ -216,9 +220,9 @@ day_end = (yr-1950)*365 + 365;
         plot3(cl.Lon,cl.Lat,ones(length(cl.Lon))*3000,'-m','LineWidth',4,'DisplayName','Crane Centerline');
         set(gca,'FontName','Arial','FontSize',14);
         xlabel('Lon'); ylabel('Lat'); title(['RACMO Mean ',num2str(yr),' SMB']);  
-        h = colorbar; set(get(h,'title'),'string','kg/m^2/d');
+        h = colorbar; set(get(h,'title'),'string','m/yr');
         ylim([-66 -65]); xlim([-63.5 -61.5]); 
-        caxis([0 500]);
+        caxis([0 0.9.*max(smb_yr(:))]);
         hold off;
 
 %% 2. Load RACMO height, linearly interpolate along centerline
@@ -270,7 +274,7 @@ close all;
 %Load Crane ice surface
 h_cl = load("Crane_surfaceElevationObs.mat").h(28).surface';
 
-maxDist = 9e3; 
+maxDist = 10e3; 
    
 %Adjust snowfall (sf) 
     

@@ -11,11 +11,10 @@
 %   4. glacier width
 %   5. ice surface speed
 %   6. rate factor, A
-%   7. basal roughness factor, beta
-%   8. surface mass balance, smb
-%   9. submarine melting rate, smr
-%   10. tributary ice volume flux, Q
-%   11. calving front location, c
+%   7. surface mass balance, smb
+%   8. submarine melting rate, smr
+%   9. tributary ice volume flux, Q
+%   10. calving front location, c
 
 clear all; close all;
 
@@ -24,9 +23,9 @@ homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/'
 cd([homepath,'inputs-outputs/']);
 
 save_initial = 1; % = 1 to save initialization file
-regrid = 0;       % = 1 to regrid to 200m resolution
+regrid = 1;       % = 1 to regrid to 200m resolution
 
-L = 70e3; % length of model domain
+L = 75e3; % length of model domain
 
 % 1. Crane centerline coordinates
 x_cl = load('Crane_centerline.mat').x; y_cl = load('Crane_centerline.mat').y; 
@@ -85,20 +84,17 @@ if size(A0)==[186 1]
     A0=A0';
 end
 
-% 7. basal roughness factor, beta
-beta0 = load('optimalBeta.mat').optBeta.beta;
-beta0x = load('optimalBeta.mat').optBeta.x;
-%beta0 = interp1(beta0x,beta0,x0);
-
-% 8. surface mass balance w/ uncertainty, smb and smb_err
-smb = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).smb_adj; % m/a
-smb_err = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).sigma_smb; % m/a
-smb0 = [smb' smb(end).*ones(1,length(x0)-length(smb))]./3.1536e7; % m/s
+% 7. surface mass balance w/ uncertainty, smb and smb_err
+%smb = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).smb_adj; % m/a
+%smb_err = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).sigma_smb; % m/a
+%smb0 = [smb' smb(end).*ones(1,length(x0)-length(smb))]./3.1536e7; % m/s
 % replace NaN values with the last SMB value near the terminus
+smb0 = load('Crane_downscaled2009SMB.mat').smb.cl_yr'./3.1536e7; % m/s
 smb0(isnan(smb0)) = smb0(find(isnan(smb0),1,'first')-1); 
-smb0_err = [smb_err smb_err(end).*ones(1,length(x0)-length(smb_err))]./3.1536e7; % m/s
+smb0=smb0+0.89/3.1536e7; % add 10%
+smb0=movmean(smb0,20);
 
-% 9. submarine melting rate, smr
+% 8. submarine melting rate, smr
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:
 %       2013-2014: 0.70 cm/d = 8.1e-8 m/s
 %       2014-2015: 0.51 cm/d = 5.29e-8 m/s
@@ -110,7 +106,7 @@ smb0_err = [smb_err smb_err(end).*ones(1,length(x0)-length(smb_err))]./3.1536e7;
 %       Larsen C net mass balance (1994-2016)= -0.4+/-1.3 m/a = 1.27e-8 m/s
 smr0 = -5.29/3.1536e7; % m/s SMR - max found at Crane
 
-% 10. tributary ice volume flux
+% 9. tributary ice volume flux
 Q = load('tributaryFluxes.mat').tribFlux.Q; % m/a
 Q_err = load('tributaryFluxes.mat').tribFlux.Q_err; % m/a
 x_Q = load('tributaryFluxes.mat').tribFlux.x; % m along centerline
@@ -131,18 +127,15 @@ if regrid
     W0 = interp1(x0,W0,xi); W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);
     U0 = interp1(x0,U0,xi); U0(find(isnan(U0),1,'first'):end) = U0(find(isnan(U0),1,'first')-1);
     A0 = interp1(x0,A0,xi); A0(find(isnan(A0),1,'first'):end) = A0(find(isnan(A0),1,'first')-1);
-    beta0 = interp1(beta0x,beta0,xi); beta0(find(isnan(beta0),1,'first'):end) = beta0(find(isnan(beta0),1,'first')-1);
     smb0 = interp1(x0,smb0,xi); smb0(find(isnan(smb0),1,'first'):end) = smb0(find(isnan(smb0),1,'first')-1);
     Q0 = interp1(x0,Q0,xi); Q0(find(isnan(Q0),1,'first'):end) = Q0(find(isnan(Q0),1,'first')-1);
     c0 = dsearchn(xi',x0(c0));
     x0=xi;
-else
-    beta0 = interp1(beta0x,beta0,x0);
 end
 
 % Save resulting variables
 if save_initial
-    save('Crane_flowlinemodelInitialization.mat','h0','hb0','W0','A0','beta0','U0',...
+    save('Crane_flowlinemodelInitialization.mat','h0','hb0','W0','A0','U0',...
         'x0','smb0','smr0','Q0','c0');
     disp(['initialization variable saved in: ',pwd]);
 end
