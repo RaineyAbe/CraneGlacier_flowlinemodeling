@@ -1,14 +1,12 @@
-function [J,U,x,xcf,beta0x] = betaSolve(A0,A,beta0,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,fwd,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,smr0,smb0,Q0,H_max,U_min,F0)
-
-% interpolate beta0 to grid spacing
-beta0x = 0:round(x0(end)/(length(beta0))):round(x0(end)/(length(beta0)))*(length(beta0)-1); 
-beta = interp1(beta0x,beta0,x0,'pchip');
+function [J,U,x,xcf] = EfwdSolve(A0,beta0,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,fwd,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,smr0,smb0,Q0,H_max,U_min,F0)
     
 % define time stepping (s)
 dt = 0.01*3.1536e7;
 t_start = 0*3.1536e7;
 t_end = 9*3.1536e7;
 t = (t_start:dt:t_end);
+
+A=A0;
 
 try
     % run flowline model
@@ -97,9 +95,9 @@ try
         W = interp1(x0,W0,xn,'linear','extrap');
         H = interp1(x,H,xn,'linear','extrap');
         U = interp1(x,U,xn,'linear','extrap');
-        dUdx = interp1(x,dUdx,xn,'linear','extrap');
         A = interp1(x0,A0,xn,'linear','extrap');
-        beta = interp1(x,beta,xn,'linear','extrap'); beta(gl+1:end)=0;
+        E = interp1(x,E,xn,'linear','extrap');
+        beta = interp1(x0,beta0,xn,'linear','extrap'); beta(gl+1:end)=0;
         x = xn; dx = dxn;
 
         % calculate surface elevation
@@ -118,7 +116,7 @@ try
         N(N<0)=0; % cannot have negative values
 
         % Solve for new velocity
-        [U,dUdx,~,~,~] = U_convergence(x,U,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i);
+        [U,dUdx,~,~,~,~,~] = U_convergence_varyingE(x,U,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i);
 
         % calculate ice flux
         F = U.*H.*W; % ice flux (m^3 s^-1)
@@ -164,13 +162,11 @@ try
     % modified from Morlighem et al., 2010; Larour et al., 2012; Kyrke-Smith et al., 2018
     U_err = 33/3.1536e7; % m/s
     h_err = 22; % m
-    K = log(beta); K(~isfinite(K))=0;
-    J = nanmean(sqrt((U-interp1(x0,U_2018,x)).^2)-U_err)/nanmean(U_2018)+... % speed misfit term
-        nanmean(abs(gradient(gradient(K)))); % regularization term to penalize changes in beta gradient        
-        %nanmean(sqrt((h-interp1(x0,h_2018,x)).^2)-h_err)./nanmean(h_2018)+... % surface elevation misfit term
+    xcf_err = 15;
+    J = nanmean(sqrt((U-0.9*interp1(x0,U_2018,x)).^2)-U_err)/nanmean(0.9*U_2018)+... % speed misfit term
+        (abs(xcf-xcf_2018)-xcf_err)/xcf_2018;%+... calving front misfit
+        %nanmean(sqrt((h-interp1(x0,h_2018,x)).^2)-h_err)./nanmean(h_2018); % surface elevation misfit term
 
 catch
     J=NaN;
-end
-
 end

@@ -1,5 +1,5 @@
 %% solve the stress balance equations to obtain speed values (U)
-function [U,dUdx,vm,Un,dUndx,M,T] = U_convergence(x,U,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i)
+function [U,dUdx,Td,Tlatb,Tlon,vm] = U_convergence(x,U,U0,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i)
 
 b=1; 
 
@@ -32,7 +32,7 @@ while b
         
         dUdx(1) = (U(2)-U(1))./(x(2)-x(1)); % forward difference
         dUdx(2:c-1) = (U(3:c)-U(1:c-2))./(x(3:c)-x(1:c-2)); % central difference
-        dUdx(c) = (U(c-1)-U(c))/(x(c-1)-x(c)); % backward difference at c
+        dUdx(c) = (U(c)-U(c-1))/(x(c)-x(c-1)); % backward difference at c
         
         vm = ((E.*Am).^(-1/n)).*(abs(dUmdx)).^((1-n)/n);
         vm(vm>8e+16) = 8e+16; %set a maximum value for very low strain rates
@@ -59,18 +59,18 @@ while b
     end
     
     %set-up coefficient vectors for the linearized stress terms over the calving front
-    %[C(k)*U(k-1)+E(k)*U(k)+G(k)*U(k+1)=Td] 
-    % upper boundary condition
-    G(1) = -(beta(1).*N(1).*eta(1))-...
-            (((2*gamma(1).*H(1))./W(1)).*((5/(E*A(1).*W(1))).^(1/n))); 
-    T(1) = U(1).*0.9/G(1); %*(rho_i.*g.*H(1).*(h(1)-h(2))./(x(1)-x(2)));     
+    %[G_minus(k)*U(k-1)+G(k)*U(k)+G_plus(k)*U(k+1)=Td]  
     % coefficients up to calving front
     G_minus(2:c-1) = (2./(dx(2:c-1).^2)).*Hm(1:c-2).*vm(1:c-2); %for U(k-1)
     G(2:c-1) = (-2./(dx(2:c-1).^2)).*(Hm(1:c-2).*vm(1:c-2)+Hm(2:c-1).*vm(2:c-1))-...
             (beta(2:c-1).*N(2:c-1).*eta(2:c-1))-...
-            (((2.*gamma(2:c-1).*H(2:c-1))./W(2:c-1)).*((5./(E.*A(2:c-1).*W(2:c-1))).^(1/n))); %for U(k)
+            (((gamma(2:c-1).*H(2:c-1))./W(2:c-1)).*((5./(2*E.*A(2:c-1).*W(2:c-1))).^(1/n))); %for U(k)
     G_plus(2:c-1) = (2./(dx(2:c-1).^2)).*Hm(2:c-1).*vm(2:c-1); %for U(k+1)
     T(2:c-1) = (rho_i.*g.*H(2:c-1).*(h(1:c-2)-h(3:c))./(x(1:c-2)-x(3:c))); %gravitational driving stress     
+    % upper boundary condition
+    G(1) = G(2); %(-2./(dx(1)^2))*(H(1)*vm(1)+Hm(1)*vm(1))-(beta(1).*N(1).*eta(1))-...
+           % (((gamma(1).*H(1))./W(1)).*((5/(2*E*A(1).*W(1))).^(1/n))); 
+    T(1) = U(1).*G(1); %rho_i.*g.*H(1).*(h(1)-h(2))./(x(1)-x(2)); 
     % calving front condition
     G_minus(c) = -1;
     G(c) = 1;
@@ -79,7 +79,12 @@ while b
     %remove any NaNs from the coefficient vectors
     G_minus(isnan(G_minus)) = 0;
     G_plus(isnan(G_plus)) = 0;
-    T(isnan(T)) = 0;
+    T(isnan(T)) = 0;    
+    
+    % calculate stress terms
+    Td = T; 
+    Tlatb = -(G+G_plus+G_minus);
+    Tlon = Td-Tlatb;
     
     %create a sparse tri-diagonal matrix for the velocity coefficient vectors
     M = diag(G_minus(2:c),-1) + diag(G(1:c)) + diag(G_plus(1:c-1),1);

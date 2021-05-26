@@ -15,9 +15,9 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
     
 % define home path in directory and add necessary paths
 homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
-addpath([homepath,'scripts/sensitivityTests/']); % add path to U_convergence
+addpath([homepath,'scripts/3_sensitivityTests/']); % add path to U_convergence
 addpath([homepath,'../matlabFunctions/cmocean_v2.0/cmocean']);
-cd([homepath,'inputs-outputs/']);
+addpath([homepath,'inputs-outputs/']);
 
 dx0 = 200; % grid spacing (m)
 
@@ -30,6 +30,14 @@ F0=0; % inner boundary flux (m^3/s)
 dH_obs = load('Crane_dHdt_2009-2018.mat').dHdt.dH_total; % (m) total change in thickness 2009-2018
 h_obs = load('Crane_surfaceElevationObs.mat').h;
 h_obs_2019 = load('Crane_surfaceElevationObs.mat').h(36).surface;
+% Centerline
+cd([homepath,'inputs-outputs']);
+cl.X = load('Crane_centerline.mat').x; cl.Y = load('Crane_centerline.mat').y;
+% define x as distance along centerline
+cl.x = zeros(1,length(cl.X));
+for i=2:(length(cl.X))
+    cl.x(i)=sqrt((cl.X(i)-cl.X(i-1))^2+(cl.Y(i)-cl.Y(i-1))^2)+cl.x(i-1);
+end
 % terminus position 
 term = load('Crane_terminusPositions_2002-2019.mat').term;
 for i=1:length(term)
@@ -41,7 +49,7 @@ termx_obs = feval(fit(termDate_obs',termx_obs','poly2'),termDate_obs');
 term_obs = interp1(termDate_obs',termx_obs,2009:2017);
 clear term 
 % ice speed
-U_obsi = load('Crane_centerlineSpeeds_2007-2017.mat').U;
+U_obsi = load('Crane_centerlineSpeeds_2007-2018.mat').U;
 u = [6 8 9 14 15:19]; % indices of speeds to use annually (2009-2017)
 for i=1:length(u)
     U_obs(i).U = U_obsi(u(i)).speed;
@@ -75,7 +83,7 @@ dUdx0 = [(U0(1:end-1)-U0(2:end))./(x0(1:end-1)-x0(2:end)) 0]; % strain rate (1/s
 % find the location of the grounding line and the end of the ice-covered domain
 Hf = -(rho_sw./rho_i).*hb0; % flotation thickness (m)
 gl0 = find(Hf-H0>0,1,'first')-1; % grounding line location 
-H0(gl0:length(x0))=h0(gl0:end)*rho_sw/(rho_sw-rho_i); % buoyant thickness using surface
+H0(gl0+1:length(x0))=h0(gl0+1:end)*rho_sw/(rho_sw-rho_i); % buoyant thickness using surface
 H0(H0>=(h0-hb0))=h0(H0>=(h0-hb0))-hb0(H0>=(h0-hb0)); % thickness can't go beneath bed elevation
 H0(c0+1:end) = 0; % zero ice thickness past calving front
 
@@ -126,13 +134,14 @@ Fgl=zeros(1,length(t)); % ice mass flux across the grounding line
 for j=1:length(delta_smb0)
 
     % initialize variables
-    x=x0; H=H0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; hb=hb0; fwd=fwd0; beta=beta0;
+    x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; hb=hb0; H=H0; fwd=fwd0; beta=beta0;
+    
     XCF = NaN*ones(1,length(t)); XGL = NaN*ones(1,length(t)); % store xcf and xgl over time
-    
-    delta_smr = 0;%delta_smr0(j);
+
+    delta_smr = delta_smr0(j);
     delta_smb = 0;%delta_smb0(j);
-    delta_fwd = 0;%delta_fwd0(j);
-    
+    delta_fwd = 0; %delta_fwd0(j);
+
     %try
         % run flowline model
         for i=1:length(t)
@@ -177,6 +186,10 @@ for j=1:length(delta_smb0)
                     xcf = xcf_b;
                 end
                 xcf=xcf_s;
+                if xcf<20e3 || xcf > 70e3 || isnan(xcf)
+                    xcf = interp1(feval(fit(x',(h-crev_s)','poly1'),x),x,0,'linear','extrap');
+                    %xcf = x0(c0);
+                end
             end
             XCF(i) = xcf; % save calving front position over time
 
@@ -266,7 +279,7 @@ for j=1:length(delta_smb0)
                     hold on; grid on;
                     set(gca,'FontSize',14,'linewidth',2);
                     title('Ice Speed'); legend('Location','northeast');
-                    xlim([0 65]); ylim([0 2500]);
+                    xlim([0 65]); ylim([0 1500]);
                     xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})');
                     % ice speed
                     plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','2009');
@@ -308,13 +321,21 @@ for j=1:length(delta_smb0)
             N(N<0)=0; % cannot have negative values
 
             % Solve for new velocity
-            [U,dUdx,~,~,~,~,~] = U_convergence(x,U,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i);
-
+            [U,dUdx,Td,Tlatb,Tlon,vm] = U_convergence(x,U,U0,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i);
+            % plot stresses
+%             if t(i)==t_end                
+%                 figure(4); hold on; grid on; legend;
+%                 set(gca,'linewidth',2,'fontsize',18);
+%                 xlabel('distance along centerline (km)'); ylabel('kPa');
+%                 plot(x/10^3,(Tlon+Tlatb)/10^3,'linewidth',2,'displayname','\tau_{lon}+\tau_{lat}+\tau_{b}'); 
+%                 plot(x/10^3,Td/10^3,'--','linewidth',2,'displayname','\tau_{d}'); 
+%             end
+            
             % calculate ice flux
             F = U.*H.*W; % ice flux (m^3 s^-1)
             F(isnan(F))=0;
             F(1)=F(2)+F0;
-
+            
             % implement SMB, SMR, delta_SMB, & delta_SMR
             if t(i)/3.1536e7<10 % use original SMB & SMR for first 10 model years
                 smr = zeros(1,c);
@@ -404,7 +425,7 @@ for j=1:length(delta_smb0)
             set(gcf,'Position',[491 80 886 686]);
             set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
             xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
-            legend('Location','east'); xlim([0 70]); ylim([-1200 max(h)+100]);
+            legend('Location','east'); xlim([0 70]); ylim([min(hb0)-100 max(h)+100]);
             title(['SMR = + ',num2str(round(delta_smr.*3.1536e7,1)),'m/a, SMB = + ',...
                 num2str(round(delta_smb*3.1536e7,1)),'m/a, fwd = ',num2str(fwd),'m']);
             ax1=get(gca);
@@ -428,7 +449,7 @@ for j=1:length(delta_smb0)
                 title(['\Delta L=',num2str(round(delta_L)),'m, ','\DeltaH_{\mu}=',...
                     num2str(round(delta_H)),' m, ','\DeltaU_{\mu}=',...
                     num2str(round(delta_U.*3.1536e7)),' m/a']);
-                xlim([40 60]); ylim([-1000 300]);
+                xlim([x(gl)/10^3-5 x(c)/10^3+5]); ylim([min(hb0)-100 300]);
                 % ice surface
                 plot(x1(1:c1)/10^3,h1(1:c1),'-k','linewidth',2,'displayname','no change');
                 plot(x2(1:c2)/10^3,h2(1:c2),'color',[0.8 0 0],'linewidth',2,'displayname','no change');
@@ -446,7 +467,7 @@ for j=1:length(delta_smb0)
 
         % save figure
         if save_figure && ishandle(10)
-            cd([homepath,'scripts/sensitivityTests/results/']);
+            cd([homepath,'scripts/3_sensitivityTests/results/']);
             % Save figure for test
             if delta_fwd==0
                 fileName = ['SMR',num2str(delta_smr),'_SMB',num2str(delta_smb)];
@@ -463,7 +484,7 @@ for j=1:length(delta_smb0)
 
         % save geometry & speed
         if save_final
-            cd([homepath,'scripts/sensitivityTests/results/']);
+            cd([homepath,'scripts/3_sensitivityTests/results/']);
             if delta_fwd==0 && delta_smr==0 && delta_smb==0 
                 save(['SMR0_SMB0_geom.mat'],'h2','H2','c2','U2','gl2','x2','fwd2','Fgl2','XGL2','XCF2');
             elseif delta_fwd==0 
@@ -483,5 +504,4 @@ for j=1:length(delta_smb0)
     %end
     
 end
-
 

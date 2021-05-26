@@ -1,4 +1,4 @@
-function [J] = fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,fwd,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,smr0,smb0,Q0,sigma_b,H_max,U_min,xcf_2019)
+function [J,x,U,xcf] = fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,fwd,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,smr0,smb0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018)
 
 % define time stepping (s)
 dt = 0.01*3.1536e7;
@@ -44,6 +44,10 @@ try
                 xcf = xcf_b;
             end
             xcf=xcf_s;
+            if xcf<20e3 || xcf > 70e3 || isnan(xcf)
+                xcf = interp1(feval(fit(x',(h-crev_s)','poly1'),x),x,0,'linear','extrap');
+                %xcf = x0(c0);
+            end
         end
 
         % calculate the thickness required to remain grounded at each grid cell
@@ -94,8 +98,8 @@ try
         W = interp1(x0,W0,xn,'linear','extrap');
         H = interp1(x,H,xn,'linear','extrap');
         U = interp1(x,U,xn,'linear','extrap');
+        dUdx = interp1(x,dUdx,xn,'linear','extrap');
         A = interp1(x0,A0,xn,'linear','extrap');
-        %E = interp1(x,E,xn,'linear','extrap');
         beta = interp1(x0,beta0,xn,'linear','extrap'); beta(gl+1:end)=0;
         x = xn; dx = dxn;
 
@@ -132,7 +136,7 @@ try
                 hold on; grid on;
                 set(gca,'FontSize',14,'linewidth',2);
                 title('Ice Speed'); legend('Location','northeast');
-                xlim([0 65]); ylim([0 2500]);
+                xlim([0 65]); ylim([0 1500]);
                 xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})');
                 % ice speed
                 plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','2009');
@@ -145,7 +149,7 @@ try
                 % terminus & grounding line positions
                 plot(x(c)/10^3,t(i)./3.1536e7,'.','markersize',15,'color',col(i,:),'displayname','2009');
                 plot(ax3,x(gl)./10^3,t(i)./3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off');
-            elseif mod(i-1,round(length(t)/20))==0 % display every length(t)/20
+            elseif mod(i-1,round(length(t)/10))==0 % display every length(t)/20
                 figure(1);
                 % ice surface
                 plot(ax1,x(1:c)/10^3,h(1:c),'-','color',col(i,:),'linewidth',2,'displayname',num2str(round(t(i)./3.1536e7)+2009));
@@ -174,7 +178,7 @@ try
         N(N<0)=0; % cannot have negative values
 
         % Solve for new velocity
-        [U,dUdx,~,~,~,~,~] = U_convergence(x,U,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i);
+        [U,dUdx,~,~,~] = U_convergence(x,U,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i);
 
         % calculate ice flux
         F = U.*H.*W; % ice flux (m^3 s^-1)
@@ -200,34 +204,39 @@ try
         Hn(Hn < 0) = 0; % remove negative values
         H = Hn; % set as the new thickness value
 
-        Fgl(i) = F(gl)*pi*1/4*917*1e-12*3.1536e7; % Gt/a
-
         % stop the model if it behaves unstably (monitored by ice thickness and speed)
         if max(H) > H_max
-            disp(['Adjust dt']);
+            disp([num2str(fwd),' m failed']);
+            J = NaN;           
             break;
         end
         if mean(U) < U_min/3.1536e7
-            disp('Too slow!');
+            disp([num2str(fwd),' m failed']);
+            J = NaN;
             break;
         end
         if any(~isfinite(H(1:c))) || any(~isfinite(U(1:c))) || any(~isfinite(h(1:c)))
-            disp('non finite values');
+            disp([num2str(fwd),' m failed']);
+            J = NaN;  
             break;
         end
 
+        if t(i)==t_end
+            % calculate cost of resulting terminus position
+            % modified from Morlighem et al., 2010; Larour et al., 2012; Kyrke-Smith et al., 2018
+            U_err = 33/3.1536e7; % m/s
+            h_err = 22; % m
+            xcf_err = 15; % m
+            J = abs((xcf-xcf_2018-xcf_err)/xcf_2018);%+... % surface elevation misfit term
+            %nanmean(sqrt((U-interp1(x0,U_2018,x)).^2)-U_err)/nanmean(U_2018);%+... % speed misfit term
+        end
+        
     end
 
-    % calculate cost of resulting terminus position
-    % modified from Morlighem et al., 2010; Larour et al., 2012; Kyrke-Smith et al., 2018
-    xcf_err = 15; % m
-    J = abs((xcf-xcf_2019-xcf_err)); % calving front position error
-
+    
 catch
-    J=NaN;
+    J=NaN; x=NaN; U=NaN; xcf=NaN;
     disp([num2str(fwd),' m failed']);
 end
-
-
 
 end

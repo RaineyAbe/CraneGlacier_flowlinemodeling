@@ -49,10 +49,14 @@ end
 h0(isnan(h0))=0; % replace NaNs with zeros
 
 % 3. glacier bed elevation
-hb0 = load('Crane_observedBed_Tate.mat').hb.hb0;
+%hb0 = load('Crane_observedBed_Tate.mat').hb.hb0;
+hb0 = load('Crane_delineatedBedWidthAveraged.mat').hb_adj;
 if size(hb0)==[186 1]
     hb0=hb0';
 end
+% if size(hb0_adj)==[186 1]
+%     hb0_adj=hb0_adj';
+% end
 
 % 4. glacier width
 W0 = load('Crane_calculatedWidth.mat').width.W;
@@ -61,28 +65,22 @@ if size(W0)==[186 1]
 end
 
 % 5. ice surface speed
-U = load('Crane_centerlineSpeeds_2007-2017.mat').U(13).speed;
-if size(U)==[186 1]
-    U=U';
+U0 = movmean(load('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg(5).speed_linearextrap,2);
+if size(U0)==[186 1]
+    U0=U0';
 end
-    % use first point in 2013 speed profile
-    % (first real data point near ice divide - speed does not seem to
-    % change much over time in this region of the glacier)
-    U(1) = load('Crane_centerlineSpeeds_2007-2017.mat').U(4).speed(1);
-    % fit smoothing spline to fill in gaps
-    U0 = feval(fit(x0(~isnan(U))',U(~isnan(U))','linearinterp'),x0);
-    if size(U0)==[186,1]
-        U0=U0';
-    end
 
 % 6. rate factor, A & adjusted rate factor
-A0 = load('Crane_adjustedAnnualRateFactor_2009-2019.mat').A_adj(1).A_adj;
-%A0 = polyval(polyfit(x0,A0,1),x0);
-%A = load('Crane_rateFactorA.mat').A;
-%A0 = polyval(polyfit(x0,A,1),x0);
+%A0 = load('Crane_rateFactorA.mat').A;
+% use a linear trendline
+%A0 = feval(fit(x0',A0,'poly1'),x0);
+A0 = load('Crane_adjustedRateFactor.mat').A_adj;
 if size(A0)==[186 1]
     A0=A0';
 end
+% if size(A0_adj)==[186 1]
+%     A0_adj=A0_adj';
+% end
 
 % 7. surface mass balance w/ uncertainty, smb and smb_err
 %smb = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).smb_adj; % m/a
@@ -91,7 +89,7 @@ end
 % replace NaN values with the last SMB value near the terminus
 smb0 = load('Crane_downscaled2009SMB.mat').smb.cl_yr'./3.1536e7; % m/s
 smb0(isnan(smb0)) = smb0(find(isnan(smb0),1,'first')-1); 
-smb0=smb0+0.89/3.1536e7; % add 10%
+%smb0=smb0+0.89/3.1536e7; % add 10%
 smb0=movmean(smb0,20);
 
 % 8. submarine melting rate, smr
@@ -124,9 +122,11 @@ if regrid
     xi = 0:200:L; % new grid vector
     h0 = interp1(x0,h0,xi); h0(find(isnan(h0),1,'first'):end) = h0(find(isnan(h0),1,'first')-1);
     hb0 = interp1(x0,hb0,xi); hb0(find(isnan(hb0),1,'first'):end) = hb0(find(isnan(hb0),1,'first')-1);
+    %hb0_adj = interp1(x0,hb0_adj,xi); hb0_adj(find(isnan(hb0_adj),1,'first'):end) = hb0_adj(find(isnan(hb0_adj),1,'first')-1);
     W0 = interp1(x0,W0,xi); W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);
     U0 = interp1(x0,U0,xi); U0(find(isnan(U0),1,'first'):end) = U0(find(isnan(U0),1,'first')-1);
     A0 = interp1(x0,A0,xi); A0(find(isnan(A0),1,'first'):end) = A0(find(isnan(A0),1,'first')-1);
+    %A0_adj = interp1(x0,A0_adj,xi); A0_adj(find(isnan(A0_adj),1,'first'):end) = A0_adj(find(isnan(A0_adj),1,'first')-1);
     smb0 = interp1(x0,smb0,xi); smb0(find(isnan(smb0),1,'first'):end) = smb0(find(isnan(smb0),1,'first')-1);
     Q0 = interp1(x0,Q0,xi); Q0(find(isnan(Q0),1,'first'):end) = Q0(find(isnan(Q0),1,'first')-1);
     c0 = dsearchn(xi',x0(c0));
@@ -136,7 +136,7 @@ end
 % Save resulting variables
 if save_initial
     save('Crane_flowlinemodelInitialization.mat','h0','hb0','W0','A0','U0',...
-        'x0','smb0','smr0','Q0','c0');
+        'x0','smb0','smr0','Q0','c0','-append');
     disp(['initialization variable saved in: ',pwd]);
 end
 
