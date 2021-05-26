@@ -87,10 +87,8 @@ end
 %smb_err = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).sigma_smb; % m/a
 %smb0 = [smb' smb(end).*ones(1,length(x0)-length(smb))]./3.1536e7; % m/s
 % replace NaN values with the last SMB value near the terminus
-smb0 = load('Crane_downscaled2009SMB.mat').smb.cl_yr'./3.1536e7; % m/s
+smb0 = load('Crane_downscaledSMB_2002-2019.mat').SMB(8).smb_adj./3.1536e7; % m/s
 smb0(isnan(smb0)) = smb0(find(isnan(smb0),1,'first')-1); 
-%smb0=smb0+0.89/3.1536e7; % add 10%
-smb0=movmean(smb0,20);
 
 % 8. submarine melting rate, smr
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:

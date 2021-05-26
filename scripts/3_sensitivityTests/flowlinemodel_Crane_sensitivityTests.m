@@ -106,7 +106,7 @@ W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);
 close all; 
 
 save_figure = 0;    % = 1 to save resulting figure
-save_final = 1;     % = 1 to save final geometry and speed 
+save_final = 0;     % = 1 to save final geometry and speed 
 plot_timeSteps = 0; % = 1 to plot geometry, speed, cf/gl positions every decade
 timeseries_save = 0; % = 1 to save figures for time series
 
@@ -138,11 +138,11 @@ for j=1:length(delta_smb0)
     
     XCF = NaN*ones(1,length(t)); XGL = NaN*ones(1,length(t)); % store xcf and xgl over time
 
-    delta_smr = delta_smr0(j);
-    delta_smb = 0;%delta_smb0(j);
-    delta_fwd = 0; %delta_fwd0(j);
+    delta_smr = 0;%delta_smr0(j);
+    delta_smb = delta_smb0(j);
+    delta_fwd = 0;%delta_fwd0(j);
 
-    %try
+    try
         % run flowline model
         for i=1:length(t)
 
@@ -419,6 +419,11 @@ for j=1:length(delta_smb0)
 
         % plot results
         if t(i)==t_end
+            smb = interp1(x0,smb0,x);
+            for k=1:c
+                smb(k) = smb(k)+delta_smb0(j)*(h0(1)-h(k))/(h0(1)-h0(c0)); 
+            end
+            disp(['Mean SMB = ',num2str(nanmean(smb)*3.1536e7),' m/yr']);
             h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; fwd2=fwd; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
             figure(10); clf % sensitivity test changes
             hold on; grid on;
@@ -499,9 +504,9 @@ for j=1:length(delta_smb0)
             disp('geometry not saved.');
         end
         
-    %catch
-    %    disp(['iteration ',num2str(j),' failed']);
-    %end
+    catch
+        disp(['iteration ',num2str(j),' failed']);
+    end
     
 end
 
