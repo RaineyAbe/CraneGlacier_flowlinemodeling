@@ -15,6 +15,7 @@ close all; clear all;
 homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
 addpath([homepath,'matlabFunctions/']);
 addpath([homepath,'matlabFunctions/gridLegend_v1.4/']);
+addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']);
 
 % Load Crane centerline
 cd([homepath,'inputs-outputs']);
@@ -322,7 +323,7 @@ eta_dot_cum = load('Crane_adjustedRateFactor.mat').eta_dot_cum; % annual cumulat
 col1 = parula(length(eta_dot_cum(:,1))); % color scheme for plotting
 
 figure(3); clf; 
-set(gcf,'Position',[100 100 1000 400]);
+set(gcf,'Position',[100 100 1000 500]);
 ax1 = axes('position',[0.07 0.15 0.42 0.78]); 
     set(ax1,'linewidth',2,'fontsize',fontsize,'fontname',fontname);
     xlabel('Distance Along Centerline (km)'); xlim([0 45]);  
@@ -330,19 +331,19 @@ ax1 = axes('position',[0.07 0.15 0.42 0.78]);
     ylabel('Cumulative Strain');
     hold on; grid on; legend('Location','northwest');
     for i=2:length(eta_dot_cum(:,1))
-        plot(ax1,cl.xi(1:135)/10^3,eta_dot_cum(i,1:135),'color',col1(i,:),'linewidth',linewidth-1,'HandleVisibility','off'); drawnow
+        plot(ax1,cl.xi(1:135)/10^3,movmean(eta_dot_cum(i,1:135),2),'color',col1(i,:),'linewidth',linewidth,'displayname',num2str(i+2006)); drawnow
     end
-    plot(ax1,cl.xi(1:135)/10^3,nanmean(eta_dot_cum(:,1:135),1),'-k','linewidth',linewidth,'displayname','mean')
+    plot(ax1,cl.xi(1:135)/10^3,nanmean(eta_dot_cum(:,1:135),1),'-k','linewidth',linewidth+1,'displayname','mean')
     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.15+min(get(gca,'YLim')),...
         '(a)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',fontname);    
-cb = colorbar('position',[0.13 0.5 0.02 0.3],'fontname',fontname,...
-    'fontsize',fontsize-3,'Ticks',0:0.5:1,'TickLabels',[{'2009'},{'2013'},{'2017'}]);
+%cb = colorbar('position',[0.13 0.5 0.02 0.3],'fontname',fontname,...
+%    'fontsize',fontsize-3,'Ticks',0:0.5:1,'TickLabels',[{'2009'},{'2013'},{'2017'}]);
 ax2 = axes('position',[0.57 0.15 0.42 0.78]);
     set(ax2,'linewidth',2,'fontsize',fontsize,'fontname',fontname);
     xlabel('Distance Along Centerline (km)'); ylabel('A (Pa^{-3} a^{-1})');
     hold on; grid on; xlim([0 45]); legend('Location','northwest');
-    plot(ax2,cl.xi(1:135)/10^3,A_adj(1:135)*3.1536e7,'-k','linewidth',linewidth,'displayname','A_{adj}');
     plot(ax2,cl.xi(1:135)/10^3,A(1:135)*3.1536e7,'--k','linewidth',linewidth,'displayname','A');
+    plot(ax2,cl.xi(1:135)/10^3,A_adj(1:135)*3.1536e7,'-k','linewidth',linewidth,'displayname','A_{adj}');
     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.15+min(get(gca,'YLim')),...
         '(b)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',fontname); 
 
@@ -423,7 +424,7 @@ end
 
 close all;
 
-save_figures = 1;    % = 1 to save figure
+save_figures = 0;    % = 1 to save figure
 fontsize = 18;      % font size
 fontname = 'Arial'; % font name
 linewidth = 2;      % line width
@@ -551,7 +552,7 @@ while loop==1
     ax6=axes('position',[0.69 0.41 0.225 0.25]); hold on; grid on; % f) gl/cf
         set(gca,'fontsize',fontsize,'linewidth',2);
         ylabel('SMB_{mean} (m a^{-1})');
-        xlim([35 70]); ylim([smb_mean(1)- nanmean(smb0)*3.1536e7+1]);              
+        xlim([35 70]); ylim([smb_mean(end)-0.5 smb_mean(1)+0.5]);              
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.89+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
@@ -608,7 +609,7 @@ while loop==1
     ax11 = axes('position',[0.39 0.18 0.27 0.75]); hold on;
         set(gca,'fontsize',fontsize,'linewidth',2); grid on;
         xlabel('SMB_{mean} (m a^{-1})');
-        xlim([nanmean(smb0(1:135)*3.1536e7-11) nanmean(smb0(1:135)*3.1536e7+1)]); ylim([0.4 1]);
+        xlim([smb_mean(end)-0.5 smb_mean(1)+0.5]); ylim([0.4 1]);
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.08+min(get(gca,'YLim')),...
@@ -679,8 +680,8 @@ for i=1:length(Ismr)
     if i==1
         yyaxis left; hdl(1) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-k','linewidth',linewidth); 
             hdl(2) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'--k','linewidth',linewidth); 
-            plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',col2(1,:),'linewidth',linewidth);
-        yyaxis right; hdl(3) = plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'color',col2(1,:),'linewidth',linewidth);
+            hdl(3) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',col2(1,:),'linewidth',linewidth);
+        yyaxis right; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'--','color',col2(1,:),'linewidth',linewidth);
     elseif i==length(Ismr)
         yyaxis left; hdl(4) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',col2(2,:),'linewidth',linewidth);
         yyaxis right; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'--','color',col2(2,:),'linewidth',linewidth);        
@@ -727,7 +728,7 @@ for i=1:length(Ismb)
         plot(ax6,x2(c2)/1e3,smb_mean(i),'o','markersize',10,'linewidth',linewidth,'color',col1(i,:));        
     % ice mass discharge
     figure(6);
-    plot(ax11,nanmean(files(Ismb(i)).change+smb0(1:135)*3.1536e7),Fsmb(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
+    plot(ax11,smb_mean(i),Fsmb(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
     figure(7);
     if i==length(Ismb)
         yyaxis left; hdl(5) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',col2(3,:),'linewidth',linewidth);
@@ -1144,6 +1145,51 @@ if save_figure
     saveas(gcf,'regionalTermini.png','png');
     disp('figure 6 saved');
 end
+
+%% Width segments
+
+save_figure = 1; % = 1 to save figure
+linewidth = 2; 
+fontsize = 18;
+fontname = 'Arial';
+
+% Load Landsat image, width, width segments, and glacier extent polygon
+cd([homepath,'data/Imagery/']);
+ls = dir('LC08*20201104_01_T2_B8.TIF');
+[LS.im,R] = readgeoraster(ls.name); [LS.ny,LS.nx] = size(LS.im);
+% Polar stereographic coordinates of image boundaries
+LS.x = linspace(min(R.XWorldLimits),max(R.XWorldLimits),LS.nx);
+LS.y = linspace(min(R.YWorldLimits),max(R.YWorldLimits),LS.ny);
+cd([homepath,'inputs-outputs/']);
+extx = load('Crane_calculatedWidth.mat').width.extx;
+exty = load('Crane_calculatedWidth.mat').width.exty;
+W = load('Crane_calculatedWidth.mat').width.W;
+ol = load('Crane_glacierOutline.mat').ol;
+        
+% Plot
+col = flipud(cmocean('ice',5)); % color scheme for potting
+figure(9); clf
+set(gcf,'units','pixels','position',[200 200 1000 800]);
+ax1 = axes('position',[0.08 0.1 0.6 0.85]);
+    hold on; imagesc(LS.x/10^3,LS.y/10^3,flipud(LS.im)); colormap("gray");
+    set(gca,'fontsize',fontsize,'linewidth',linewidth); 
+    xlabel('Easting (km)'); ylabel('Northing (km)'); 
+    legend('Location','east','color',[0.8,0.8,0.8]);
+    xlim([-2.43e3 -2.385e3]); ylim([1.21e3 1.285e3]); 
+    fill(ol.x/10^3,ol.y/10^3,col(1,:),'displayname','glacier extent');
+    for i=1:length(extx)
+        if i==1
+            plot(extx(i,:)/10^3,exty(i,:)/10^3,'color',col(2,:),'linewidth',linewidth,'displayname','width segments');
+        else
+            plot(extx(i,:)/10^3,exty(i,:)/10^3,'color',col(2,:),'linewidth',linewidth,'HandleVisibility','off');        
+        end
+    end
+    plot(cl.X/10^3,cl.Y/10^3,'color',col(3,:),'linewidth',linewidth,'displayname','centerline');
+ax2 = axes('position',[0.75 0.15 0.2 0.7]);
+    hold on; set(gca,'fontsize',fontsize,'linewidth',linewidth,'YAxisLocation','right'); 
+    xlabel('Width (m)'); yyaxis right; ylabel('Distance Along Centerline (km)'); 
+    plot(cl.xi/10^3,W,'linewidth',linewidth
+
 
 
 

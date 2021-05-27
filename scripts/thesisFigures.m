@@ -15,6 +15,7 @@ close all; clear all;
 homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
 addpath([homepath,'matlabFunctions/']);
 addpath([homepath,'matlabFunctions/gridLegend_v1.4/']);
+addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']);
 
 % Load Crane centerline
 cd([homepath,'inputs-outputs']);
@@ -195,10 +196,10 @@ linewidth = 2;      % line width
     
 if save_figure
     set(gcf,'InvertHardCopy','off'); % save colors as is
-    cd([homepath,'../figures']);
-    saveas(gcf,'fig1.1_studyArea.png','png');
+    cd([homepath,'figures/']);
+    saveas(gcf,'studyArea.png','png');
     cd([homepath,'../write-ups/Thesis/figures']);
-    saveas(gcf,'fig1.1_studyArea.png','png');
+    saveas(gcf,'studyArea.png','png');
     disp('figure 1 saved.');    
 end
 
@@ -299,7 +300,9 @@ ax4=axes('Position',[0.55 0.1 0.35 0.35],'linewidth',2,'fontsize',fontsize,'font
 % Save figure
 if save_figure
     cd([homepath,'../write-ups/Thesis/figures']);
-    saveas(gcf,'centerlineObservations.png','png');   
+    saveas(gcf,'centerlineObservations.png','png'); 
+    cd([homepath,'figures/']);
+    saveas(gcf,'centerlineObservations.png','png');     
     disp('figure 2 saved.');
 end
 
@@ -322,7 +325,7 @@ eta_dot_cum = load('Crane_adjustedRateFactor.mat').eta_dot_cum; % annual cumulat
 col1 = parula(length(eta_dot_cum(:,1))); % color scheme for plotting
 
 figure(3); clf; 
-set(gcf,'Position',[100 100 1000 400]);
+set(gcf,'Position',[100 100 1000 500]);
 ax1 = axes('position',[0.07 0.15 0.42 0.78]); 
     set(ax1,'linewidth',2,'fontsize',fontsize,'fontname',fontname);
     xlabel('Distance Along Centerline (km)'); xlim([0 45]);  
@@ -330,19 +333,19 @@ ax1 = axes('position',[0.07 0.15 0.42 0.78]);
     ylabel('Cumulative Strain');
     hold on; grid on; legend('Location','northwest');
     for i=2:length(eta_dot_cum(:,1))
-        plot(ax1,cl.xi(1:135)/10^3,eta_dot_cum(i,1:135),'color',col1(i,:),'linewidth',linewidth-1,'HandleVisibility','off'); drawnow
+        plot(ax1,cl.xi(1:135)/10^3,movmean(eta_dot_cum(i,1:135),2),'color',col1(i,:),'linewidth',linewidth,'displayname',num2str(i+2006)); drawnow
     end
-    plot(ax1,cl.xi(1:135)/10^3,nanmean(eta_dot_cum(:,1:135),1),'-k','linewidth',linewidth,'displayname','mean')
+    plot(ax1,cl.xi(1:135)/10^3,nanmean(eta_dot_cum(:,1:135),1),'-k','linewidth',linewidth+1,'displayname','mean')
     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.15+min(get(gca,'YLim')),...
         '(a)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',fontname);    
-cb = colorbar('position',[0.13 0.5 0.02 0.3],'fontname',fontname,...
-    'fontsize',fontsize-3,'Ticks',0:0.5:1,'TickLabels',[{'2009'},{'2013'},{'2017'}]);
+%cb = colorbar('position',[0.13 0.5 0.02 0.3],'fontname',fontname,...
+%    'fontsize',fontsize-3,'Ticks',0:0.5:1,'TickLabels',[{'2009'},{'2013'},{'2017'}]);
 ax2 = axes('position',[0.57 0.15 0.42 0.78]);
     set(ax2,'linewidth',2,'fontsize',fontsize,'fontname',fontname);
     xlabel('Distance Along Centerline (km)'); ylabel('A (Pa^{-3} a^{-1})');
     hold on; grid on; xlim([0 45]); legend('Location','northwest');
-    plot(ax2,cl.xi(1:135)/10^3,A_adj(1:135)*3.1536e7,'-k','linewidth',linewidth,'displayname','A_{adj}');
     plot(ax2,cl.xi(1:135)/10^3,A(1:135)*3.1536e7,'--k','linewidth',linewidth,'displayname','A');
+    plot(ax2,cl.xi(1:135)/10^3,A_adj(1:135)*3.1536e7,'-k','linewidth',linewidth,'displayname','A_{adj}');
     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.15+min(get(gca,'YLim')),...
         '(b)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',fontname); 
 
@@ -352,6 +355,8 @@ if save_figure
     % save in thesis figures folder
     cd([homepath,'../write-ups/Thesis/figures/']);
     saveas(gcf,'cumulativeStrains.png','png');  
+    cd([homepath,'figures/']);
+    saveas(gcf,'cumulativeStrains.png','png');      
     disp('figure 3 saved.'); 
 end
         
@@ -378,8 +383,8 @@ U_2018 = load('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg(20
 
 % plot results
 figure(4); clf
-set(gcf,'Position',[272 143 1000 400]);
-ax1=axes; set(gca,'position',[0.08 0.15 0.36 0.8]);
+set(gcf,'Position',[272 143 1000 700]);
+%ax1=axes; set(gca,'position',[0.08 0.15 0.36 0.8]);
     set(gca,'fontsize',fontsize,'fontname',fontname,'linewidth',2);
     hold on; grid on; legend('Location','northwest'); xlim([0 45]);    
     xlabel('Distance Along Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})'); 
@@ -389,29 +394,29 @@ ax1=axes; set(gca,'position',[0.08 0.15 0.36 0.8]);
     plot(betax(1:dsearchn(betax',x0(c0)))./10^3,U(1:dsearchn(betax',x0(c0))).*3.1536e7,'--k','displayname','U_{mod}','linewidth',2); 
     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
         '(a)','fontsize',fontsize,'linewidth',1,'backgroundcolor','w');   
-ax2=axes; set(gca,'position',[0.62 0.15 0.36 0.8]);
-    set(gca,'fontsize',fontsize,'fontname',fontname,'linewidth',linewidth);
-    xlabel('Distance Along Centerline (km)'); ylabel('R_{xx} (kPa)');
-    hold on; grid on; 
-    plot(x./10^3,Rxx./10^3,'linewidth',linewidth); 
-    ax=get(gca); % get current axes
-    for i=1:length(ITRxx)
-        plot([x(ITRxx(i)) x(ITRxx(i))]./10^3,[ax.YLim(1) ax.YLim(2)],'--k','linewidth',linewidth-1.5);
-    end  
-    xlim([0 45]);
-    text(5,-1000,['\Deltax_{mean} = ',num2str(round(mean(diff(x(ITRxx))))/10^3),'km'],...
-        'fontsize',fontsize,'linewidth',1,'backgroundcolor','w','color','k','fontname',fontname);    
-    text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
-        '(b)','fontsize',fontsize-1,'linewidth',1,'backgroundcolor','w','fontname',fontname);    
-    text(27.8,-200,'\Deltax','fontsize',13,'fontweight','bold','color','k');
-    annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','}', ...
-       'HeadStyle','none','LineStyle', 'none', 'TextRotation',90,'Position',[0.85 0.565 0 0],...
-       'FontSize',24,'FontName',fontname,'TextColor','k','fontweight','bold');
+% ax2=axes; set(gca,'position',[0.62 0.15 0.36 0.8]);
+%     set(gca,'fontsize',fontsize,'fontname',fontname,'linewidth',linewidth);
+%     xlabel('Distance Along Centerline (km)'); ylabel('R_{xx} (kPa)');
+%     hold on; grid on; 
+%     plot(x./10^3,Rxx./10^3,'linewidth',linewidth); 
+%     ax=get(gca); % get current axes
+%     for i=1:length(ITRxx)
+%         plot([x(ITRxx(i)) x(ITRxx(i))]./10^3,[ax.YLim(1) ax.YLim(2)],'--k','linewidth',linewidth-1.5);
+%     end  
+%     xlim([0 45]);
+%     text(5,-1000,['\Deltax_{mean} = ',num2str(round(mean(diff(x(ITRxx))))/10^3),'km'],...
+%         'fontsize',fontsize,'linewidth',1,'backgroundcolor','w','color','k','fontname',fontname);    
+%     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
+%         '(b)','fontsize',fontsize-1,'linewidth',1,'backgroundcolor','w','fontname',fontname);    
+%     text(27.8,-200,'\Deltax','fontsize',13,'fontweight','bold','color','k');
+%     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','}', ...
+%        'HeadStyle','none','LineStyle', 'none', 'TextRotation',90,'Position',[0.85 0.565 0 0],...
+%        'FontSize',24,'FontName',fontname,'TextColor','k','fontweight','bold');
    
 if save_figure
     figure(4);
     % save in figures folder
-    cd([homepath,'../figures/']);
+    cd([homepath,'figures/']);
     saveas(gcf,'betaSolution.png','png');  
     % save in thesis figures folder
     cd([homepath,'../write-ups/Thesis/figures/']);
@@ -803,14 +808,14 @@ T_fwd = table(dfwd,round(dL),round(dgl),round(dHgl),round(dUgl),Ffwd,'VariableNa
 
 % save figures 
 if save_figures
-    % save in thesis figures folders
     cd([homepath,'../write-ups/Thesis/figures/']);
-    figure(5);    
-    saveas(gcf,'sensitivityTests_geom+speed.png','png');
-    figure(6);
-    saveas(gcf,'sensitivityTests_discharge.png','png');
-    figure(7);
-    saveas(gcf,'sensitivityTests_FglXcf.png','png');
+    figure(5); saveas(gcf,'sensitivityTests_geom+speed.png','png');
+    figure(6); saveas(gcf,'sensitivityTests_discharge.png','png');
+    figure(7); saveas(gcf,'sensitivityTests_FglXcf.png','png');
+    cd([homepath,'figures/']);
+    figure(5); saveas(gcf,'sensitivityTests_geom+speed.png','png');
+    figure(6); saveas(gcf,'sensitivityTests_discharge.png','png');
+    figure(7); saveas(gcf,'sensitivityTests_FglXcf.png','png');    
     disp('figures 5-7 saved.');
 end
 
@@ -1143,6 +1148,65 @@ if save_figure
     cd([homepath,'../write-ups/Thesis/figures/']);
     saveas(gcf,'regionalTermini.png','png');
     disp('figure 6 saved');
+end
+
+%% Width segments
+
+save_figure = 1; % = 1 to save figure
+linewidth = 2; 
+fontsize = 18;
+fontname = 'Arial';
+
+% Load Landsat image, width, width segments, and glacier extent polygon
+cd([homepath,'data/Imagery/']);
+ls = dir('LC08*20201104_01_T2_B8.TIF');
+[LS.im,R] = readgeoraster(ls.name); [LS.ny,LS.nx] = size(LS.im);
+% Polar stereographic coordinates of image boundaries
+LS.x = linspace(min(R.XWorldLimits),max(R.XWorldLimits),LS.nx);
+LS.y = linspace(min(R.YWorldLimits),max(R.YWorldLimits),LS.ny);
+cd([homepath,'inputs-outputs/']);
+extx = load('Crane_calculatedWidth.mat').width.extx;
+exty = load('Crane_calculatedWidth.mat').width.exty;
+W = load('Crane_calculatedWidth.mat').width.W;
+ol = load('Crane_glacierOutline.mat').ol;
+        
+% Plot
+col = flipud(cmocean('ice',5)); % color scheme for potting
+figure(9); clf
+set(gcf,'units','pixels','position',[200 200 1000 800]);
+ax1 = axes('position',[0.08 0.1 0.6 0.85]);
+    hold on; imagesc(LS.x/10^3,LS.y/10^3,flipud(LS.im)); colormap("gray");
+    set(gca,'fontsize',fontsize,'linewidth',linewidth); 
+    xlabel('Easting (km)'); ylabel('Northing (km)'); 
+    legend('Location','east','color',[0.8,0.8,0.8]);
+    xlim([-2.43e3 -2.385e3]); ylim([1.21e3 1.285e3]); 
+    fill(ol.x/10^3,ol.y/10^3,col(1,:),'displayname','glacier extent');
+    for i=1:length(extx)
+        if i==1
+            plot(extx(i,:)/10^3,exty(i,:)/10^3,'color',col(2,:),'linewidth',linewidth,'displayname','width segments');
+        else
+            plot(extx(i,:)/10^3,exty(i,:)/10^3,'color',col(2,:),'linewidth',linewidth,'HandleVisibility','off');        
+        end
+    end
+    plot(cl.X/10^3,cl.Y/10^3,'color',col(3,:),'linewidth',linewidth,'displayname','centerline');
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
+            '(a)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1); 
+ax2 = axes('position',[0.73 0.2 0.2 0.65]);
+    hold on; set(gca,'fontsize',fontsize,'linewidth',linewidth,'YTick',[],'XDir','reverse'); 
+    xlabel('Width (km)'); yyaxis right; ylabel('Distance Along Centerline (km)'); 
+    plot(W/10^3,cl.xi/10^3,'-k','linewidth',linewidth); grid on; 
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.95+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
+            '(b)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1); 
+        
+% save figure
+if save_figure
+    cd([homepath,'figures/']);
+    saveas(gcf,'Crane_widthSegments.png','png');
+    cd([homepath,'../write-ups/Thesis/figures/']);
+    saveas(gcf,'Crane_widthSegments.png','png');
+    disp('figure 9 saved');
 end
 
 
