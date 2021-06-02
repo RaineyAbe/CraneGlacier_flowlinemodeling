@@ -133,13 +133,13 @@ Fgl=zeros(1,length(t)); % ice mass flux across the grounding line
 for j=1:length(delta_smb0)
 
     % initialize variables
-    x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; hb=hb0; H=H0; fwd=fwd0; beta=beta0;
+    x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; hb=hb0; H=H0; beta=beta0; fwd=fwd0; 
     
     XCF = NaN*ones(1,length(t)); XGL = NaN*ones(1,length(t)); % store xcf and xgl over time
 
-    delta_smr = 0;%delta_smr0(j);
+    delta_smr = delta_smr0(j);
     delta_smb = 0;%delta_smb0(j);
-    delta_fwd = delta_fwd0(j);
+    delta_fwd = 0;%delta_fwd0(j);
 
     try
         % run flowline model
@@ -186,7 +186,8 @@ for j=1:length(delta_smb0)
                 end
                 xcf=xcf_s;
                 if xcf<20e3 || xcf > 70e3 || isnan(xcf)
-                    xcf = interp1(feval(fit(x',(h-crev_s)','poly1'),x),x,0,'linear','extrap');
+                    xcf = x(dsearchn(x',x(c)));
+                    %xcf = interp1(feval(fit(x',(h-crev_s)','poly1'),x),x,0,'linear','extrap');
                     %xcf = x0(c0);
                 end
             end
@@ -779,38 +780,51 @@ for i=1:length(t)
 
 end
 
-% calculate misfit
+% calculate and plot misfits
 figure(2); clf;
 set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0.8 0.1 0.1]]);
 ax1 = axes('position',[0.08 0.67 0.4 0.3]); hold on; grid on;
     set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
-    xlim([0 55]); ylabel('Misfit (m a^{-1})');
+    xlim([0 50]); ylabel('Misfit (m a^{-1})');
     plot(x/10^3,(U-interp1(cl.x,U_obs(10).U,x))*3.1536e7,'-','linewidth',2,...
         'color',[0.8 0.1 0.1],'HandleVisibility','off');
     plot(x/10^3,nanmean(U-interp1(cl.x,U_obs(10).U,x))*3.1536e7*ones(1,length(x)),...
         '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.94+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+            '(a)','backgroundcolor','w','fontsize',18,'linewidth',1);  
 ax2 = axes('position',[0.08 0.1 0.4 0.5]); hold on; grid on; legend('Location','west'); 
-    set(gca,'fontsize',18,'fontname','Arial','linewidth',2); xlim([0 55]);
+    set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
+    xlim([0 50]); ylim([100 850]);
     xlabel('Distance Along Centerline (km)'); ylabel('Speed (m a^{-1})');
     plot(x/10^3,U*3.1536e7,'-k','linewidth',2,'displayname','U_{mod}');
     plot(cl.x(1:145)/10^3,U_obs(10).U(1:145)*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.94+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+            '(c)','backgroundcolor','w','fontsize',18,'linewidth',1);  
 ax3 = axes('position',[0.58 0.67 0.4 0.3]); hold on; grid on;
     set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
-    xlim([0 55]); ylabel('Misfit (m a^{-1})'); 
+    xlim([0 50]); ylabel('Misfit (m)'); 
     plot(x/10^3,h-interp1(cl.x,h_obs(36).surface,x),'-','linewidth',2,...
         'color',[0.8 0.1 0.1],'HandleVisibility','off');
     plot(x/10^3,nanmean(h-interp1(cl.x,h_obs(36).surface,x))*ones(1,length(x)),...
         '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.94+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+            '(b)','backgroundcolor','w','fontsize',18,'linewidth',1);  
 ax4 = axes('position',[0.58 0.1 0.4 0.5]); hold on; grid on; legend('Location','west'); 
     set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
-    xlim([0 55]); ylabel('Elevation (m)'); xlabel('Distance Along Centerline (km)'); 
+    xlim([0 50]); ylabel('Elevation (m)'); xlabel('Distance Along Centerline (km)'); 
     plot(x/10^3,movmean(h,20),'-k','linewidth',2,'displayname','h_{mod}');
     plot(cl.x(1:150)/10^3,h_obs(36).surface(1:150),'--k','linewidth',2,'displayname','h_{obs}');
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.94+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+            '(d)','backgroundcolor','w','fontsize',18,'linewidth',1);  
 
 % display grounding line misfit
 disp('Mean misfits at the grounding line:');
 disp(['    Speed: ',num2str((U(gl)-interp1(cl.x,U_obs(10).U,x(gl)))*3.1536e7),' m/yr']);
-disp(['    Surface: ',num2str((h(gl)-interp1(cl.x,h_obs(36).surface,x(gl)))),' m']);
+disp(['    Elevation: ',num2str((h(gl)-interp1(cl.x,h_obs(36).surface,x(gl)))),' m']);
 
 % save figure
 if save_figure

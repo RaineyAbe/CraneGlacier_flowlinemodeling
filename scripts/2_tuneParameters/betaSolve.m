@@ -95,11 +95,15 @@ try
 
         hb = interp1(x0,hb0,xn,'linear','extrap');
         W = interp1(x0,W0,xn,'linear','extrap');
-        H = interp1(x,H,xn,'linear','extrap');
+        H = interp1(x,H,xn,'linear','extrap'); 
+            if any(isnan(H))
+                H(find(isnan(H),1,'first'):c) = H(find(isnan(H),1,'first')-1);
+            end
         U = interp1(x,U,xn,'linear','extrap');
         dUdx = interp1(x,dUdx,xn,'linear','extrap');
         A = interp1(x0,A0,xn,'linear','extrap');
-        beta = interp1(x,beta,xn,'linear','extrap'); beta(gl+1:end)=0;
+        beta = interp1(x,beta,xn,'linear','extrap'); 
+        beta(gl+1:end)=0;
         x = xn; dx = dxn;
 
         % calculate surface elevation
@@ -145,7 +149,7 @@ try
         H = Hn; % set as the new thickness value
 
         % stop the model if it behaves unstably (monitored by ice thickness and speed)
-        if max(H) > H_max
+        if max(H(1:c)) > H_max
             disp(['Adjust dt']);
             break;
         end
@@ -165,9 +169,9 @@ try
     U_err = 33/3.1536e7; % m/s
     h_err = 22; % m
     K = log(beta); K(~isfinite(K))=0;
-    J = nanmean(sqrt((U-interp1(x0,U_2018,x)).^2)-U_err)/nanmean(U_2018)+... % speed misfit term
+    J = nanmean(sqrt((U-interp1(x0(1:dsearchn(x0',xcf_2018)),U_2018(1:dsearchn(x0',xcf_2018)),x)).^2)-U_err)/nanmean(U_2018(1:dsearchn(x0',xcf_2018)))+... % speed misfit term
         nanmean(abs(gradient(gradient(K)))); % regularization term to penalize changes in beta gradient        
-        %nanmean(sqrt((h-interp1(x0,h_2018,x)).^2)-h_err)./nanmean(h_2018)+... % surface elevation misfit term
+        %nanmean(sqrt((h-interp1(x0,h_2018,x)).^2)-h_err)./nanmean(h_2018); % surface elevation misfit term
 
 catch
     J=NaN;

@@ -23,7 +23,7 @@ cl.x = load('Crane_centerline.mat').x; cl.y = load('Crane_centerline.mat').y;
         x(i) = sqrt((cl.x(i)-cl.x(i-1))^2+(cl.y(i)-cl.y(i-1))^2)+x(i-1);
     end
 
-% Load observations of speed 2007-2017
+% Load observations of speed 2007-2018
 U = load('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg; 
 
 % Load calculated rate factor

@@ -23,7 +23,6 @@ for i=2:length(cl.X)
     cl.x(i) = sqrt((cl.X(i)-cl.X(i-1))^2+(cl.Y(i)-cl.Y(i-1))^2)+cl.x(i-1);
 end
 F0 = 0; % inner boundary flux (m^3/s)
-%c0=210; % initial calving front location
 
 % 2018 observed surface speed and elevation
 U_2018 = load('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg(20).speed;
@@ -84,23 +83,12 @@ W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);
 
 %% 2. solve for beta using 2009 observed surface speed
 
-save_beta = 1;    % = 1 to save parameter solutions
-save_figure = 1;   % = 1 to save figures
+save_beta = 0;    % = 1 to save parameter solutions
+save_figure = 0;   % = 1 to save figures
 
 % initialize variables
 x=x0; H=H0; hb=hb0; U=U0; dUdx=dUdx0; U0(c0+1:end)=NaN; A=A0;
-fwd=11;
-
-% load stress-coupling length
-cd([homepath,'inputs-outputs/']);
-ITRxx = load('Crane_SCL_results.mat').ITRxx;
-x_scl = load('Crane_SCL_results.mat').x;
-scl = zeros(1,length(ITRxx));
-for i=2:length(ITRxx)
-    scl(i) = x_scl(ITRxx(i))-x_scl(ITRxx(i-1));
-end
-SCL = nanmean(scl); % m
-clear ITRxx x_scl scl
+fwd=10;
 
 % solve for beta by gradient descent 
 cd([homepath,'scripts/2_tuneParameters/']);
@@ -108,9 +96,8 @@ cd([homepath,'scripts/2_tuneParameters/']);
 tic
 fh = @(betai)betaSolve(A0,A,betai,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,fwd,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,smr0,smb0,Q0,H_max,U_min,F0);
 % solve for beta at the resolution of the stress-coupling length
-no_pts = round(x0(end)/SCL); % number of pts at which to solve for a beta value
-beta0 = 1.1*ones(1,10); % initial guess for beta
-[beta,~] = fmincon(fh,beta0,[],[],[],[],zeros(1,length(beta0)),1.5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-2,'MaxFunctionEvaluations',1e4));
+beta0 = 1.4*ones(1,5); % initial guess for beta
+[beta,~] = fmincon(fh,beta0,[],[],[],[],0.5*ones(1,length(beta0)),5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-2,'MaxFunctionEvaluations',1e4));
 % grab velocity from beta solution
 [~,Un,xn,xcf,beta0x] = betaSolve(A0,A,beta,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,fwd,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,smr0,smb0,Q0,H_max,U_min,F0);
 beta = interp1(beta0x,beta,x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
@@ -119,13 +106,13 @@ toc
 
 % plot results
 figure(1); clf; hold on;
-set(gcf,'position',[200 200 900 700]);
+set(gcf,'position',[200 200 900 700],'defaultAxesColorOrder',[0 0 1; 0 0 0]);
 yyaxis left; cla; hold on;
-set(gca,'fontsize',18,'linewidth',2); grid on; legend('Location','northeast');
+set(gca,'fontsize',18,'linewidth',2); grid on; legend('Location','northwest');
 xlabel('Distance Along Centerline (km)');ylabel('\beta (s^{1/m} m^{-1/m})');
 plot(x0/10^3,beta,'b','linewidth',2,'displayname','\beta');
 yyaxis right; cla; ylabel('U (m a^{-1})');
-plot(x0/10^3,U_2018*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
+plot(x0(1:dsearchn(x0',xcf_2018))/10^3,U_2018(1:dsearchn(x0',xcf_2018))*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
 plot(xn/10^3,Un*3.1536e7,'-k','linewidth',2,'displayname','U_{sol}');
 
 if save_figure
@@ -146,15 +133,15 @@ end
 %% 3. tune fwd using 2018 speed and terminus position
 
 % define settings
-fwdbounds = [0 20]; % range of possible fwd values (m)
+fwdbounds = [0 15]; % range of possible fwd values (m)
 method = 'g';       % = 'g' to solve by gradient descent
                     % = 'b' to solve by brute force
 plot_timeSteps = 0; % = 1 to plot geometry, speed, grounding line/terminus positions over time
-save_fwd = 1;       % = 1 to save resulting fwd
+save_fwd = 0;       % = 1 to save resulting fwd
 save_figure = 0;    % = 1 to save figure resulting from brute force method
 
 % initialize variables
-beta0 = load('Crane_flowlineModelInitialization.mat').beta0;
+beta0 = load('Crane_flowlineModelInitialization.mat').beta0; 
 A=A0; x=x0; h=h0; H=H0; hb=hb0; U=U0; dUdx=dUdx0; c=c0; gl=gl0;
 
 % solve for fwd which minimizes the cost function J

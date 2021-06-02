@@ -71,24 +71,20 @@ if size(U0)==[186 1]
 end
 
 % 6. rate factor, A & adjusted rate factor
-%A0 = load('Crane_rateFactorA.mat').A;
-% use a linear trendline
-%A0 = feval(fit(x0',A0,'poly1'),x0);
 A0 = load('Crane_adjustedRateFactor.mat').A_adj;
 if size(A0)==[186 1]
     A0=A0';
 end
-% if size(A0_adj)==[186 1]
-%     A0_adj=A0_adj';
-% end
 
 % 7. surface mass balance w/ uncertainty, smb and smb_err
-%smb = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).smb_adj; % m/a
-%smb_err = load('Crane_downscaledSMB_2009-2019.mat').SMB(1).sigma_smb; % m/a
-%smb0 = [smb' smb(end).*ones(1,length(x0)-length(smb))]./3.1536e7; % m/s
-% replace NaN values with the last SMB value near the terminus
-smb0 = load('Crane_downscaledSMB_2002-2019.mat').SMB(8).smb_adj./3.1536e7; % m/s
-smb0(isnan(smb0)) = smb0(find(isnan(smb0),1,'first')-1); 
+% Use the mean values for 2002-2019
+smb0 = load('Crane_downscaledSMB_2002-2019.mat').SMB(8).smb_adj2./3.5136e7; % m/s
+%smb = zeros(length(SMB),length(x_cl));
+%for i=1:length(SMB)
+%    smb(i,:) = SMB(i).smb_adj./3.1536e7;
+%end
+%smb0 = nanmean(smb,1);
+%smb0(136:end) = smb0(135); 
 
 % 8. submarine melting rate, smr
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:
@@ -120,11 +116,9 @@ if regrid
     xi = 0:200:L; % new grid vector
     h0 = interp1(x0,h0,xi); h0(find(isnan(h0),1,'first'):end) = h0(find(isnan(h0),1,'first')-1);
     hb0 = interp1(x0,hb0,xi); hb0(find(isnan(hb0),1,'first'):end) = hb0(find(isnan(hb0),1,'first')-1);
-    %hb0_adj = interp1(x0,hb0_adj,xi); hb0_adj(find(isnan(hb0_adj),1,'first'):end) = hb0_adj(find(isnan(hb0_adj),1,'first')-1);
     W0 = interp1(x0,W0,xi); W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);
     U0 = interp1(x0,U0,xi); U0(find(isnan(U0),1,'first'):end) = U0(find(isnan(U0),1,'first')-1);
     A0 = interp1(x0,A0,xi); A0(find(isnan(A0),1,'first'):end) = A0(find(isnan(A0),1,'first')-1);
-    %A0_adj = interp1(x0,A0_adj,xi); A0_adj(find(isnan(A0_adj),1,'first'):end) = A0_adj(find(isnan(A0_adj),1,'first')-1);
     smb0 = interp1(x0,smb0,xi); smb0(find(isnan(smb0),1,'first'):end) = smb0(find(isnan(smb0),1,'first')-1);
     Q0 = interp1(x0,Q0,xi); Q0(find(isnan(Q0),1,'first'):end) = Q0(find(isnan(Q0),1,'first')-1);
     c0 = dsearchn(xi',x0(c0));

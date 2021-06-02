@@ -250,7 +250,7 @@ figure(2); clf
 set(gcf,'Position',[100 100 1000 600]);
 ax1=axes('Position',[0.1 0.6 0.35 0.35],'linewidth',2,'fontsize',fontsize,'fontname',font); % geometry
     hold on; grid on; ylabel('Elevation (m)'); 
-    xlim([0 60]); ylim([-1200 1000]);
+    xlim([0 60]); ylim([-1200 1000]); legend('Location','southwest');
     for i=1:length(h)
         if i==16
         else
@@ -260,7 +260,7 @@ ax1=axes('Position',[0.1 0.6 0.35 0.35],'linewidth',2,'fontsize',fontsize,'fontn
         end
     end
     plot(ax1,cl.xi./10^3,hb,'--k','linewidth',linewidth,'displayname','hb');
-    plot(ax1,x0/10^3,hb0,'-k','linewidth',linewidth,'displayname','hb_{W-avg}');
+    plot(ax1,x0/10^3,hb0,'-k','linewidth',linewidth,'displayname','hb_{\mu}');
     % Add text label
     text(55,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         '(a)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',font);    
@@ -284,16 +284,17 @@ ax3=axes('Position',[0.1 0.1 0.35 0.35],'linewidth',2,'fontsize',fontsize,'fontn
         '(c)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',font);     
 ax4=axes('Position',[0.55 0.1 0.35 0.35],'linewidth',2,'fontsize',fontsize,'fontname',font); % speed
     hold on; grid on; xlabel('Distance Along Centerline (km)'); ylabel('Mean Annual SMB (m a^{-1})');
-    xlim([0 60]); set(gca,'clim',[2002 2019]); 
+    xlim([0 60]); set(gca,'clim',[2002 2019]); legend('Location','southwest');
     % Add colorbar
     colormap(col1); 
     c = colorbar('Limits',[2002 2019],'Ticks',[2002 2010 2019],'Position',[.92 .32 .03 .3410],...
-        'fontsize',fontsize);
-    for i=1:length(SMB)
+        'fontsize',fontsize); ylim([-0.2 0.6]);
+    for i=1:length(SMB)-3
         term = dsearchn(cl.xi',termx(dsearchn(termdate',2001+i)));
-        smb = SMB(i).smb_adj;
-        plot(ax4,cl.xi(1:term)./10^3,smb(1:term),'color',col1(i,:),'linewidth',linewidth);
+        smb(i,:) = SMB(i).smb_adj;
+        plot(ax4,cl.xi(1:term)./10^3,smb(i,1:term),'color',col1(i,:),'linewidth',linewidth-1,'HandleVisibility','off');
     end
+    plot(ax4,cl.xi(1:term)./10^3,nanmean(smb(:,1:term),1),'-k','linewidth',linewidth+1,'displayname','mean');
     % Add text label
     text(55,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         '(d)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',font);          
@@ -331,10 +332,11 @@ ax1 = axes('position',[0.07 0.15 0.42 0.78]);
     set(ax1,'linewidth',2,'fontsize',fontsize,'fontname',fontname);
     xlabel('Distance Along Centerline (km)'); xlim([0 45]);  
     %ylabel('$$ \Sigma ( \dot{\eta} ) (s^{-1})$$','Interpreter','latex','fontname','Arial','fontsize',18);
-    ylabel('Cumulative Strain');
+    ylabel('Cumulative Strain Rate');
     hold on; grid on; legend('Location','northwest');
+    years = [2007:2011 2013:2018];
     for i=2:length(eta_dot_cum(:,1))
-        plot(ax1,cl.xi(1:135)/10^3,movmean(eta_dot_cum(i,1:135),2),'color',col1(i,:),'linewidth',linewidth,'displayname',num2str(i+2006)); drawnow
+        plot(ax1,cl.xi(1:135)/10^3,movmean(eta_dot_cum(i,1:135),2),'color',col1(i,:),'linewidth',linewidth,'displayname',num2str(years(i))); drawnow
     end
     plot(ax1,cl.xi(1:135)/10^3,nanmean(eta_dot_cum(:,1:135),1),'-k','linewidth',linewidth+1,'displayname','mean')
     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.15+min(get(gca,'YLim')),...
@@ -355,9 +357,9 @@ if save_figure
     figure(3); 
     % save in thesis figures folder
     cd([homepath,'../write-ups/Thesis/figures/']);
-    saveas(gcf,'cumulativeStrains.png','png');  
+    saveas(gcf,'rateFactor.png','png');  
     cd([homepath,'figures/']);
-    saveas(gcf,'cumulativeStrains.png','png');      
+    saveas(gcf,'rateFactor.png','png');      
     disp('figure 3 saved.'); 
 end
         
@@ -384,36 +386,17 @@ U_2018 = load('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg(20
 
 % plot results
 figure(4); clf
-set(gcf,'Position',[272 143 1000 700]);
-%ax1=axes; set(gca,'position',[0.08 0.15 0.36 0.8]);
-    set(gca,'fontsize',fontsize,'fontname',fontname,'linewidth',2);
-    hold on; grid on; legend('Location','northwest'); xlim([0 45]);    
-    xlabel('Distance Along Centerline (km)'); ylabel('\beta (s^{1/m} m^{-1/m})'); 
-    plot(x0(1:c0)./10^3,beta(1:c0),'linewidth',2,'displayname','\beta');     
-    yyaxis right; ylabel('U (m a^{-1})'); ylim([0 750]);
-    plot(cl.xi(1:135)./10^3,U_2018(1:135).*3.1536e7,'k','displayname','U_{obs}','linewidth',linewidth);
-    plot(betax(1:dsearchn(betax',x0(c0)))./10^3,U(1:dsearchn(betax',x0(c0))).*3.1536e7,'--k','displayname','U_{mod}','linewidth',2); 
-    text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
-        '(a)','fontsize',fontsize,'linewidth',1,'backgroundcolor','w');   
-% ax2=axes; set(gca,'position',[0.62 0.15 0.36 0.8]);
-%     set(gca,'fontsize',fontsize,'fontname',fontname,'linewidth',linewidth);
-%     xlabel('Distance Along Centerline (km)'); ylabel('R_{xx} (kPa)');
-%     hold on; grid on; 
-%     plot(x./10^3,Rxx./10^3,'linewidth',linewidth); 
-%     ax=get(gca); % get current axes
-%     for i=1:length(ITRxx)
-%         plot([x(ITRxx(i)) x(ITRxx(i))]./10^3,[ax.YLim(1) ax.YLim(2)],'--k','linewidth',linewidth-1.5);
-%     end  
-%     xlim([0 45]);
-%     text(5,-1000,['\Deltax_{mean} = ',num2str(round(mean(diff(x(ITRxx))))/10^3),'km'],...
-%         'fontsize',fontsize,'linewidth',1,'backgroundcolor','w','color','k','fontname',fontname);    
-%     text(42,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
-%         '(b)','fontsize',fontsize-1,'linewidth',1,'backgroundcolor','w','fontname',fontname);    
-%     text(27.8,-200,'\Deltax','fontsize',13,'fontweight','bold','color','k');
-%     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','}', ...
-%        'HeadStyle','none','LineStyle', 'none', 'TextRotation',90,'Position',[0.85 0.565 0 0],...
-%        'FontSize',24,'FontName',fontname,'TextColor','k','fontweight','bold');
-   
+set(gcf,'Position',[272 143 1000 700],'defaultAxesColorOrder',[0 0 1; 0 0 0]);
+set(gca,'fontsize',fontsize,'fontname',fontname,'linewidth',2);
+hold on; grid on; 
+legend('position',[0.78 0.15 0.09 0.14]);
+xlim([0 45]); xlabel('Distance Along Centerline (km)'); 
+yyaxis left; ylabel('\beta (s^{1/m} m^{-1/m})'); 
+plot(x0(1:c0)./10^3,beta(1:c0),'-b','linewidth',2,'displayname','\beta');     
+yyaxis right; ylabel('U (m a^{-1})'); ylim([0 600]);
+plot(cl.xi(1:135)./10^3,U_2018(1:135).*3.1536e7,'k','displayname','U_{obs}','linewidth',linewidth);
+plot(betax(1:dsearchn(betax',x0(c0)))./10^3,U(1:dsearchn(betax',x0(c0))).*3.1536e7,'--k','displayname','U_{mod}','linewidth',2);    
+
 if save_figure
     figure(4);
     % save in figures folder
@@ -429,7 +412,7 @@ end
 
 close all;
 
-save_figures = 1;    % = 1 to save figure
+save_figures = 0;    % = 1 to save figure
 fontsize = 18;      % font size
 fontname = 'Arial'; % font name
 linewidth = 2;      % line width
@@ -586,7 +569,7 @@ while loop==1
     ax9=axes('position',[0.69 0.09 0.225 0.25]); hold on; grid on; % i) gl/cf
         set(gca,'fontsize',fontsize,'linewidth',2);
         xlabel('Distance Along Centerline (km)'); ylabel('FWD (m)');
-        xlim([35 70]); ylim([fwd0-0.5 fwd0+5.5]);         
+        xlim([35 70]); ylim([fwd0-0.5 fwd0+10.5]);         
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.89+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
@@ -625,7 +608,7 @@ while loop==1
     ax12 = axes('position',[0.7 0.18 0.27 0.75]); hold on;
         set(gca,'fontsize',fontsize,'linewidth',2); grid on;
         xlabel('FWD (m)'); 
-        xlim([fwd0-0.5 fwd0+5.5]); ylim([0.4 1]);
+        xlim([fwd0-0.5 fwd0+10.5]); ylim([0.4 1]);
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.08+min(get(gca,'YLim')),...
