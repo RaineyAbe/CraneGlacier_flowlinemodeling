@@ -36,7 +36,8 @@ cl.X = interp1(cl.xi,cl.Xi,cl.x); cl.Y = interp1(cl.xi,cl.Yi,cl.x);
 close all;
 
 save_figure = 1;    % = 1 to save figure
-fontsize = 20;      % font size
+fontsize = 18;      % font size
+fontname = 'Arial'; % font name
 markersize = 8;    % marker size
 linewidth = 2;      % line width
 
@@ -48,23 +49,24 @@ linewidth = 2;      % line width
 % Specify xticks/yticks coordinates and axes limits
     xticks = linspace(-2.455e6,-2.375e6,5); yticks=linspace(1.21e6,1.29e6,5);
     xlimits=[xticks(1) xticks(end)]; ylimits = [yticks(1) yticks(end)];
+    xlimits2 = -2.4260e6:0.01e6:-2.3960e6; ylimits2 = 1.2353e6:0.01e6:1.2653e6; 
     
-% load & display Landsat image
+% load & display Landsat image 1
     cd([homepath,'../Imagery/LC08_L1GT_218106_20191013_20191018_01_T2']);
     landsat = dir('*B8.TIF');
     [LS.im,LS.R] = readgeoraster(landsat.name); [LS.ny,LS.nx] = size(LS.im);
     % polar stereographic coordinates of image boundaries
     LS.x = linspace(min(LS.R.XWorldLimits),max(LS.R.XWorldLimits),LS.nx); 
     LS.y = linspace(min(LS.R.YWorldLimits),max(LS.R.YWorldLimits),LS.ny);
-    % display image on ax1
-    figure(1); clf; hold on; 
-    set(gcf,'position',[557    75   724   622],'color','w');
-    ax1=gca; 
-    im1 = imagesc(ax1,LS.x,LS.y,flipud(LS.im*1.1)); colormap('gray');
+    % display image on ax(1)
+    F1 = figure(1); clf; hold on; 
+    set(gcf,'position',[557 75 724 622],'color','w');
+    ax(1)=gca;
+    im1 = imagesc(ax(1),LS.x,LS.y,flipud(LS.im*1.1)); colormap('gray');
     % set axes properties
-    ax1.XTick=xticks; ax1.XTickLabel=string(xticks./10^3);
-    ax1.YTick=yticks; ax1.YTickLabel=string(yticks./10^3);
-    set(ax1,'YDir','normal','XLim',xlimits','YLim',ylimits,'FontSize',14,...
+    ax(1).XTick=xticks+5e3; ax(1).XTickLabel=string((xticks+5e3)./10^3);
+    ax(1).YTick=yticks; ax(1).YTickLabel=string(yticks./10^3);
+    set(ax(1),'YDir','normal','XLim',xlimits','YLim',ylimits,'FontSize',14,...
         'linewidth',2,'fontsize',fontsize,'Position',[0.165 0.08 0.67 0.84]); 
     xlabel('Easting (km)'); ylabel('Northing (km)');
     
@@ -76,20 +78,20 @@ linewidth = 2;      % line width
     % polar stereographic coordinates of image boundaries
     REMA.x = linspace(min(REMA.R.XWorldLimits),max(REMA.R.XWorldLimits),REMA.nx); 
     REMA.y = linspace(min(REMA.R.YWorldLimits),max(REMA.R.YWorldLimits),REMA.ny);
-    % display contours on ax1
-    hold on; contour(ax1,REMA.x,REMA.y,flipud(REMA.im),0:500:2000,'-k','linewidth',2,'ShowText','on');
+    % display contours on ax(1)
+    hold on; contour(ax(1),REMA.x,REMA.y,flipud(REMA.im),0:500:2000,'-k','linewidth',2,'ShowText','on');
     
 % load & display ITS_LIVE velocity map
     cd([homepath,'data/velocities']);
     v.v = ncread('ANT_G0240_2017.nc','v'); v.v(v.v==-3267)=NaN;
     v.x = ncread('ANT_G0240_2017.nc','x'); v.y = ncread('ANT_G0240_2017.nc','y');
-    % display velocity map on ax2
-    ax2 = axes; 
-    im2=imagesc(ax2,v.x,v.y,v.v'); colormap(cmocean('haline'));
+    % display velocity map on ax(2)
+    ax(2) = axes; 
+    im2=imagesc(ax(2),v.x,v.y,v.v'); colormap(cmocean('haline'));
     im2.AlphaData=0.5; caxis([0 1100]);
     % set axes properties
-    ax2.XLim=xlimits; ax2.YLim=ylimits; 
-    set(ax2,'YDir','normal','Visible','off','fontsize',12,'XTick',[],'YTick',[]); hold on; 
+    ax(2).XLim=xlimits; ax(2).YLim=ylimits; 
+    set(ax(2),'YDir','normal','Visible','off','fontsize',12,'XTick',[],'YTick',[]); hold on; 
     % add legend
     l=legend('Position',[0.23 0.8 0.12 0.07],'Color',[175 175 175]/255,...
         'fontname','arial','fontsize',fontsize);
@@ -97,16 +99,16 @@ linewidth = 2;      % line width
 % Add lat lon coordinates to top and right axes
     latlon = graticuleps(-66:0.25:-64,-64:0.5:-62,'color',[175 175 175]/255,'linewidth',1,...
         'HandleVisibility','off');
-    ax1.Position = [0.135 0.1 0.73 0.85];
-    ax2.Position=[0.001 0.1 1 0.85];     
+    ax(1).Position = [0.135 0.1 0.73 0.85];
+    ax(2).Position=[0.001 0.1 1 0.85];     
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','62.00^oS','textcolor',[175 175 175]/255,...
-        'HeadStyle','none','LineStyle', 'none','Position',[.97 .67 0 0],'FontSize',fontsize,'FontName','Arial');     
+        'HeadStyle','none','LineStyle', 'none','Position',[.97 .67 0 0],'FontSize',fontsize,'FontName',fontname);     
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','62.50^oS','textcolor',[175 175 175]/255, ...
-        'HeadStyle','none','LineStyle', 'none','Position',[.97 .39 0 0],'FontSize',fontsize,'FontName','Arial');     
+        'HeadStyle','none','LineStyle', 'none','Position',[.97 .39 0 0],'FontSize',fontsize,'FontName',fontname);     
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','65.25^oW','textcolor',[175 175 175]/255, ...
-        'HeadStyle','none','LineStyle', 'none','Position',[.64 .97 0 0],'FontSize',fontsize,'FontName','Arial');     
+        'HeadStyle','none','LineStyle', 'none','Position',[.64 .97 0 0],'FontSize',fontsize,'FontName',fontname);     
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','65.00^oW','textcolor',[175 175 175]/255, ...
-        'HeadStyle','none','LineStyle', 'none','Position',[.36 .97 0 0],'FontSize',fontsize,'FontName','Arial'); 
+        'HeadStyle','none','LineStyle', 'none','Position',[.36 .97 0 0],'FontSize',fontsize,'FontName',fontname); 
     
 % plot OIB flights
     cd([homepath,'../figures/1_StudyArea']);
@@ -115,10 +117,10 @@ linewidth = 2;      % line width
         OIB.file = readmatrix(OIBfiles(i).name);
         [OIB.x,OIB.y] = wgs2ps(OIB.file(:,2),OIB.file(:,1),'StandardParallel',-71,'StandardMeridian',0);
         if i==1
-            hold on; plot(ax2,OIB.x,OIB.y,'color','w',...
+            hold on; plot(ax(2),OIB.x,OIB.y,'color','w',...
                 'displayname','NASA OIB','linewidth',linewidth-1);
         else
-            hold on; plot(ax2,OIB.x,OIB.y,'color','w',...
+            hold on; plot(ax(2),OIB.x,OIB.y,'color','w',...
                 'HandleVisibility','off','linewidth',linewidth-1);            
         end
     end
@@ -138,69 +140,94 @@ linewidth = 2;      % line width
     text(cl.X(Idist)+1500,cl.Y(Idist),labels,'color',[253,224,221]/255,...
         'fontweight','bold','fontname','arial','fontsize',fontsize);
 
+% plot (b) as outline polygon
+
 % add colorbar
     c = colorbar('Position',[0.29 0.58 0.02 0.15],'fontsize',fontsize,'fontweight',...
-        'bold','color','w','fontname','arial');
+        'bold','color','w','fontname',fontname);
     set(get(c,'Title'),'String','Speed (m a^{-1})','color','w','fontname',...
-        'arial','Position',[5 100 0]);
+        fontname,'Position',[5 100 0]);
 
 % insert text labels
     % Crane
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Crane', ...
        'HeadStyle','none','LineStyle', 'none', 'TextRotation',70,'Position',[.52 0.65 0 0],...
-       'FontSize',fontsize-1,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);
-    % Former Larsen B Ice Shelf
-    %txt = sprintf('Former Larsen \n    B Ice Shelf');
-    %text(-2.405e6,1.282e6,txt,'color',[200 200 200]/255,'fontsize',12,'fontweight','bold');
+       'FontSize',fontsize-1,'FontName',fontname,'fontweight','bold','TextColor',[200 200 200]/255);
     % Jorum
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Jorum', ...
         'HeadStyle','none','LineStyle', 'none', 'TextRotation',35,'Position',[.52 .855 0 0],...
-        'FontSize',fontsize-1,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);    
+        'FontSize',fontsize-1,'FontName',fontname,'fontweight','bold','TextColor',[200 200 200]/255);    
     % Flask
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Flask', ...
        'HeadStyle','none','LineStyle', 'none', 'TextRotation',55,'Position',[.8 .19 0 0],...
-       'FontSize',fontsize-1,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);    
+       'FontSize',fontsize-1,'FontName',fontname,'fontweight','bold','TextColor',[200 200 200]/255);    
     % Mapple
     %annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Mapple', ...
     %    'HeadStyle','none','LineStyle', 'none', 'TextRotation',66,'Position',[.65 .7 0 0],...
-    %    'FontSize',fontsize-1,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);    
+    %    'FontSize',fontsize-1,'FontName',fontname,'fontweight','bold','TextColor',[200 200 200]/255);    
     % Melville
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Melville', ...
         'HeadStyle','none','LineStyle', 'none', 'TextRotation',70,'Position',[.68 .6 0 0],...
-        'FontSize',fontsize-1,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);           
+        'FontSize',fontsize-1,'FontName',fontname,'fontweight','bold','TextColor',[200 200 200]/255);           
     % Pequod
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Pequod', ...
         'HeadStyle','none','LineStyle', 'none', 'TextRotation',66,'Position',[.74 .59 0 0],...
-        'FontSize',fontsize-1,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);               
+        'FontSize',fontsize-1,'FontName',fontname,'fontweight','bold','TextColor',[200 200 200]/255);               
     % Starbuck
     annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','Starbuck', ...
         'HeadStyle','none','LineStyle', 'none', 'TextRotation',38,'Position',[.78 .47 0 0],...
-        'FontSize',fontsize-1,'FontName','Arial','fontweight','bold','TextColor',[200 200 200]/255);   
+        'FontSize',fontsize-1,'FontName',fontname,'fontweight','bold','TextColor',[200 200 200]/255);   
     % Tributary A
     txt = sprintf('A');
-        text(-2.413e6,1.232e6,txt,'color',[200 200 200]/255,'fontsize',fontsize-1,'fontweight','bold','fontname','arial');       
+        text(-2.413e6,1.232e6,txt,'color',[200 200 200]/255,'fontsize',fontsize-1,'fontweight','bold','fontname',fontname);       
     % Tributary B
     txt = sprintf('B');
-        text(-2.415e6,1.237e6,txt,'color',[200 200 200]/255,'fontsize',fontsize-1,'fontweight','bold','fontname','arial');    
+        text(-2.415e6,1.237e6,txt,'color',[200 200 200]/255,'fontsize',fontsize-1,'fontweight','bold','fontname',fontname);    
     % Tributary C
     txt = sprintf('C');
-        text(-2.417e6,1.251e6,txt,'color',[200 200 200]/255,'fontsize',fontsize-1,'fontweight','bold','fontname','arial');       
-    
+        text(-2.417e6,1.251e6,txt,'color',[200 200 200]/255,'fontsize',fontsize-1,'fontweight','bold','fontname',fontname); 
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.925+min(get(gca,'XLim')),(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        '(a)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',fontname);          
+
     % plot LIMA inset in figure
-    ax4=axes('pos',[0.2 0.12 0.2 0.2]);
-    set(ax4,'xtick',[],'xticklabel',[],'ytick',[],'yticklabel',[]);
+    ax(4)=axes('pos',[0.2 0.12 0.2 0.2]);
+    set(ax(4),'xtick',[],'xticklabel',[],'ytick',[],'yticklabel',[]);
     cd([homepath,'../Imagery']);
     L = imread('LIMA.jpg');
     imshow(L);
     hold on; plot(1100,4270,'o','color','y','markersize',10,'linewidth',3);
     
-if save_figure
-    set(gcf,'InvertHardCopy','off'); % save colors as is
+% add Landsat NIR band to demonstrate meltwater pooling on Crane surface
+cd([homepath,'../Imagery/LC08_L1GT_217106_20200110_20200114_01_T2']);
+    landsat = dir('*B4.TIF');
+    [LS2.im,LS2.R] = readgeoraster(landsat.name); [LS2.ny,LS2.nx] = size(LS2.im);
+    % polar stereographic coordinates of image boundaries
+    LS2.x = linspace(min(LS2.R.XWorldLimits),max(LS2.R.XWorldLimits),LS2.nx); 
+    LS2.y = linspace(min(LS2.R.YWorldLimits),max(LS2.R.YWorldLimits),LS2.ny);
+    % create new figure
+    F2 = figure(2); clf; hold on; F2.Position = F1.Position.*2./3;
+    % display image on ax(5) 
+    ax(5)=gca; ax(5).Position = [0.15 0.15 0.8 0.8];
+    im2 = imagesc(ax(5),LS2.x,LS2.y,flipud(LS2.im*1.1)); colormap('gray');
+    % set axis properties
+    set(ax(5),'YDir','normal','linewidth',2,'fontsize',fontsize,'fontname',fontname,...
+        'XLim',[xlimits2(1) xlimits2(end)],'YLim',[ylimits2(1) ylimits2(end)]); 
+    ax(5).XTick=xlimits2+6e3; ax(5).XTickLabel=string((xlimits2+6e3)./10^3);
+    ax(5).YTick=ylimits2+4700; ax(5).YTickLabel=string((ylimits2+4700)./10^3);
+    xlabel('Easting (km)'); ylabel('Northing (km)');  
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.925+min(get(gca,'XLim')),(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        '(b)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',fontname);          
+    
+% save figure 1
+if save_figure || merge_figures
+    set(F1,'InvertHardCopy','off'); %set(F2,'InvertHardCopy','off'); % save colors as is
     cd([homepath,'figures/']);
-    saveas(gcf,'studyArea.png','png');
+    exportgraphics(F1,'studyArea.png','Resolution',300);
+    exportgraphics(F2,'meltwaterPonds.png','Resolution',300);
     cd([homepath,'../write-ups/Thesis/figures']);
-    saveas(gcf,'studyArea.png','png');
-    disp('figure 1 saved.');    
+    exportgraphics(F1,'studyArea.png','Resolution',300);
+    exportgraphics(F2,'meltwaterPonds.png','Resolution',300);    
+    disp('figures 1 and 2 saved.');    
 end
 
 %% Observed Conditions Time Series
@@ -273,11 +300,11 @@ ax2=axes('Position',[0.55 0.6 0.35 0.35],'linewidth',2,'fontsize',fontsize,'font
     % Add text label
     text(55,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         '(b)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',font);      
-ax3=axes('Position',[0.1 0.1 0.35 0.35],'linewidth',2,'fontsize',fontsize,'fontname',font); % terminus position
+ax(3)=axes('Position',[0.1 0.1 0.35 0.35],'linewidth',2,'fontsize',fontsize,'fontname',font); % terminus position
     hold on; grid on; xlabel('Distance Along Centerline (km)'); ylabel('Date');
     xlim([0 60]);
     for i=1:length(termx)
-        plot(ax3,termx(i)./10^3,termdate(i),'ok','MarkerFaceColor',col1(col_term(i),:),'markersize',markersize);
+        plot(ax(3),termx(i)./10^3,termdate(i),'ok','MarkerFaceColor',col1(col_term(i),:),'markersize',markersize);
     end
     % Add text label
     text(55,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
@@ -412,7 +439,7 @@ end
 
 close all;
 
-save_figures = 0;    % = 1 to save figure
+save_figures = 1;    % = 1 to save figure
 fontsize = 18;      % font size
 fontname = 'Arial'; % font name
 linewidth = 2;      % line width
@@ -436,6 +463,20 @@ t_end = 91*3.1536e7;
 t = (t_start:dt:t_end);
 clear dt t_start t_end
 
+% Observed discharge & calving front positions
+    % Rignot et al. (2004) discharge observations 
+    % [deciyear discharge (km^3/a)]
+    F_obs = [1996 2.6; 2003+2.75/12 5.6; 2003+3.2/12 6.8; 2003+3.5/12 7.6];
+    % convert to Gt/a
+    % (km^3/a)*(10^9 m^3/km^3)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton) = Gt/a
+    F_obs(:,2) = F_obs(:,2).*10^9.*917.*10^-3.*10^-9; % Gt/a
+    
+    % Calving front positions
+    termdate = load('LarsenB_centerline.mat').centerline.termdate;
+    termX = load('LarsenB_centerline.mat').centerline.termx;
+    termY = load('LarsenB_centerline.mat').centerline.termy;
+    termx = cl.x(dsearchn([cl.X' cl.Y'],[termX' termY']));
+    
 cd([homepath,'scripts/3_sensitivityTests/results/']);
 addpath([homepath,'../matlabFunctions/cmocean_v2.0/cmocean']);
 
@@ -481,7 +522,7 @@ files = table2struct(files);
 col1=cmocean('thermal',length(Ismb)+3); % color scheme for figures 5 & 6 
 col1(1,:) = []; col1(end-1:end,:)=[]; % don't use end member colors
 colr = [200/255 0 0];
-
+    
 % set up axes
 loop=1; % loop to minimize plotting commands
 while loop==1
@@ -618,14 +659,17 @@ while loop==1
         cb6=colorbar('northoutside','fontname',fontname,'fontsize',fontsize-2,'Ticks',0:1/5:1,'TickLabels',string(0:2:10)); 
         set(get(cb6,'label'),'String','\DeltaFWD (m)','fontsize',fontsize-2);
     figure(7); clf;  
-    set(gcf,'Position',[200 200 1000 1000],'defaultAxesColorOrder',[[0 0 0];colr]); 
-    ax13 = axes('position',[0.08 0.09 0.85 0.85]);
-        set(ax13,'fontsize',fontsize,'linewidth',2); grid on;
-        xlabel('Year'); ylabel('Grounding Line Discharge (Gt a^{-1})');
-        ylim([0.4 2.6]);
-        hold on; grid on; 
-        xlim([2008 2101]);
-        yyaxis right; ylabel('Calving Front Position (km)'); ylim([42 64]);
+    set(gcf,'Position',[200 200 1000 1000],'defaultAxesColorOrder',[0 0 0;colr]); 
+    ax13 = axes('position',[0.08 0.09 0.85 0.85]); hold on;
+        set(ax13,'fontsize',fontsize,'linewidth',2);
+        xlabel('Year'); xlim([1995 2101]); 
+        yyaxis right; ylim([0 7.1]); ylabel('Grounding Line Discharge (Gt a^{-1})');
+        plot(F_obs(:,1),F_obs(:,2),'x','color',colr,'markersize',markersize-1,'linewidth',linewidth);
+        yyaxis left; ylabel('Calving Front Position (km)'); ylim([40 68.4]); 
+        ax13.YTick = ax13.YLim(1):4:ax13.YLim(2); grid on;
+        ax13.YTickLabel = string(ax13.YLim(1):4:ax13.YLim(2));
+        hdl(3) = plot(termdate,termx/10^3,'x','color',[0.5 0.5 0.5],'markersize',markersize-1,'linewidth',linewidth);        
+        plot(termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth);
     loop=loop+1; % exit loop        
 end
 
@@ -666,17 +710,17 @@ for i=1:length(Ismr)
     figure(7);
     if i==1
         % legend entries
-        yyaxis left; hdl(1) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',colr,'linewidth',linewidth); 
-        yyaxis right; hdl(2) = plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-k','linewidth',linewidth);
+        yyaxis right; hdl(1) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',colr,'linewidth',linewidth); 
+        yyaxis left; hdl(2) = plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-k','linewidth',linewidth);
         % no change
-        yyaxis left; hdl(3) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',[0.5 0.5 0.5],'linewidth',linewidth); 
+        yyaxis right; hdl(4) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',[0.5 0.5 0.5],'linewidth',linewidth); 
         plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',colr,'linewidth',linewidth); 
-        yyaxis right; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-k','linewidth',linewidth);
+        yyaxis left; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-k','linewidth',linewidth);
     elseif i==length(Ismr)
         % SMR scenarios
-        yyaxis left; hdl(4) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'--','color',[0.5 0.5 0.5],'linewidth',linewidth); 
+        yyaxis right; hdl(5) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'--','color',[0.5 0.5 0.5],'linewidth',linewidth); 
         plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'--','color',colr,'linewidth',linewidth); 
-        yyaxis right; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'--k','linewidth',linewidth);     
+        yyaxis left; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'--k','linewidth',linewidth);     
     end
     % save results 
     dsmr(i) = files(Ismr(i)).change; % m/a
@@ -723,9 +767,9 @@ for i=1:length(Ismb)
     plot(ax11,smb_mean(i),Fsmb(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
     figure(7);
     if i==length(Ismb)
-        yyaxis left; hdl(5) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-.','color',[0.5 0.5 0.5],'linewidth',linewidth); 
+        yyaxis right; hdl(6) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-.','color',[0.5 0.5 0.5],'linewidth',linewidth); 
         plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),'-.','color',colr,'linewidth',linewidth); 
-        yyaxis right; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-.k','linewidth',linewidth);
+        yyaxis left; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-.k','linewidth',linewidth);
     end
     % save results 
     dsmb(i) = files(Ismb(i)).change; % m/a
@@ -777,9 +821,9 @@ for i=1:length(Ifwd)
     plot(ax12,files(Ifwd(i)).change+fwd0,Ffwd(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));    
     figure(7);
     if i==length(Ifwd)
-        yyaxis left; hdl(6) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),':','color',[0.5 0.5 0.5],'linewidth',linewidth); 
+        yyaxis right; hdl(7) = plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),':','color',[0.5 0.5 0.5],'linewidth',linewidth); 
         plot(ax13,t/3.1536e7+2009,movmean(Fgl2,100),':','color',colr,'linewidth',linewidth); 
-        yyaxis right; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),':k','linewidth',linewidth);
+        yyaxis left; plot(ax13,t/3.1536e7+2009,movmean(XCF2/10^3,100),':k','linewidth',linewidth);
     end
     % save results 
     dfwd(i) = files(Ifwd(i)).change; % m/a
@@ -789,8 +833,8 @@ for i=1:length(Ifwd)
     Ugl(i) = U2(gl2)*3.1536e7; % m/a
 end
 % add legend to figure 7 
-gkey = [{"discharge"},{"calving front position"},{"no change"},{"+1^oC ocean temp."},{"+1^oC air temp."},{"+10 m FWD"}];
-gridLegend(hdl,3,gkey,'location','north');
+gkey = [{"discharge"},{"calving front position"},{"observed"},{"no change"},{"\DeltaSMR = +10 m a^{-1}"},{"\DeltaSMB = -10 m a^{-1}"},{"\DeltaFWD = +10 m"}];
+gridLegend(hdl,2,gkey,'location','north','Orientation','Horizontal','fontsize',fontsize-2);
 
 % create table to store result quantities
 varNames = {'dfwd','dL','dxgl','dHgl','dUgl','Ffwd'};
