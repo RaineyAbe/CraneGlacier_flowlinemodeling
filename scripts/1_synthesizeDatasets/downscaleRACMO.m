@@ -20,7 +20,7 @@
 close all; clear all;  
 
 % Define homepath
-homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
+homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
 cd(homepath);
 
 % Add path with necessary functions, data, inputs/outputs
@@ -537,10 +537,10 @@ end
 
 close all; 
 
-figure_save = 1;    % = 1 to save figure
-save_smb = 1;       % = 1 to save final downscaled SMB
+figure_save = 0;    % = 1 to save figure
+save_smb = 0;       % = 1 to save final downscaled SMB
 
-years = 2002:2019; % Define years
+years = 2009:2019; % Define years
 col = parula(length(years)+1); % color scheme for plotting
 
 % Load centerline
@@ -715,7 +715,7 @@ if years(i)<=2016
     
     % Fit a linear trendline to snowfall
     sf.linear(i,1:length(find(~isnan(h_cl)))) = feval(fit(h_cl(~isnan(h_cl)),sf.interp(~isnan(h_cl)),'poly1'),h_cl(~isnan(h_cl)))';
-    sf.linear(i,length(find(~isnan(h_cl)))+1:length(x)) = sf.linear(end);
+    sf.linear(i,length(find(~isnan(h_cl)))+1:length(x)) = sf.linear(i,end);
 
     figure(1); subplot(2,3,1);
     plot(h_cl,sf.interp,'--','color',col(i,:),'linewidth',1,'displayname',num2str(years(i))); 

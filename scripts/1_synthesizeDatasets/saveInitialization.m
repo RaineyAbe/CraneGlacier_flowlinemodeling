@@ -19,7 +19,7 @@
 clear all; close all;
 
 % Define homepath
-homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
+homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
 cd([homepath,'inputs-outputs/']);
 
 save_initial = 1; % = 1 to save initialization file
@@ -76,15 +76,16 @@ if size(A0)==[186 1]
     A0=A0';
 end
 
-% 7. surface mass balance w/ uncertainty, smb and smb_err
-% Use the mean values for 2002-2019
-smb0 = load('Crane_downscaledSMB_2002-2019.mat').SMB(8).smb_adj2./3.5136e7; % m/s
-%smb = zeros(length(SMB),length(x_cl));
-%for i=1:length(SMB)
-%    smb(i,:) = SMB(i).smb_adj./3.1536e7;
-%end
-%smb0 = nanmean(smb,1);
-%smb0(136:end) = smb0(135); 
+% 7. surface mass balance
+% Use the mean value at each point along the centerline for 2009-2019 
+smb = load('Crane_downscaledSMB_2002-2019.mat').SMB; % m/s
+smbi = zeros(length(smb),length(x_cl));
+for i=8:length(smb)
+   smbi(i,:) = smb(i).smb_adj./3.1536e7;
+end
+smbi(1:7,:)=[];
+smb0 = nanmean(smbi,1);
+smb0(136:end) = smb0(135); 
 
 % 8. submarine melting rate, smr
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:
