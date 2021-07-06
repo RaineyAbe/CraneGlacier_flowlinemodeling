@@ -22,7 +22,7 @@ addpath([homepath,'inputs-outputs/']);
 dx0 = 200; % grid spacing (m)
 
 % Load Crane Glacier initialization variables
-load('Crane_flowlineModelInitialization.mat');
+load('flowlineModelInitialization.mat');
 F0=0; % inner boundary flux (m^3/s)
 
 % Centerline
@@ -36,9 +36,9 @@ end
 
 % Load observed conditions
 % ice surface
-h_obs = load('Crane_surfaceElevationObs.mat').h;
+h_obs = load('surfaceElevationObs.mat').h;
 % terminus position 
-term = load('Crane_terminusPositions_2002-2019.mat').term;
+term = load('terminusPositions_2002-2019.mat').term;
 for i=1:length(term)
     termx_obs(i) = term(i).x;
     termDate_obs(i) = term(i).decidate;
@@ -48,7 +48,7 @@ termx_obs = feval(fit(termDate_obs',termx_obs','poly2'),termDate_obs');
 term_obs = interp1(termDate_obs',termx_obs,2009:2017);
 clear term 
 % ice speed
-U_obsi = load('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg;
+U_obsi = load('centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg;
 u = [6 8 9 14 15:20]; % indices of speeds to use annually (2009-2017)
 for i=1:length(u)
     U_obs(i).U = U_obsi(u(i)).speed;
@@ -113,7 +113,7 @@ timeseries_save = 0; % = 1 to save figures for time series
 
 % load no change conditions
 cd([homepath,'inputs-outputs/']);
-load('Crane_2100_noChange.mat'); % load no change variables
+load('2100_noChange.mat'); % load no change variables
     
 % set up changes in SMB, SMR, & fwd
 % note: decrease SMB & SMR in increments of 0.5 m a-1 (1.585e-8) starting

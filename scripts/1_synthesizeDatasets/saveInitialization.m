@@ -42,7 +42,7 @@ end
     end
 
 % 2. ice surface elevation
-h0 = load('Crane_surfaceElevationObs.mat').h(1).surface;
+h0 = load('surfaceElevationObs.mat').h(1).surface;
 if size(h0)==[186 1]
     h0=h0';
 end
@@ -50,7 +50,7 @@ h0(isnan(h0))=0; % replace NaNs with zeros
 
 % 3. glacier bed elevation
 %hb0 = load('Crane_observedBed_Tate.mat').hb.hb0;
-hb0 = load('Crane_delineatedBedWidthAveraged.mat').hb_adj;
+hb0 = load('delineatedBedWidthAveraged.mat').hb_adj;
 if size(hb0)==[186 1]
     hb0=hb0';
 end
@@ -59,33 +59,27 @@ end
 % end
 
 % 4. glacier width
-W0 = load('Crane_calculatedWidth.mat').width.W;
+W0 = load('calculatedWidth.mat').width.W;
 if size(W0)==[186 1]
     W0=W0';
 end
 
 % 5. ice surface speed
-U0 = movmean(load('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg(5).speed_linearextrap,2);
+U0 = movmean(load('centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg(5).speed_linearextrap,2);
 if size(U0)==[186 1]
     U0=U0';
 end
 
 % 6. rate factor, A & adjusted rate factor
-A0 = load('Crane_adjustedRateFactor.mat').A_adj;
+A0 = load('adjustedRateFactor.mat').A_adj;
 if size(A0)==[186 1]
     A0=A0';
 end
 
 % 7. surface mass balance
 % Use the mean value at each point along the centerline for 2009-2019 
-smb = load('Crane_downscaledSMB_2002-2019.mat').SMB; % m/s
-smbi = zeros(length(smb),length(x_cl));
-for i=8:length(smb)
-   smbi(i,:) = smb(i).smb_adj./3.1536e7;
-end
-smbi(1:7,:)=[];
-smb0 = nanmean(smbi,1);
-smb0(136:end) = smb0(135); 
+SMB0 = load('downscaledClimateVariables_2009-2019.mat').SMB.downscaled_average./3.1536e7; % m/s
+RO0 = load('downscaledClimateVariables_2009-2019.mat').RO.downscaled_average./3.1536e7; % m/s
 
 % 8. submarine melting rate, smr
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:
@@ -97,7 +91,7 @@ smb0(136:end) = smb0(135);
 %   Adusumilli et al. (2018):
 %       Larsen C basal melt rate (1994-2016) = 0.5+/-1.4 m/a = 1.59e-8 m/s
 %       Larsen C net mass balance (1994-2016)= -0.4+/-1.3 m/a = 1.27e-8 m/s
-smr0 = -5.29/3.1536e7; % m/s SMR - max found at Crane
+SMR0 = -5.29/3.1536e7; % m/s SMR - max found at Crane
 
 % 9. tributary ice volume flux
 Q = load('tributaryFluxes.mat').tribFlux.Q; % m/a
@@ -120,7 +114,8 @@ if regrid
     W0 = interp1(x0,W0,xi); W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);
     U0 = interp1(x0,U0,xi); U0(find(isnan(U0),1,'first'):end) = U0(find(isnan(U0),1,'first')-1);
     A0 = interp1(x0,A0,xi); A0(find(isnan(A0),1,'first'):end) = A0(find(isnan(A0),1,'first')-1);
-    smb0 = interp1(x0,smb0,xi); smb0(find(isnan(smb0),1,'first'):end) = smb0(find(isnan(smb0),1,'first')-1);
+    SMB0 = interp1(x0,SMB0,xi); SMB0(find(isnan(SMB0),1,'first'):end) = SMB0(find(isnan(SMB0),1,'first')-1);
+    RO0 = interp1(x0,RO0,xi); RO0(find(isnan(RO0),1,'first'):end) = RO0(find(isnan(RO0),1,'first')-1);
     Q0 = interp1(x0,Q0,xi); Q0(find(isnan(Q0),1,'first'):end) = Q0(find(isnan(Q0),1,'first')-1);
     c0 = dsearchn(xi',x0(c0));
     x0=xi;
@@ -128,8 +123,8 @@ end
 
 % Save resulting variables
 if save_initial
-    save('Crane_flowlinemodelInitialization.mat','h0','hb0','W0','A0','U0',...
-        'x0','smb0','smr0','Q0','c0','-append');
+    save('flowlinemodelInitialization.mat','h0','hb0','W0','A0','U0',...
+        'x0','SMB0','SMR0','Q0','c0','-append');
     disp(['initialization variable saved in: ',pwd]);
 end
 

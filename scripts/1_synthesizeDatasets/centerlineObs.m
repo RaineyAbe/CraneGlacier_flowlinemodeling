@@ -91,13 +91,13 @@ if bed_save
     
     % Save resulting bed profile as variable
     cd([homepath,'inputs-outputs/']);
-    save('Crane_observedBed_Tate.mat','hb');
+    save('observedBed_Tate.mat','hb');
     disp('bed variable saved');
     
 else
     
     cd([homepath,'inputs-outputs/']);
-    hb = load('Crane_observedBed_Tate.mat').hb.hb0;
+    hb = load('observedBed_Tate.mat').hb.hb0;
     
 end
 
@@ -162,16 +162,16 @@ if surface_save
     % Sort h by observation date, save variable
     [h,index] = nestedSortStruct(h,'date');
     cd([homepath,'inputs-outputs/']);
-    save('Crane_surfaceElevationObs.mat','h');
+    save('surfaceElevationObs.mat','h');
     disp('surface variable saved');
     
 else
     cd([homepath,'inputs-outputs/']);
-    h = load('Crane_surfaceElevationObs.mat').h;
+    h = load('surfaceElevationObs.mat').h;
 end
 
 % Load bathymetry observations
-%    hb.bathym = load('Crane_bathymetryData.mat').cl_trough;
+%    hb.bathym = load('bathymetryData.mat').cl_trough;
 %    hb.bathym = -1.*hb.bathym; % Data reported in depth beneath the surface (convert to negative values for plotting)
 
 % Load terminus positions
@@ -269,7 +269,7 @@ figure(3); clf; set(gcf,'Position',[386 285 1028 520]);
 % save dHdt
 if dHdt_save
     cd([homepath,'inputs-outputs/']);
-    save('Crane_dHdt_2009-2018.mat','dHdt');
+    save('dHdt_2009-2018.mat','dHdt');
     disp('dHdt saved');
 end
 
@@ -277,7 +277,7 @@ end
 % final elevations
 if bed_save
     cd([homepath,'inputs-outputs/']);
-    save('Crane_observedBed.mat','hb_bathymobs','-append');
+    save('observedBed.mat','hb_bathymobs','-append');
     disp('bed saved');
 end
 
@@ -360,12 +360,12 @@ if velocity_save
     
     % save u variable as structure
     cd([homepath,'inputs-outputs/']);
-    save('Crane_centerlineSpeeds_2007-2018.mat','U');
+    save('centerlineSpeeds_2007-2018.mat','U');
     disp('velocity variable saved');
     
 else
     cd([homepath,'inputs-outputs/']);
-    U = load('Crane_centerlineSpeeds_2007-2018.mat').U;
+    U = load('centerlineSpeeds_2007-2018.mat').U;
 end
 
 % Plot velocities
@@ -441,7 +441,7 @@ end
 % Save term as .mat variable
 if terminus_save
     cd([homepath,'inputs-outputs']);
-    save('Crane_terminusPositions_2002-2019.mat','term');
+    save('terminusPositions_2002-2019.mat','term');
 end
 
 % Save figure as image
@@ -459,9 +459,9 @@ close all;
 cd([homepath,'inputs-outputs/']);
 
 % load OIB picks from previous years
-OIB16_1 = load('CraneOIBPicks_2016_005.mat').CraneOIBPicks_2016;
-OIB16_2 = load('CraneOIBPicks_2016_2.mat').CraneOIBPicks_2016;
-OIB17 = load('CraneOIBPicks_2017_006.mat').CraneOIBPicks_2017;
+OIB16_1 = load('OIBPicks_2016_005.mat').CraneOIBPicks_2016;
+OIB16_2 = load('OIBPicks_2016_2.mat').CraneOIBPicks_2016;
+OIB17 = load('OIBPicks_2017_006.mat').CraneOIBPicks_2017;
 % interpolate coordinates to centerline
 OIB16_1.x = x(dsearchn([cl.X cl.Y],[OIB16_1.Easting OIB16_1.Northing]))';
 OIB16_2.x = x(dsearchn([cl.X cl.Y],[OIB16_2.Easting OIB16_2.Northing]))';
@@ -489,11 +489,11 @@ save_hb_adj = 1; % = 1 to save adjusted hb
 cd([homepath,'inputs-outputs/']);
 
 % load 2009 surface
-h_2009 = load('Crane_surfaceElevationObs.mat').h(1).surface;
+h_2009 = load('surfaceElevationObs.mat').h(1).surface;
 h_2009(find(isnan(h_2009),1,'first'):end) = 0;
 
 % load width
-W = load('Crane_calculatedWidth.mat').width.W;
+W = load('calculatedWidth.mat').width.W;
 
 % calculate thickness
 H = h_2009-hb;
@@ -525,7 +525,7 @@ plot(x/10^3,h_2009,'-b','linewidth',2,'DisplayName','h');
 
 % save results
 if save_hb_adj
-    save('Crane_delineatedBedWidthAveraged.mat','hb_adj','x');
+    save('delineatedBedWidthAveraged.mat','hb_adj','x');
     disp('hb_adj saved');
 end
 
@@ -538,7 +538,7 @@ save_U_widthavg = 1; % = 1 to save results
 
     % load glacier outline
     cd([homepath,'inputs-outputs/']);
-    ol = load('Crane_glacierOutline.mat').ol;
+    ol = load('glacierOutline.mat').ol;
     % use a staggered grid of centerline coordinates for calculating slope
     cl.Xm = (cl.X(2:end)+cl.X(1:end-1))./2;
     cl.Ym = (cl.Y(2:end)+cl.Y(1:end-1))./2;
@@ -746,7 +746,7 @@ end
 if save_U_widthavg
     cd([homepath,'inputs-outputs/']);
     U_widthavg = U;
-    save('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat','U_widthavg');
+    save('centerlineSpeedsWidthAveraged_2007-2018.mat','U_widthavg');
     disp('width-averaged speed saved');
 end
 

@@ -24,10 +24,10 @@ cl.x = load('Crane_centerline.mat').x; cl.y = load('Crane_centerline.mat').y;
     end
 
 % Load observations of speed 2007-2018
-U = load('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg; 
+U = load('centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg; 
 
 % Load calculated rate factor
-A = load('Crane_rateFactorA.mat').A;
+A = load('rateFactorA.mat').A;
 
 % Set up figure
 figure(1); clf;

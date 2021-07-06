@@ -25,8 +25,8 @@ end
 F0 = 0; % inner boundary flux (m^3/s)
 
 % 2018 observed surface speed and elevation
-U_2018 = load('Crane_centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg(20).speed;
-h_2018 = load('Crane_surfaceElevationObs.mat').h(36).surface;
+U_2018 = load('centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg(20).speed;
+h_2018 = load('surfaceElevationObs.mat').h(36).surface;
 % interpolate to x0
 U_2018 = movmean(double(interp1(cl.x,U_2018,x0)),10);
 h_2018 = interp1(cl.x,h_2018,x0);
@@ -125,8 +125,8 @@ end
 if save_beta
     cd([homepath,'inputs-outputs/']);
     beta0=beta;
-    save('Crane_flowlineModelInitialization.mat','beta0','-append');
-    save('Crane_betaSolution.mat','beta','Un','xn','xcf');
+    save('flowlineModelInitialization.mat','beta0','-append');
+    save('betaSolution.mat','beta','Un','xn','xcf');
     disp('beta solution saved');
 end
 
@@ -141,7 +141,7 @@ save_fwd = 0;       % = 1 to save resulting fwd
 save_figure = 0;    % = 1 to save figure resulting from brute force method
 
 % initialize variables
-beta0 = load('Crane_flowlineModelInitialization.mat').beta0; 
+beta0 = load('flowlineModelInitialization.mat').beta0; 
 A=A0; x=x0; h=h0; H=H0; hb=hb0; U=U0; dUdx=dUdx0; c=c0; gl=gl0;
 
 % solve for fwd which minimizes the cost function J

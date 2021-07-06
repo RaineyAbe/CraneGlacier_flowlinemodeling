@@ -25,12 +25,11 @@ cd(homepath);
 
 % Add path with necessary functions, data, inputs/outputs
 addpath([homepath,'matlabFunctions/']);
-addpath([homepath,'../matlabFunctions/cmocean_v2.0/cmocean/']);
+addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']);
 addpath([homepath,'data/RACMO2.3/']); 
 addpath([homepath,'inputs-outputs/']);
 
-save_smb = 0; % = 1 to save resulting SMB
-save_temp = 0; % = 1 to save resulting air temperature
+save_smb = 0; % = 1 to save resulting smb
 
 %% 1. Load centerline, Annual Snowfall (sf), Snowmelt (sm), Runoff (ro),
 %Surface Mass Balance (SMB), Air Temperature (airtemp) along centerline
@@ -47,11 +46,11 @@ rho_w = 1000;   % kg/m^3
 % Plot full gridded RACMO variables for year and Crane centerline
 % Note: RACMO day # = (year - 1950)*365 + (day # in year)
 % Ex: Feb 1, 2000 = (2000-1950)*365 + 1
-yr = 2019;
+yr = 2009;
 day_start = (yr-1950)*365 + 1;
 day_end = (yr-1950)*365 + 365;
         
-% 2011 SNOWFALL (sf)
+% SNOWFALL (sf)
     sf.Lat = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lat'); % degrees north
     sf.Lon = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lon'); % degrees east
     sf.h = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','height'); % m above surface   
@@ -60,17 +59,15 @@ day_end = (yr-1950)*365 + 365;
     Iday_start = dsearchn(time,day_start); % index of day start in RACMO time
     Iday_end = dsearchn(time,day_end); % index of day start in RACMO time
     
-    % Grab mean sf for every month in year (RACMO days mo_start:mo_end)
+    % Grab mean sf for every month in year (RACMO days day_start:day_end)
     sf_yr = zeros(length(sf.sf(:,1,1)),length(sf.sf(1,:,1)),1); % initialize
-    for i = 1:length(sf.sf(:,1,1))
+    for i=1:length(sf.sf(:,1,1))
         for j=1:length(sf.sf(1,:,1))
-            sf_yr(i,j,1) = nanmean(sf.sf(i,j,Iday_start:Iday_end))*12; % kg/m^2/yr
+            sf_yr(i,j,1) = nanmean(sf.sf(i,j,Iday_start:Iday_end))*12./rho_i; % m/yr
         end     
     end 
-    % kg/m^2/yr / (917 kg/m^3) = m/yr
-    sf_yr = sf_yr./rho_i; % m/yr
         
-    % Interpolate mean annual sf along Crane centerline (RACMO days day_start:day_end)
+    % Extrapolate mean annual sf along Crane centerline (RACMO days day_start:day_end)
     % Grab RACMO grid
     RACMOy=zeros(1,length(cl.Lat)); RACMOx=zeros(1,length(cl.Lat)); % initialize
     for i=1:length(cl.Lat)
@@ -103,7 +100,7 @@ day_end = (yr-1950)*365 + 365;
         ylim([-66 -65]); xlim([-63.5 -61.5]); caxis([0 0.9.*max(sf_yr(:))]);
         hold off;
     
-% 2011 SNOWMELT (sm)
+% SNOWMELT (sm)
     sm.Lat = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lat'); % degrees north
     sm.Lon = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lon'); % degrees east
     sm.h = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','height'); % m above surface   
@@ -142,7 +139,7 @@ day_end = (yr-1950)*365 + 365;
         ylim([-66 -65]); xlim([-63.5 -61.5]); caxis([0 0.9.*max(sm_yr(:))]);
         hold off;
     
-% 2011 RUNOFF (ro)
+% RUNOFF (ro)
     ro.Lat = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lat'); % degrees north
     ro.Lon = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lon'); % degrees east
     ro.h = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','height'); % m above surface   
@@ -260,7 +257,7 @@ figure(2); clf; hold on;
     xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)'); 
     hold off;
         
-%% 3. Adjust SF, SM, & SMB  along centerline 
+%% 3. Downscale SF, SM, & SMB  along centerline 
 %   for elevation dependence, adapted from Noel et al.(2016)
 
 close all;
@@ -528,8 +525,8 @@ figure(2); clf; hold on;
 
 if save_smb
     cd([homepath,'data/RACMO2.3/']);
-    save_smb('Crane_downscaledSMB_2011.mat','x','h_cl_11','smb.interp','smb.linear');
-    save_smb('Crane_adjustedAirTemp_2011.mat','T.cl_11');
+    save_smb('downscaledSMB_2011.mat','x','h_cl_11','smb.interp','smb.linear');
+    save_smb('adjustedAirTemp_2011.mat','T.cl_11');
     disp('downscaled SMB and air temperature saved for one year.');
 end 
 
@@ -538,22 +535,29 @@ end
 close all; 
 
 figure_save = 0;    % = 1 to save figure
-save_smb = 0;       % = 1 to save final downscaled SMB
+save_variables = 0;       % = 1 to save final downscaled SMB
 
 years = 2009:2019; % Define years
-col = parula(length(years)+1); % color scheme for plotting
+maxDist = 8e3;  % Define distance from centerline over which values will 
+                % be used in the downscaling computation 
 
-% Load centerline
-cl.X = load('Crane_centerline.mat','x').x; 
-cl.Y = load('Crane_centerline.mat','y').y;
-cd([homepath,'inputs-outputs/']);
-    
+col = parula(length(years)+1); % Define color scheme for plotting
+
+% Load and initialize variables
+loop=1;
+while loop==1
+
+    % Load centerline
+    cl.X = load('Crane_centerline.mat','x').x; 
+    cl.Y = load('Crane_centerline.mat','y').y;
+    cd([homepath,'inputs-outputs/']);
+        
     % Load most advanced terminus position (2019)
     term = dsearchn([cl.X cl.Y],[load('Crane_terminusPositions_2002-2019.mat').term(61).X ...
     load('Crane_terminusPositions_2002-2019.mat').term(61).Y]); 
     % clip centerline at this point
     %cl.X = cl.X(1:term); cl.Y = cl.Y(1:term);
-
+    
     % Define x as distance along centerline
     x = zeros(1,length(cl.X));
     for i=2:length(cl.X)
@@ -564,89 +568,97 @@ cd([homepath,'inputs-outputs/']);
     [cl.Lon,cl.Lat] = ps2wgs(cl.X,cl.Y,'StandardParallel',-71,'StandardMeridian',0);
     
     rho_i = 917; % kg/m^3
-
-% Load RACMO variables
-    sf.Lat = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lat'); % degrees north
-    sf.Lon = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lon'); % degrees east
-    sf.sf = squeeze(ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','snowfall')); % kg m-2 mo-1 
+    
+    % Load RACMO variables
+    SF.Lat = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lat'); % degrees north
+    SF.Lon = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lon'); % degrees east
+    SF.sf = squeeze(ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','snowfall')); % kg m-2 mo-1 
     time = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','time'); % days since 1950/01/01
-
-    sm.Lat = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lat'); % degrees north
-    sm.Lon = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lon'); % degrees east
-    sm.sm = squeeze(ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','snowmelt')); % kg m-2 mo-1
-
-    ro.Lat = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lat'); % degrees north
-    ro.Lon = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lon'); % degrees east
-    ro.ro = squeeze(ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','runoff')); % kg m-2 mo-1
-   
-    smb.Lat = ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','lat'); % degrees north
-    smb.Lon = ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','lon'); % degrees east
-    smb.smb = squeeze(ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','smb')); % kg m-2 mo-1
+    
+    SM.Lat = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lat'); % degrees north
+    SM.Lon = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lon'); % degrees east
+    SM.sm = squeeze(ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','snowmelt')); % kg m-2 mo-1
+    
+    RO.Lat = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lat'); % degrees north
+    RO.Lon = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lon'); % degrees east
+    RO.ro = squeeze(ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','runoff')); % kg m-2 mo-1
+    
+    SMB.Lat = ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','lat'); % degrees north
+    SMB.Lon = ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','lon'); % degrees east
+    SMB.smb = squeeze(ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','smb')); % kg m-2 mo-1
     
     h.Lat = ncread('Height_latlon_XPEN055.nc','lat'); % degrees north
     h.Lon = ncread('Height_latlon_XPEN055.nc','lon'); % degrees east
     h.h = ncread('Height_latlon_XPEN055.nc','height'); % m above the surface
-    h_cl_RACMO = griddata(h.Lon,h.Lat,h.h,cl.Lon,cl.Lat); 
+    h.cl = griddata(h.Lon,h.Lat,h.h,cl.Lon,cl.Lat); 
     
-    T_Lat = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','lat'); % degrees north
-    T_Lon = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','lon'); % degrees east
-    T_T = squeeze(ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','t2m')); % degrees K
-
+    T.Lat = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','lat'); % degrees north
+    T.Lon = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','lon'); % degrees east
+    T.T = squeeze(ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','t2m')); % degrees K
+    
     % Grab RACMO grid
         % Note: RACMO day # = (year - 1950)*365 + (day # in year)
         % Ex: 1 Feb/2000 = (2000-1950)*365 + 1 = 18251
         for i=1:length(cl.Lon)
-            lat_diff = abs(cl.Lat(i)*ones(size(sf.Lat)) - sf.Lat);
-            lon_diff = abs(cl.Lat(i,1)*ones(size(sf.Lon)) - sf.Lon);
+            lat_diff = abs(cl.Lat(i)*ones(size(SF.Lat)) - SF.Lat);
+            lon_diff = abs(cl.Lat(i,1)*ones(size(SF.Lon)) - SF.Lon);
             diff_map = sqrt(lat_diff.^2+lon_diff.^2);
             RACMO_ref = find(diff_map==min(min(diff_map)));
-            [RACMOy(i),RACMOx(i)] = ind2sub(size(nanmean(sf.sf(:,:,1),4)),RACMO_ref);
+            [RACMOy(i),RACMOx(i)] = ind2sub(size(nanmean(SF.sf(:,:,1),4)),RACMO_ref);
         end     
         
     % Convert RACMO grid to polar stereographic
     [h.X,h.Y] = wgs2ps(h.Lon,h.Lat,'StandardParallel',-71,'StandardMeridian',0);
-    [sf.X,sf.Y] = wgs2ps(sf.Lon,sf.Lat,'StandardParallel',-71,'StandardMeridian',0);
-    [sm.X,sm.Y] = wgs2ps(sm.Lon,sm.Lat,'StandardParallel',-71,'StandardMeridian',0);
-    [smb.X,smb.Y] = wgs2ps(smb.Lon,smb.Lat,'StandardParallel',-71,'StandardMeridian',0);
+    [SF.X,SF.Y] = wgs2ps(SF.Lon,SF.Lat,'StandardParallel',-71,'StandardMeridian',0);
+    [SM.X,SM.Y] = wgs2ps(SM.Lon,SM.Lat,'StandardParallel',-71,'StandardMeridian',0);
+    [SMB.X,SMB.Y] = wgs2ps(SMB.Lon,SMB.Lat,'StandardParallel',-71,'StandardMeridian',0);
     
     % Load 2016 Crane ice surface
     cd([homepath,'inputs-outputs/']);
-    h_cl = load("Crane_surfaceElevationObs.mat").h(28).surface';
+    h_cl = load("Crane_surfaceElevationObs.mat").h(28).surface';   
+        
+    % Grab points within a certain distance from centerline, interpolate
+    nearbyPts = []; % Hold points within a certain distance
+    numPts = 0; % Total number of points found    
     
-    maxDist = 8e3;     
-    
-        % Grab points within a certain distance from centerline, interpolate
-        nearbyPts = []; % Hold points within a certain distance
-        numPts = 0; % Total number of points found    
+    % Initialize variables
+    SF.extrap = NaN*zeros(length(years),length(x)); SF.downscaled = NaN*zeros(length(years),length(x)); SF.linear = NaN*zeros(length(years),length(x)); SF.fullGrid = NaN*zeros(length(RACMOx),length(RACMOy));
+    SM.extrap = NaN*zeros(length(years),length(x)); SM.downscaled = NaN*zeros(length(years),length(x)); SM.linear = NaN*zeros(length(years),length(x)); SM.fullGrid = NaN*zeros(length(RACMOx),length(RACMOy));
+    SMB.extrap = NaN*zeros(length(years),length(x)); SMB.downscaled = NaN*zeros(length(years),length(x)); SMB.linear = NaN*zeros(length(years),length(x)); SMB.fullGrid = NaN*zeros(length(RACMOx),length(RACMOy));
 
+    loop=loop+1;
+
+end
+
+% Loop through years to calculate Adjusted Snowfall (SF), Snowmelt (SM), 
+% and Surface Mass Balance (SMB) along centerline
 for i=1:length(years)
 
-% Calculate Adjusted Snowfall (sf), Snowmelt (sm), 
-% and Surface Mass Balance (SMB) along centerline
-
-    day_start = (years(i)-1950)*365+1; Iday_start = dsearchn(time,day_start);
-    day_end = (years(i)-1950)*365+365; Iday_end = dsearchn(time,day_end);
+    day_start = (years(i)-1950)*365+1; % first day in year in RACMO days
+        Iday_start = dsearchn(time,day_start); % index of first day in RACMO days
+    day_end = (years(i)-1950)*365+365; % last day in year in RACMO days
+        Iday_end = dsearchn(time,day_end); % index of last day in RACMO days
     
-    % set up figures
+    % set up figure
     if i==1
         figure(1); clf
         set(gcf,'units','centimeters','position',[5 0 40 30]);
         subplot(2,3,1); hold on;  % adjusted snowfall
             set(gca,'FontName','Arial','FontSize',14);
-            xlabel('Elevation (m)'); ylabel('(m a^{-1})'); 
-            title('Adjusted Snowfall');grid on;
+            xlabel('Distance Along Centerline (km)'); ylabel('(m a^{-1})'); 
+            title('Downscaled Snowfall');grid on;
         subplot(2,3,2); hold on; % adjusted snowmelt
             set(gca,'FontName','Arial','FontSize',14);
-            xlabel('Elevation (m)'); ylabel('(m a^{-1})'); 
-            title('Adjusted Snowmelt');grid on; 
+            xlabel('Distance Along Centerline (km)'); ylabel('(m a^{-1})'); 
+            title('Downscaled Snowmelt');grid on; 
         subplot(2,3,3); hold on; % adjusted SMB
             set(gca,'FontName','Arial','FontSize',14);
-            xlabel('Elevation (m)'); ylabel('(m a^{-1})'); 
-            title('Adjusted SMB');grid on;         
+            xlabel('Distance Along Centerline (km)'); ylabel('(m a^{-1})'); 
+            title('Downscaled SMB');grid on;         
         subplot(2,3,[4,4.5]); hold on; % linearized SMB
             set(gca,'FontName','Arial','FontSize',14);
             xlabel('Distance Along Centerline (km)'); ylabel('(m a^{-1})'); 
-            title('Linearized SMB');grid on; 
+            title('Estimated Runoff');grid on; 
         subplot(2,3,[5.5,6]); hold on; % adjusted air temp
             set(gca,'FontName','Arial','FontSize',14);
             xlabel('Distance Along Centerline (km)'); ylabel('(^oC)'); 
@@ -655,357 +667,314 @@ for i=1:length(years)
         c.Ticks = [0 0.5 1.0]; c.TickLabels = {'2002','2010','2019'};
     end 
 
-% SNOWFALL (sf)
-if years(i)<=2016
-    % Grab mean sf for every month for full RACMO grid
-        sf.Yr = zeros(length(sf.sf(:,1,1)),length((sf.sf(1,:,1))));
-        for j = 1:length(sf.sf(:,1,1))
-            for k=1:length(sf.sf(1,:,1))
-                sf.Yr(j,k) = nanmean(sf.sf(j,k,Iday_start:Iday_end)); % kg/m^2/day
-            end     
+    % SNOWFALL (SF)
+    if years(i)<=2016
+
+        % Grab mean SF for every month for full RACMO grid
+        for j=1:length(SF.sf(:,1,1))
+            for k=1:length(SF.sf(1,:,1))
+                SF.fullGrid(j,k) = nanmean(SF.sf(j,k,Iday_start:Iday_end))./rho_i*12; % m a^-1
+            end  
         end 
-        sf.Yr = sf.Yr./rho_i.*12; % m/yr
-
-    % Interpolate mean annual sf along Crane centerline
-        sf.cl=[];
-        for j=1:length(RACMOy)
-            for k=Iday_start:Iday_end
-                sf.cl(j,k) = sf.sf(RACMOy(j),RACMOx(j),k);
-            end    
-        end  
-
-       % Take the average at each point along centerline
-        sf.cl(:,1:(Iday_start-1))=[]; % Delete empty columns
-        sf.cl(:,1) = nanmean(sf.cl,2);
-        sf.cl(:,2:end) = []; % kg m-2 day-1
-        sf.cl = sf.cl.*365./rho_i; % m a-1
-
-   % Adjust snowfall (sf) for elevation-dependence
-
-    % Loop through each point along centerline
-    sf.interp = ones(length(h_cl),1);
-    for j=1:length(x)
-
-        % Grab points within a certain distance from centerline, interpolate
-        nearbyPts = []; % Hold points within a certain distance
-        numPts = 0; % Total number of points found
-
-        xi = cl.X(j); yi = cl.Y(j);
-        for k=1:length(h.X(:,1))
-            for l=1:length(h.X(1,:))
-                dist = sqrt((xi-h.X(k,l))^2 + (yi-h.Y(k,l))^2);
-                if dist<=maxDist
-                    numPts = numPts+1;
-                    nearbyPts(numPts,1:2) = ([h.h(k,l) sf.Yr(k,l)]); 
-                end 
-            end 
-        end 
-
-        % Grab the mean of nearby points
-        sf.mean(i,j) = nanmean(nearbyPts(:,2));
-        
-        %Calculate a linear trendline for nearby points
-        P = polyfit(nearbyPts(:,1),nearbyPts(:,2),1);
-        int = -500:2000; 
-        yfit = P(1)*int+P(2);
-
-        sf.interp(j) = interp1(int,yfit,h_cl(j));
-
-    end     
-    
-    % Fit a linear trendline to snowfall
-    sf.linear(i,1:length(find(~isnan(h_cl)))) = feval(fit(h_cl(~isnan(h_cl)),sf.interp(~isnan(h_cl)),'poly1'),h_cl(~isnan(h_cl)))';
-    sf.linear(i,length(find(~isnan(h_cl)))+1:length(x)) = sf.linear(i,end);
-
-    figure(1); subplot(2,3,1);
-    plot(h_cl,sf.interp,'--','color',col(i,:),'linewidth',1,'displayname',num2str(years(i))); 
-    plot(h_cl,sf.linear(i,:),'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');     
-    drawnow
-    
-end   
-
-%SNOWMELT (sm)
-if years(i)<=2016
-    %Grab mean sm for every month for full RACMO grid
-        sm.Yr = zeros(length(sm.sm(:,1,1)),length(sm.sm(1,:,1)));
-        for j = 1:length(sm.sm(:,1,1))
-            for k=1:length(sm.sm(1,:,1))
-                sm.Yr(j,k,1) = nanmean(sm.sm(j,k,Iday_start:Iday_end)); % kg m^2 / day
-            end     
-        end 
-        sm.Yr = sm.Yr./rho_i.*12; %m a^-1
-        
-    %Interpolate mean annual sm along Crane centerline
-        sm.cl=zeros(length(RACMOy),length(Iday_start:Iday_end));
-        for j=1:length(RACMOy)
-            for k=Iday_start:Iday_end
-                sm.cl(j,k) = sm.sm(RACMOy(j),RACMOx(j),k);
-            end    
-        end  
-        
-       %Take the average at each point along centerline
-        sm.cl(:,1:(Iday_start-1))=[]; %Delete empty columns
-        sm.cl(:,1) = nanmean(sm.cl,2);
-        sm.cl(:,2:end) = []; %kg m-2 day-1
-        sm.cl = sm.cl.*365./rho_i; %m a-1
-        
-    %Ajust snowmelt for elevation-dependence
-    
-        %Loop through each point along centerline
-        sm.interp = ones(length(h_cl),1);
+        % Extrapolate mean annual SF along Crane centerline
         for j=1:length(x)
-    
-            %Grab points within a certain distance from centerline, interpolate
-            nearbyPts = []; %Hold points within a certain distance
-            numPts = 0; %Total number of points found
-    
-            xi = cl.X(j); yi = cl.Y(j);
+            SF.extrap(i,j) = SF.fullGrid(RACMOy(j),RACMOx(j)); 
+        end
+
+        % Adjust snowfall (SF) for elevation-dependence
+
+        % Loop through each point along centerline
+        for j=1:length(x)
+
+            % Grab points within a certain distance from centerline, interpolate
+            nearbyPts = []; % Hold points within a certain distance
+            numPts = 0; % Total number of points found
+
             for k=1:length(h.X(:,1))
                 for l=1:length(h.X(1,:))
-                    dist = sqrt((xi-h.X(k,l))^2 + (yi-h.Y(k,l))^2);
+                    dist = sqrt((cl.X(j)-h.X(k,l))^2 + (cl.Y(j)-h.Y(k,l))^2);
                     if dist<=maxDist
                         numPts = numPts+1;
-                        nearbyPts(numPts,1:2) = ([h.h(k,l) sm.Yr(k,l)]); 
+                        nearbyPts(numPts,1:2) = ([h.h(k,l) SF.fullGrid(k,l)]); 
                     end 
                 end 
-            end
-            
+            end 
+
             % Grab the mean of nearby points
-            sm.mean(i,j) = nanmean(nearbyPts(:,2));   
+            SF.mean(i,j) = nanmean(nearbyPts(:,2));
             
             %Calculate a linear trendline for nearby points
             P = polyfit(nearbyPts(:,1),nearbyPts(:,2),1);
-            int = -20:1600; 
+            int = -500:2000; 
             yfit = P(1)*int+P(2);
-            sm.interp(j) = interp1(int,yfit,h_cl(j));
+    
+            SF.downscaled(i,j) = interp1(int,yfit,h_cl(j));
+    
+        end     
+    
+        % Fit a linear trendline to snowfall
+        SF.linear(i,~isnan(h_cl)) = feval(fit(h_cl(~isnan(h_cl)),SF.downscaled(i,~isnan(h_cl))','poly1'),h_cl(~isnan(h_cl)))';
+        SF.linear(i,find(isnan(h_cl),1,'first'):length(x)) = SF.linear(i,find(isnan(h_cl),1,'first')-1);
+    
+        % Plot
+        figure(1); subplot(2,3,1);
+        plot(x/10^3,SF.downscaled(i,:),'--','color',col(i,:),'linewidth',1,'displayname',num2str(years(i))); 
+        plot(x/10^3,SF.linear(i,:),'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');     
+        drawnow
         
+        % Calculate and plot the mean SF at each point 
+        if years(i)==2016
+            SF.downscaled_average = nanmean(SF.downscaled,1);
+            SF.downscaled_average_linear = feval(fit(h_cl(~isnan(h_cl)),SF.downscaled_average(~isnan(h_cl))','poly1'),h_cl);
+            plot(x/10^3,SF.downscaled_average_linear,'-k','linewidth',2);
+        end
+
+    end   
+
+    % SNOWMELT (SM)
+    if years(i)<=2016
+
+        % Grab mean SM for every month for full RACMO grid
+        for j=1:length(SM.sm(:,1,1))
+            for k=1:length(SM.sm(1,:,1))
+                SM.fullGrid(j,k) = nanmean(SM.sm(j,k,Iday_start:Iday_end))./rho_i.*12; % m a-1
+            end   
         end 
-    
-    % Fit a linear trendline to snowmelt
-    sm.linear(i,1:length(find(~isnan(h_cl)))) = feval(fit(h_cl(~isnan(h_cl)),sm.interp(~isnan(h_cl)),'poly1'),h_cl(~isnan(h_cl)))';
-    sm.linear(i,length(find(~isnan(h_cl)))+1:length(x)) = sm.linear(end);
+        % Extrapolate mean annual SM along Crane centerline
+        for j=1:length(x)
+            SM.extrap(i,j) = SM.fullGrid(RACMOy(j),RACMOx(j));
+        end
 
-    figure(1); subplot(2,3,2);
-    plot(h_cl,sm.interp,'--','color',col(i,:),'linewidth',1,'displayname',num2str(years(i))); 
-    plot(h_cl,sm.linear(i,:),'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');     
-    drawnow
-    
-end
+        % Adjust SM for elevation-dependence
 
-%SURFACE MASS BALANCE (smb)
+        % Loop through each point along centerline
+        for j=1:length(x)
 
-    %Grab mean smb for every month in year
-        smb.Yr = zeros(length(smb.smb(:,1,1)),length(smb.smb(1,:,1)));
-        for j = 1:length(smb.smb(:,1,1))
-            for k=1:length(smb.smb(1,:,1))
-                smb.Yr(j,k,1) = nanmean(smb.smb(j,k,Iday_start:Iday_end)); % kg a^-1
-            end     
-        end 
-        smb.Yr = smb.Yr./rho_i.*12;  % m a^-1
+            % Grab points within a certain distance from centerline, interpolate
+            nearbyPts = []; % Hold points within a certain distance
+            numPts = 0; % Total number of points found
+
+            for k=1:length(h.X(:,1))
+                for l=1:length(h.X(1,:))
+                    dist = sqrt((cl.X(j)-h.X(k,l))^2 + (cl.Y(j)-h.Y(k,l))^2);
+                    if dist<=maxDist
+                        numPts = numPts+1;
+                        nearbyPts(numPts,1:2) = ([h.h(k,l) SM.fullGrid(k,l)]); 
+                    end 
+                end 
+            end 
+
+            % Grab the mean of nearby points
+            SM.mean(i,j) = nanmean(nearbyPts(:,2));
             
-        %Interpolate mean annual smb along Crane centerline (RACMO days day_start:day_end)
-        smb.cl=zeros(length(RACMOy),length(Iday_start:Iday_end));
-        for j=1:length(RACMOy)
-            for k=Iday_start:Iday_end
-                smb.cl(j,k) = smb.smb(RACMOy(j),RACMOx(j),k);
+            %Calculate a linear trendline for nearby points
+            P = polyfit(nearbyPts(:,1),nearbyPts(:,2),1);
+            int = -500:2000; 
+            yfit = P(1)*int+P(2);
+    
+            SM.downscaled(i,j) = interp1(int,yfit,h_cl(j));
+    
+        end     
+    
+        % Fit a linear trendline to the downscaled SM
+        SM.linear(i,~isnan(h_cl)) = feval(fit(h_cl(~isnan(h_cl)),SM.downscaled(i,~isnan(h_cl))','poly1'),h_cl(~isnan(h_cl)))';
+        SM.linear(i,find(isnan(h_cl),1,'first'):length(x)) = SM.linear(i,find(isnan(h_cl),1,'first')-1);
+    
+        % Plot
+        figure(1); subplot(2,3,2);
+        plot(x/10^3,SM.downscaled(i,:),'--','color',col(i,:),'linewidth',1,'displayname',num2str(years(i))); 
+        plot(x/10^3,SM.linear(i,:),'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');     
+        drawnow
+
+        % Calculate and plot the mean SM at each point 
+        if years(i)==2016
+            SM.downscaled_average = nanmean(SM.downscaled,1);
+            SM.downscaled_average_linear = feval(fit(h_cl(~isnan(h_cl)),SM.downscaled_average(~isnan(h_cl))','poly1'),h_cl);
+            plot(x/10^3,SM.downscaled_average_linear,'-k','linewidth',2);
+        end
+        
+    end   
+
+    % SURFACE MASS BALANCE (SMB)
+    if years(i)<=2019
+
+        % Grab mean SMB for every month for full RACMO grid
+        for j = 1:length(SMB.smb(:,1,1))
+            for k=1:length(SMB.smb(1,:,1))
+                SMB.fullGrid(j,k) = nanmean(SMB.smb(j,k,Iday_start:Iday_end))./rho_i*12; % m a^-1
             end    
         end  
-        
-       %Take the average at each point along centerline
-        smb.cl(:,1:(Iday_start-1))=[]; %Delete empty columns
-        smb.cl(:,1) = nanmean(smb.cl,2);
-        smb.cl(:,2:end) = []; %kg m-2 day-1
-        smb.cl = smb.cl.*365./rho_i; %m a-1    
+        % Extrapolate mean annual SF along Crane centerline
+        for j=1:length(x)
+            SMB.extrap(i,j) = SMB.fullGrid(RACMOy(j),RACMOx(j));
+        end        
 
-    %Ajust surface mass balance for elevation-dependence
+        % Adjust SMB for elevation-dependence
 
-    %Loop through each point along centerline
-    smb.interp = ones(length(h_cl),1);
-    for j=1:length(x)
-    
-        %Grab points within a certain distance from centerline, interpolate
-        nearbyPts = []; %Hold points within a certain distance
-        numPts = 0; %Total number of points found
-    
-        xi = cl.X(j); yi = cl.Y(j);
-        for k=1:length(h.X(:,1))
-            for l=1:length(h.X(1,:))
-                dist = sqrt((xi-h.X(k,l))^2 + (yi-h.Y(k,l))^2);
-                if dist<=maxDist
-                    numPts = numPts+1;
-                    nearbyPts(numPts,1:2) = ([h.h(k,l) smb.Yr(k,l)]); 
+        % Loop through each point along centerline
+        for j=1:length(x)
+
+            % Grab points within a certain distance from centerline, interpolate
+            nearbyPts = []; % Hold points within a certain distance
+            numPts = 0; % Total number of points found
+
+            for k=1:length(h.X(:,1))
+                for l=1:length(h.X(1,:))
+                    dist = sqrt((cl.X(j)-h.X(k,l))^2 + (cl.Y(j)-h.Y(k,l))^2);
+                    if dist<=maxDist
+                        numPts = numPts+1;
+                        nearbyPts(numPts,1:2) = ([h.h(k,l) SMB.fullGrid(k,l)]); 
+                    end 
                 end 
             end 
-        end 
-        
-        % Grab the mean of nearby points
-        smb.mean(i,j) = nanmean(nearbyPts(:,2));  
-        
-        %Calculate a linear trendline for nearby points
-        smb.interp(j) = polyval(polyfit(nearbyPts(:,1),...
-            nearbyPts(:,2),1),h_cl(j));
-       
-    end 
-    
-    % Fit a linear trendline to snowfall
-    smb.linear(i,1:length(find(~isnan(h_cl)))) = feval(fit(h_cl(~isnan(h_cl)),smb.interp(~isnan(h_cl)),'poly1'),h_cl(~isnan(h_cl)))';
-    smb.linear(i,length(find(~isnan(h_cl)))+1:length(x)) = smb.linear(end);
 
-    figure(1); subplot(2,3,3);
-    plot(h_cl,smb.interp,'--','color',col(i,:),'linewidth',1,'displayname',num2str(years(i))); 
-    plot(h_cl,smb.linear(i,:),'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');     
-    drawnow
+            % Grab the mean of nearby points
+            SMB.mean(i,j) = nanmean(nearbyPts(:,2));
+            
+            %Calculate a linear trendline for nearby points
+            P = polyfit(nearbyPts(:,1),nearbyPts(:,2),1);
+            int = -500:2000; 
+            yfit = P(1)*int+P(2);
     
-    % Save in structure
-    SMB(i).year = years(i); % Year
-    sigma_h_cl_11 = 25; % uncertainty in ice surface (m) - two points
-    SMB(i).smb_interp = smb.interp; % interpolated smb (m/a)
-    SMB(i).mean = smb.mean(i,:); % mean of nearby points (m/a)
+            SMB.downscaled(i,j) = interp1(int,yfit,h_cl(j));
     
-    % Calculate uncertainty in final SMB vector: 
-    % sigma_smb: [10% SMB raw product] &
-    %           [0.49 mWE/a from mean bias for downscaled product vs.
-    %           smb observed for eight transects in GrIS (Noel et al., 2016)] 
-    %           & [uncertainty in ice surface elevation]
-    %           = 0.1.*smb_interp + 0.49*(rho_w/rho_i*sigma_smbWE)
-    % mWE/a -> m ice/a: rho_w*H_w = rho_i*H_i
-    %                   ->  H_i = rho_w/rho_i/H_w
-    H_w = 0.49; % mWE/a mean bias vs. observations (Noel et al., 2016)
-    rho_i = 917; rho_w = 1000; % kg/m^3
-    for j=1:length(x)
-        SMB(i).sigma_smb(j) = SMB(i).smb_interp(j).*sqrt((0.1.*smb.interp(j)/smb.interp(j))^2 ...
-        +(rho_w/rho_i*H_w/H_w)^2+(sigma_h_cl_11/h_cl(j))^2);
-    end 
-    
-    % Calculate final SMB as sf-sm evaluated at the ice surface elevation
-    if years(i)<2016
-        P = fit(h_cl(~isnan(h_cl)),sf.linear(i,~isnan(h_cl))'-sm.linear(i,~isnan(h_cl))','poly1');
-        SMB(i).smb_adj = P.p1*h_cl+P.p2;
-    else
-        P = fit(h_cl(~isnan(h_cl)),smb.linear(i,~isnan(h_cl))','poly1');        
-        SMB(i).smb_adj = P.p1*h_cl+P.p2;
-        SMB(i).smb_adj(find(isnan(SMB(i).smb_adj),1,'first')+1:end) = SMB(i).smb_adj(find(isnan(SMB(i).smb_adj),1,'first')-1);
-    end
-    subplot(2,3,[4,4.5]);
-    plot(x/10^3,SMB(i).smb_adj,'linewidth',2,'color',col(i,:));
-    drawnow
-    
-% AIR TEMPERATURE (T)
-    T(i).T_yr = zeros(length(T_T(:,1,1)),length(T_T(1,:,1))); % initialize
-    for j=1:length(T_T(:,1,1))
-        for k=1:length(T_T(1,:,1))
-            T(i).T_yr(j,k,1) = nanmean(T_T(j,k,Iday_start:Iday_end));
         end     
-    end 
-    T(i).T_yr = T(i).T_yr - 273.15; % degrees C
-    % Interpolate mean annual T along centerline (RACMO days day_start:day_end)
-    T_cl=zeros(length(RACMOy),length(Iday_start:Iday_end));
-    for j=1:length(RACMOy)
-        for k=Iday_start:Iday_end
-            T_cl(j,k) = T_T(RACMOy(j),RACMOx(j),k);
-        end    
-    end  
-    % Take the average at each point along centerline
-    T_cl(:,1:Iday_start-1)=[]; % started adding points in column Iday_start
-    T_cl(:,1) = nanmean(T_cl,2);
-    T_cl(:,2:end) = []; % deg K
-    T_cl = T_cl - 273.15; % degrees C
+    
+        % Fit a linear trendline to SMB
+        SMB.linear(i,~isnan(h_cl)) = feval(fit(h_cl(~isnan(h_cl)),SMB.downscaled(i,~isnan(h_cl))','poly1'),h_cl(~isnan(h_cl)))';
+        SMB.linear(i,isnan(h_cl)) = SMB.linear(i,find(isnan(h_cl),1,'first')-1);
+    
+        % Plot
+        figure(1); subplot(2,3,3);
+        plot(x/10^3,SMB.downscaled(i,:),'--','color',col(i,:),'linewidth',1,'displayname',num2str(years(i))); 
+        plot(x/10^3,SMB.linear(i,:),'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');     
+        drawnow
 
-    % Loop through each point along centerline
-    T(i).interp = ones(length(h_cl),1);
-    for j=1:length(x)
+        % Calculate and plot the mean SM at each point 
+        if years(i)==2016
+            SMB.downscaled_average = nanmean(SMB.downscaled,1);
+            SMB.downscaled_average_linear = feval(fit(h_cl(~isnan(h_cl)),SMB.downscaled_average(~isnan(h_cl))','poly1'),h_cl);
+            plot(x/10^3,SMB.downscaled_average_linear,'-k','linewidth',2);
+        end
 
-        % Grab points within a certain distance from centerline, interpolate
-        maxDist = 9e3; 
-        nearbyPts = []; % Hold points within a certain distance
-        numPts = 0; % Total number of points found
+    end   
 
-        xi = cl.X(i); yi = cl.Y(i);
-        for k=1:length(h.X(:,1))
-            for l=1:length(h.X(1,:))
-                dist = sqrt((xi-h.X(k,l))^2 + (yi-h.Y(k,l))^2);
-                if dist<=maxDist
-                    numPts = numPts+1;
-                    nearbyPts(numPts,1:2) = ([h.h(k,l) T(i).T_yr(k,l)]); 
+    % RUNOFF (RO)
+    if years(i)<=2019
+    
+        % estimate using the difference between the native 
+        % and downscaled resolution snowmelt
+        if years(i)<2016
+            RO.diff(i,:) = SM.downscaled(i,:)-SM.extrap(i,:);
+        else
+            RO.diff(i,:) = SMB.downscaled(i,:)-SMB.extrap(i,:);
+        end
+        
+        % calculate linear trendline
+        RO.linear(i,:) = feval(fit(x(~isnan(RO.diff(i,:)))',RO.diff(i,~isnan(RO.diff(i,:)))','poly1'),x')';
+        
+        % Plot
+        figure(1);
+        subplot(2,3,[4,4.5]);    
+        plot(x/10^3,RO.diff(i,:),'--','color',col(i,:),'linewidth',1);
+        plot(x/10^3,RO.linear(i,:),'-','color',col(i,:),'linewidth',2);
+
+        % Calculate and plot the mean RO at each point 
+        if years(i)==2016
+            RO.downscaled_average = nanmean(RO.diff,1);
+            RO.downscaled_average_linear = feval(fit(h_cl(~isnan(h_cl)),RO.downscaled_average(~isnan(h_cl))','poly1'),h_cl);
+            plot(x/10^3,RO.downscaled_average_linear,'-k','linewidth',2);
+        end
+
+    end
+
+    % AIR TEMPERATURE (T)
+    T.extrap = NaN*zeros(length(years),length(x)); 
+    T.mean = NaN*zeros(length(years),length(x));
+    T.downscaled = NaN*zeros(length(years),length(x));
+    if years(i)<=2019
+ 
+        T.fullGrid = NaN*zeros(length(T.T(:,1,1)),length(T.T(1,:,1))); % initialize
+        for j=1:length(T.T(:,1,1))
+            for k=1:length(T.T(1,:,1))
+                T.fullGrid(j,k) = nanmean(T.T(j,k,Iday_start:Iday_end))-273.15; % ^oC
+            end     
+        end 
+        % Extrapolate mean annual T along centerline (RACMO days day_start:day_end)
+        for j=1:length(RACMOy)
+            T.extrap(i,j) = T.fullGrid(RACMOy(j),RACMOx(j));
+        end  
+   
+        % Loop through each point along centerline
+        for j=1:length(x)
+        
+            % Grab points within a certain distance from centerline, interpolate
+            maxDist = 9e3; 
+            nearbyPts = []; % Hold points within a certain distance
+            numPts = 0; % Total number of points found
+        
+            for k=1:length(h.X(:,1))
+                for l=1:length(h.X(1,:))
+                    dist = sqrt((cl.X(j)-h.X(k,l))^2 + (cl.Y(j)-h.Y(k,l))^2);
+                    if dist<=maxDist
+                        numPts = numPts+1;
+                        nearbyPts(numPts,1:2) = ([h.h(k,l) T.fullGrid(k,l)]); 
+                    end 
                 end 
             end 
-        end 
-
-        % Grab the mean of nearby points
-        T(i).mean(j) = nanmean(nearbyPts(:,2));
         
-        % Calculate a linear trendline for nearby points
-        P = polyfit(nearbyPts(:,1),nearbyPts(:,2),1);
-        int = -10:1800; 
-        yfit = P(1)*int+P(2);
+            % Grab the mean of nearby points
+            T.mean(i,j) = nanmean(nearbyPts(:,2));
+           
+            % Calculate a linear trendline for nearby points
+            P = polyfit(nearbyPts(:,1),nearbyPts(:,2),1);
+            int = -10:1800; 
+            yfit = P(1)*int+P(2);
+        
+            % Apply regression slope to current grid cell, solve for eqn
+            m = P(1); b = T.extrap(i,j)-m*h.cl(j);
+            T_fit = [h.cl m.*h.cl+b];
+            T.downscaled(i,j) = m*h_cl(j)+b; 
 
-        % Apply regression slope to current grid cell, solve for eqn
-        m = P(1); b = T_cl(i)-m*h_cl_RACMO(i);
-        T_fit = [h_cl_RACMO m.*h_cl_RACMO+b];
-        T(i).interp(i) = m*h_cl(i)+b; 
-    end 
-
-    % Dry adiabatic lapse rate    
-    lr = 9.8e-3; % lapse rate (degrees C m^-1)
-
-    % Calculate new air temperature using lapse rate and RACMO reference height
-    T_cl_m = movmean(T_cl,10,'omitnan');
-    h_cl_m = movmean(h_cl,10,'omitnan');
-    T(i).cl_yr = (h_cl_RACMO-h_cl)*lr+T_cl; 
+        end 
+        
+        % Dry adiabatic lapse rate    
+        lr = 9.8e-3; % lapse rate (degrees C m^-1)
+        
+        % Calculate new air temperature using lapse rate and RACMO reference height
+        T_cl_m = movmean(T.downscaled(i,:),10,'omitnan');
+        h_cl_m = movmean(h_cl,10,'omitnan');
+        T.adjusted(i,:) = (h.cl-h_cl)'*lr+T.extrap(i,:); 
     
-    % Plot
-    figure(1);
-    subplot(2,3,[5.5,6]);
-    plot(x/10^3,T(i).cl_yr,'color',col(i,:),'linewidth',2);
+        % Plot
+        figure(1);
+        subplot(2,3,[5.5,6]);
+        plot(x/10^3,T.adjusted(i,:),'color',col(i,:),'linewidth',2);
+
+        % Calculate and plot the mean SM at each point 
+        if years(i)==2016
+            T.adjusted_average = nanmean(T.adjusted,1);
+            T.adjusted_average_linear = feval(fit(h_cl(~isnan(h_cl)),T.adjusted_average(~isnan(h_cl))','poly1'),h_cl);
+            plot(x/10^3,T.adjusted_average_linear,'-k','linewidth',2);
+        end
+
+    end
 
 end 
     
 % save figure
 if figure_save
     cd([homepath,'figures/']);
-    saveas(gcf,'Crane_adjustedRACMOVariables_2002-2019.png','png');
+    saveas(gcf,'adjustedRACMOVariables_2009-2019.png','png');
     disp('Figure 1 saved');
 end 
 
-% save downscaled SMB
-if save_smb
+% save downscaled SMB and Runoff
+if save_variables
     cd([homepath,'inputs-outputs/']);
-    save('Crane_downscaledSMB_2002-2019.mat','SMB');
-    disp('SMB saved');
+    save('downscaledClimateVariables_2009-2019.mat','SF','SM','RO','SMB','T');
+    disp('Climate variables saved');
 end 
 
-% save air temperature
-if save_temp
-    cd([homepath,'inputs-outputs/']);
-    save('Crane_downscaledAnnualAirTemp.mat','T');
-    disp('T saved');
-end
-
-%% Adjust SMB to ~= 0.1 m/a near the terminus
-
-termSMB = 0.1; % SMB at the terminus (m/a)
-
-% set up figure
-figure(2); clf; hold on; grid on;
-set(gca,'linewidth',2,'fontsize',16);
-xlabel('Distance Along Centerline (km)'); ylabel('Adjusted SMB (m a^{-1})');
-
-% loop through years
-for i=1:length(SMB)
-    SMB(i).smb_adj2 = zeros(1,length(SMB(i).smb_adj));
-    % loop through centerline
-    for j=1:length(SMB(i).smb_adj)
-        SMB(i).smb_adj2(j) = SMB(i).smb_adj(j)-(SMB(i).smb_adj(150)-termSMB)/x(160)*x(j);
-    end
-    SMB(i).smb_adj2(150:end) = NaN;
-    plot(x/10^3,SMB(i).smb_adj2,'linewidth',2,'color',col(i,:));
-end
-
-% save
-if save_smb
-    cd([homepath,'inputs-outputs/']);
-    save('Crane_downscaledSMB_2002-2019.mat','SMB');
-    disp('SMB saved');
-end 
 
 
