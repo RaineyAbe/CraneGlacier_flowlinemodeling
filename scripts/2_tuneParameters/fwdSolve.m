@@ -1,4 +1,4 @@
-function [J,x,U,xcf] = fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,fwd,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,smr0,smb0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018)
+function [J,x,U,xcf] = FWDSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,FWD,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018)
 
 % define time stepping (s)
 dt = 0.01*3.1536e7;
@@ -13,7 +13,7 @@ try
 
         % find the calving front location (based on Benn et al., 2007 & Nick et al., 2010)
         Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
-        crev_s = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*fwd); % surface crevasse penetration depth (m)
+        crev_s = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*FWD); % surface crevasse penetration depth (m)
         Hab = H+rho_sw/rho_i*(hb); % height above buoyancy (m)
         crev_b = rho_i/(rho_sw-rho_i).*(Rxx./(rho_i*g)-Hab); % basal crevasse depth (m)
         % calving front located where the inland-most crevasse intersects sea level
@@ -186,11 +186,11 @@ try
         F(1)=F(2);
 
         % implement SMB, SMR, delta_SMB, & delta_SMR
-        smr = zeros(1,c);
+        SMR = zeros(1,c);
         for k=gl+1:c
-            smr(k) = smr0-0.001*(smr0)*(k-gl+1);
+            SMR(k) = SMR0-0.001*(SMR0)*(k-gl+1);
         end
-        smb = interp1(x0,smb0+Q0,x);
+        SMB = interp1(x0,SMB0+Q0,x);
 
         % calculate the  change in ice thickness from continuity
         clearvars dHdt
@@ -200,23 +200,23 @@ try
         dH = dHdt.*dt;
 
         % new thickness (change from dynamics, SMB, & SMR)
-        Hn = H+dH+(smb.*dt)+(smr.*dt);
+        Hn = H+dH+(SMB.*dt)+(SMR.*dt)-(interp1(x0,RO0,x)*dt);
         Hn(Hn < 0) = 0; % remove negative values
         H = Hn; % set as the new thickness value
 
         % stop the model if it behaves unstably (monitored by ice thickness and speed)
         if max(H) > H_max
-            disp([num2str(fwd),' m failed']);
+            disp([num2str(FWD),' m failed']);
             J = NaN;           
             break;
         end
         if mean(U) < U_min/3.1536e7
-            disp([num2str(fwd),' m failed']);
+            disp([num2str(FWD),' m failed']);
             J = NaN;
             break;
         end
         if any(~isfinite(H(1:c))) || any(~isfinite(U(1:c))) || any(~isfinite(h(1:c)))
-            disp([num2str(fwd),' m failed']);
+            disp([num2str(FWD),' m failed']);
             J = NaN;  
             break;
         end
@@ -236,7 +236,7 @@ try
     
 catch
     J=NaN; x=NaN; U=NaN; xcf=NaN;
-    disp([num2str(fwd),' m failed']);
+    disp([num2str(FWD),' m failed']);
 end
 
 end

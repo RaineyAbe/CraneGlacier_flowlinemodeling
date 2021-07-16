@@ -269,7 +269,7 @@ close all;
 [smb.X,smb.Y] = wgs2ps(smb.Lon,smb.Lat,'StandardParallel',-71,'StandardMeridian',0);
 
 %Load Crane ice surface
-h_cl = load("Crane_surfaceElevationObs.mat").h(28).surface';
+h_cl = load("surfaceElevationObs.mat").h(28).surface';
 
 maxDist = 10e3; 
    
@@ -553,8 +553,8 @@ while loop==1
     cd([homepath,'inputs-outputs/']);
         
     % Load most advanced terminus position (2019)
-    term = dsearchn([cl.X cl.Y],[load('Crane_terminusPositions_2002-2019.mat').term(61).X ...
-    load('Crane_terminusPositions_2002-2019.mat').term(61).Y]); 
+    term = dsearchn([cl.X cl.Y],[load('terminusPositions_2002-2019.mat').term(61).X ...
+    load('terminusPositions_2002-2019.mat').term(61).Y]); 
     % clip centerline at this point
     %cl.X = cl.X(1:term); cl.Y = cl.Y(1:term);
     
@@ -615,7 +615,7 @@ while loop==1
     
     % Load 2016 Crane ice surface
     cd([homepath,'inputs-outputs/']);
-    h_cl = load("Crane_surfaceElevationObs.mat").h(28).surface';   
+    h_cl = load("surfaceElevationObs.mat").h(28).surface';   
         
     % Grab points within a certain distance from centerline, interpolate
     nearbyPts = []; % Hold points within a certain distance
@@ -972,7 +972,7 @@ end
 % save downscaled SMB and Runoff
 if save_variables
     cd([homepath,'inputs-outputs/']);
-    save('downscaledClimateVariables_2009-2019.mat','SF','SM','RO','SMB','T');
+    save('downscaledClimateVariables_2009-2019.mat','RO','SMB','T');
     disp('Climate variables saved');
 end 
 

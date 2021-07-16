@@ -13,6 +13,7 @@ save_mr = 1; % = 1 to save resulting melt rates
 homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/';
 addpath([homepath,'CraneGlacier_flowlinemodeling/matlabFunctions/cmocean_v2.0/cmocean/']);
 addpath('/Users/raineyaberle/Desktop/Research/matlabFunctions');
+addpath('/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/inputs-outputs/');
 cd([homepath,'ice_shelf_change/']);
 
 % load grid, basal melt rate (w_b), interpolated basal melt rate
@@ -93,9 +94,28 @@ if save_figure
     disp('figure 1 saved')
 end
 
-%% scale fit for other maximum submarine melt rates - TEST
-smr_max = 10; % m/yr
-x = 0:200:10e3; % distance along ice tongue (m)
-smr = smr_max/(mr_mean_fit.a+1)*feval(mr_mean_fit,x);
-smr(1) = 0; 
-figure; plot(x,smr); hold on; plot(x,feval(mr_mean_fit,x));
+%% extract ocean thermal forcing, plot
+
+% load maximum thermal forcing and coordinates (Adumusilli et al., 2020)
+cd([homepath,'ice_shelf_change/data/figure_1/']);
+TF.X = h5read('max_thermal_forcing_200-800.h5','/x'); % m
+TF.Y = h5read('max_thermal_forcing_200-800.h5','/y'); % m
+TF.TF_max = h5read('max_thermal_forcing_200-800.h5','/tf_max'); % ^oC
+
+% load Crane centerline
+cl.X = load('Crane_centerline.mat').x; cl.Y = load('Crane_centerline.mat').y;
+
+% plot results
+figure(2); clf; hold on;
+colormap(cmocean('thermal'));
+imagesc(TF.X/10^3,TF.Y/10^3,TF.TF_max');
+plot(cl.X/10^3,cl.Y/10^3,'-b','linewidth',2);
+set(gca,'YDir','normal','fontsize',14,'linewidth',2);
+xlabel('Easting (km)'); ylabel('Northing (km)');
+xlim([-2.4991e3 -2.2658e3]); ylim([1.1691e3 1.4023e3]);
+c=colorbar; c.Label.String = "Max. Thermal Forcing (^oC)"; caxis([0 3]);
+
+disp('TF near the terminus =~ 2.5^oC');
+
+
+

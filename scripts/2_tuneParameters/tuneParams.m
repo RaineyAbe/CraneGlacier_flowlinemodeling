@@ -10,13 +10,13 @@ clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
 % define home path in directory
-homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
-addpath([homepath,'../matlabFunctions/cmocean_v2.0/cmocean/']);
+homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
+addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']);
 addpath([homepath,'scripts/2_tuneParmeters/']);
 addpath([homepath,'inputs-outputs/']);
 
 % Load Crane Glacier initialization variables
-load('Crane_flowlineModelInitialization.mat');
+load('flowlineModelInitialization.mat');
 cl.X = load('Crane_centerline.mat').x; cl.Y = load('Crane_centerline.mat').y;
 cl.x = zeros(1,length(cl.X));
 for i=2:length(cl.X)
@@ -56,7 +56,7 @@ E = 1; % enhancement factor
 % calving parameters
 Hc = 400; % m -> set the calving front to a default minimum ice thickness value if calving criteria is not met
 sigma_b = 0; % back pressure (Pa) due to sea ice or sikkusak
-fwd = 13; % fresh water depth in crevasses (m)
+FWD = 13; % fresh water depth in crevasses (m)
 
 % maximum & minimum thickness & speed cut-off to check for instability
 H_max = 2000; % maximum thickness (m)
@@ -81,25 +81,25 @@ hb0(find(isnan(hb0),1,'first'):end) = hb0(find(isnan(hb0),1,'first')-1);
 
 W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);    
 
-%% 2. solve for beta using 2009 observed surface speed
+%% 2. solve for beta using observed surface speed
 
 save_beta = 0;    % = 1 to save parameter solutions
 save_figure = 0;   % = 1 to save figures
 
 % initialize variables
 x=x0; H=H0; hb=hb0; U=U0; dUdx=dUdx0; U0(c0+1:end)=NaN; A=A0;
-fwd=10;
+FWD=10;
 
 % solve for beta by gradient descent 
 cd([homepath,'scripts/2_tuneParameters/']);
 % start timer
 tic
-fh = @(betai)betaSolve(A0,A,betai,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,fwd,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,smr0,smb0,Q0,H_max,U_min,F0);
+fh = @(betai)betaSolve(A0,A,betai,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,FWD,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,SMR0,SMB0,RO0,Q0,H_max,U_min,F0);
 % solve for beta at the resolution of the stress-coupling length
-beta0 = 1.4*ones(1,5); % initial guess for beta
-[beta,~] = fmincon(fh,beta0,[],[],[],[],0.5*ones(1,length(beta0)),5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-2,'MaxFunctionEvaluations',1e4));
+beta0 = 1.2*ones(1,5); % initial guess for beta
+[beta,~] = fmincon(fh,beta0,[],[],[],[],0.5*ones(1,length(beta0)),1.5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-1,'MaxFunctionEvaluations',1e4));
 % grab velocity from beta solution
-[~,Un,xn,xcf,beta0x] = betaSolve(A0,A,beta,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,fwd,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,smr0,smb0,Q0,H_max,U_min,F0);
+[~,Un,xn,xcf,beta0x] = betaSolve(A0,A,beta,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,FWD,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,SMR0,SMB0,RO0,Q0,H_max,U_min,F0);
 beta = interp1(beta0x,beta,x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
 % stop timer
 toc
@@ -126,7 +126,7 @@ if save_beta
     cd([homepath,'inputs-outputs/']);
     beta0=beta;
     save('flowlineModelInitialization.mat','beta0','-append');
-    save('betaSolution.mat','beta','Un','xn','xcf');
+    save('betaSolution.mat','beta','x','Un','xn','xcf');
     disp('beta solution saved');
 end
 
@@ -152,15 +152,15 @@ if strcmp(method,'g')
     tic
     
     % create function handle for the beta solve function
-    fh = @(fwd)fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,fwd,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,smr0,smb0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018);
-    fwd0 = 6; % initial guesses fwd
+    fh = @(FWD)fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,FWD,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018);
+    FWD0 = 6; % initial guesses fwd
     % solve for fwd which minimize the cost function J
-    [fwd,fval] = fmincon(fh,fwd0,[],[],[],[],fwdbounds(1),fwdbounds(2));   
+    [FWD,fval] = fmincon(fh,FWD0,[],[],[],[],fwdbounds(1),fwdbounds(2));   
     
     % stop timer
     toc
     
-    disp(['optimal fwd = ',num2str(fwd),' m']);
+    disp(['optimal fwd = ',num2str(FWD),' m']);
     
 elseif strcmp(method,'b')
     
@@ -168,27 +168,27 @@ elseif strcmp(method,'b')
     tic
     
     % loop through possible fwd values
-    fwd0 = fwdbounds(1):fwdbounds(2);
-    J = NaN*ones(1,length(fwd0)); % initialize cost function
-    for j=1:length(fwd0)
-        fwd=fwd0(j);
-        [J(j),~,~,~] = fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,fwd,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,smr0,smb0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018);
+    FWD0 = fwdbounds(1):fwdbounds(2);
+    J = NaN*ones(1,length(FWD0)); % initialize cost function
+    for j=1:length(FWD0)
+        FWD=FWD0(j);
+        [J(j),~,~,~] = fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,FWD,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018);
     end
     
     % save fwd with lowest cost
     Ibest = find(J==min(J(:)),1);
-    fwd = fwd0(Ibest);
+    FWD = FWD0(Ibest);
     % stop timer
     toc
 
      % plot results
-    [~,x,U,xcf] = fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,fwd,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,smr0,smb0,Q0,sigma_b,H_max,U_min,xcf_2018);
+    [~,x,U,xcf] = fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,FWD,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018);
     figure(3); clf; hold on;
     set(gcf,'position',[200 300 1000 500]);
     subplot(1,2,1); hold on;
     set(gca,'fontsize',18,'linewidth',2); grid on;
-    plot(fwd0,J,'.','markersize',15);
-    plot(fwd,J(Ibest),'*r','markersize',15,'linewidth',2);
+    plot(FWD0,J,'.','markersize',15);
+    plot(FWD,J(Ibest),'*r','markersize',15,'linewidth',2);
     xlabel('FWD (m)'); ylabel('Cost');
     subplot(1,2,2); hold on;
     set(gca,'fontsize',18,'linewidth',2); grid on; legend('location','northwest');
@@ -202,9 +202,9 @@ end
 
 if save_fwd
     cd([homepath,'inputs-outputs/']);
-    fwd0=fwd;
-    save('Crane_flowlineModelInitialization.mat','fwd0','-append');
-    disp('fwd saved');
+    FWD0=FWD;
+    save('flowlineModelInitialization.mat','FWD0','-append');
+    disp('FWD saved');
 end
 
 if save_figure
