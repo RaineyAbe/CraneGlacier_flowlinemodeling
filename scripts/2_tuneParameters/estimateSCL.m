@@ -10,19 +10,19 @@ clear all; close all;
 save_results = 0; % = 1 to save results
 
 % Define home path
-homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
+homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
 cd([homepath,'inputs-outputs/']);
 
 % 1. Load centerline observations of ice speed, ice thickness, glacier width
 % and define constants
 
-    x0 = load('flowline_initialization.mat').x0'; % spatial grid (m along centerline)
-    hb0 = load('flowline_initialization.mat').hb0'; % glacier bed elevation (m)
-    h0 = load('flowline_initialization.mat').h0'; % ice surface elevation (m)
-    W0 = load('flowline_initialization.mat').W0'; % glacier width (m)
-    U0 = load('flowline_initialization.mat').U0'; % ice surface speed (m/s)
-    A0 = load('flowline_initialization.mat').A0'; % rate factor (Pa^-n s^-1)
-    c0 = load('flowline_initialization.mat').c0; % calving front position
+    x0 = load('flowlineModelInitialization.mat').x0'; % spatial grid (m along centerline)
+    hb0 = load('flowlineModelInitialization.mat').hb0'; % glacier bed elevation (m)
+    h0 = load('flowlineModelInitialization.mat').h0'; % ice surface elevation (m)
+    W0 = load('flowlineModelInitialization.mat').W0'; % glacier width (m)
+    U0 = load('flowlineModelInitialization.mat').U0'; % ice surface speed (m/s)
+    A0 = load('flowlineModelInitialization.mat').A0'; % rate factor (Pa^-n s^-1)
+    c0 = load('flowlineModelInitialization.mat').c0; % calving front position
     % end variables at observed calving front location
     x0(c0+1:end)=[]; hb0(c0+1:end)=[]; h0(c0+1:end)=[]; W0(c0+1:end)=[];
     U0(c0+1:end)=[]; A0(c0+1:end)=[];

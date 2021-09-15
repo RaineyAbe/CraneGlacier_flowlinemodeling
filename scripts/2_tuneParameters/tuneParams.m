@@ -11,8 +11,9 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
     
 % define home path in directory
 homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
-addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']);
-addpath([homepath,'scripts/2_tuneParmeters/']);
+addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']); % path to cmocean color palettes
+addpath([homepath,'scripts/2_tuneParmeters/']); % path to tuning functions
+addpath([homepath,'scripts/']); % path to U_convergence
 addpath([homepath,'inputs-outputs/']);
 
 % Load Crane Glacier initialization variables
@@ -56,12 +57,12 @@ E = 1; % enhancement factor
 % calving parameters
 Hc = 400; % m -> set the calving front to a default minimum ice thickness value if calving criteria is not met
 sigma_b = 0; % back pressure (Pa) due to sea ice or sikkusak
-FWD = 13; % fresh water depth in crevasses (m)
+d_fw = 13; % fresh water depth in crevasses (m)
 
 % maximum & minimum thickness & speed cut-off to check for instability
 H_max = 2000; % maximum thickness (m)
 H_min = 100;  % minimum thickness (m)
-U_min = 100;  % minimum mean speed (m a^-1)
+U_min = 100./3.1536e7;  % minimum mean speed (m s^-1)
 
 % initial conditions
 H0 = h0-hb0; % ice thickness (m)
@@ -87,19 +88,18 @@ save_beta = 0;    % = 1 to save parameter solutions
 save_figure = 0;   % = 1 to save figures
 
 % initialize variables
-x=x0; H=H0; hb=hb0; U=U0; dUdx=dUdx0; U0(c0+1:end)=NaN; A=A0;
-FWD=10;
+x=x0; H=H0; hb=hb0; U=U0; dUdx=dUdx0; A=A0;
+d_fw=3; % initial guess for depth of fresh water in crevasses
 
 % solve for beta by gradient descent 
-cd([homepath,'scripts/2_tuneParameters/']);
 % start timer
 tic
-fh = @(betai)betaSolve(A0,A,betai,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,FWD,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,SMR0,SMB0,RO0,Q0,H_max,U_min,F0);
+fh = @(betai)betaSolve(A0,A,betai,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,d_fw,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,xcf_2018,SMB0,Q0,SMR0,H_max,U_min,F0);
 % solve for beta at the resolution of the stress-coupling length
-beta0 = 1.2*ones(1,5); % initial guess for beta
-[beta,~] = fmincon(fh,beta0,[],[],[],[],0.5*ones(1,length(beta0)),1.5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-1,'MaxFunctionEvaluations',1e4));
+beta0 = 1*ones(1,13); % initial guess for beta
+[beta,~] = fmincon(fh,beta0,[],[],[],[],0*ones(1,length(beta0)),5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-4,'MaxFunctionEvaluations',1e5));
 % grab velocity from beta solution
-[~,Un,xn,xcf,beta0x] = betaSolve(A0,A,beta,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,FWD,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,h_2018,xcf_2018,SMR0,SMB0,RO0,Q0,H_max,U_min,F0);
+[~,Un,xn,xcf,beta0x] = betaSolve(A0,A,beta,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,d_fw,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,xcf_2018,SMB0,Q0,H_max,U_min,F0);
 beta = interp1(beta0x,beta,x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
 % stop timer
 toc
@@ -130,10 +130,10 @@ if save_beta
     disp('beta solution saved');
 end
 
-%% 3. tune fwd using 2018 speed and terminus position
+%% 3. tune dfw using 2018 speed and terminus position
 
 % define settings
-fwdbounds = [0 15]; % range of possible fwd values (m)
+dfwbounds = [0 15]; % range of possible fwd values (m)
 method = 'g';       % = 'g' to solve by gradient descent
                     % = 'b' to solve by brute force
 plot_timeSteps = 0; % = 1 to plot geometry, speed, grounding line/terminus positions over time
@@ -152,15 +152,15 @@ if strcmp(method,'g')
     tic
     
     % create function handle for the beta solve function
-    fh = @(FWD)fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,FWD,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018);
-    FWD0 = 6; % initial guesses fwd
+    fh = @(d_fw)dfwSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,d_fw,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018);
+    d_fw0 = 6; % initial guesses fwd
     % solve for fwd which minimize the cost function J
-    [FWD,fval] = fmincon(fh,FWD0,[],[],[],[],fwdbounds(1),fwdbounds(2));   
+    [d_fw,fval] = fmincon(fh,d_fw0,[],[],[],[],dfwbounds(1),dfwbounds(2));   
     
     % stop timer
     toc
     
-    disp(['optimal fwd = ',num2str(FWD),' m']);
+    disp(['optimal fwd = ',num2str(d_fw),' m']);
     
 elseif strcmp(method,'b')
     
@@ -168,28 +168,28 @@ elseif strcmp(method,'b')
     tic
     
     % loop through possible fwd values
-    FWD0 = fwdbounds(1):fwdbounds(2);
-    J = NaN*ones(1,length(FWD0)); % initialize cost function
-    for j=1:length(FWD0)
-        FWD=FWD0(j);
-        [J(j),~,~,~] = fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,FWD,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018);
+    d_fw0 = dfwbounds(1):dfwbounds(2);
+    J = NaN*ones(1,length(d_fw0)); % initialize cost function
+    for j=1:length(d_fw0)
+        d_fw=d_fw0(j);
+        [J(j),~,~,~] = dfwSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,d_fw,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018);
     end
     
     % save fwd with lowest cost
     Ibest = find(J==min(J(:)),1);
-    FWD = FWD0(Ibest);
+    d_fw = d_fw0(Ibest);
     % stop timer
     toc
 
      % plot results
-    [~,x,U,xcf] = fwdSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,FWD,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018);
+    [~,x,U,xcf] = dfwSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,d_fw,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018);
     figure(3); clf; hold on;
     set(gcf,'position',[200 300 1000 500]);
     subplot(1,2,1); hold on;
     set(gca,'fontsize',18,'linewidth',2); grid on;
-    plot(FWD0,J,'.','markersize',15);
-    plot(FWD,J(Ibest),'*r','markersize',15,'linewidth',2);
-    xlabel('FWD (m)'); ylabel('Cost');
+    plot(d_fw0,J,'.','markersize',15);
+    plot(d_fw,J(Ibest),'*r','markersize',15,'linewidth',2);
+    xlabel('d_fw (m)'); ylabel('Cost');
     subplot(1,2,2); hold on;
     set(gca,'fontsize',18,'linewidth',2); grid on; legend('location','northwest');
     plot(x/10^3,U*3.1536e7,'-k','linewidth',2,'displayname','U_{sol}');
@@ -202,9 +202,9 @@ end
 
 if save_fwd
     cd([homepath,'inputs-outputs/']);
-    FWD0=FWD;
-    save('flowlineModelInitialization.mat','FWD0','-append');
-    disp('FWD saved');
+    d_fw0=d_fw;
+    save('flowlineModelInitialization.mat','d_fw0','-append');
+    disp('d_fw saved');
 end
 
 if save_figure

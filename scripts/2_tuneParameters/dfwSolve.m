@@ -1,17 +1,16 @@
-function [J,U,x,xcf,beta0x] = betaSolve(A0,A,beta0,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,d_fw,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,xcf_2018,SMB0,Q0,SMR0,H_max,U_min,F0)
+function [J,x,U,xcf] = dfwSolve(dUdx,U,E,A,m,n,rho_i,g,rho_fw,rho_sw,d_fw,x0,c0,h,hb,x,H,dx0,hb0,W0,A0,beta0,plot_timeSteps,SMR0,SMB0,RO0,Q0,sigma_b,H_max,U_min,xcf_2018,U_2018)
 
-% interpolate beta0 to grid spacing
-beta0x = 0:round(x0(end)/(length(beta0))):round(x0(end)/(length(beta0)))*(length(beta0)-1); 
-beta = interp1(beta0x,beta0,x0,'pchip');
-    
 % define time stepping (s)
-dt = 0.001*3.1536e7;
+dt = 0.01*3.1536e7;
 t_start = 0*3.1536e7;
 t_end = 9*3.1536e7;
 t = (t_start:dt:t_end);
 
-%try
+try
+    
+    % run flowline model
     for i=1:length(t)
+
         % find the calving front location (based on Benn et al., 2007 & Nick et al., 2010)
         Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
         crev_s = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*d_fw); % surface crevasse penetration depth (m)
@@ -44,18 +43,17 @@ t = (t_start:dt:t_end);
             else
                 xcf = xcf_b;
             end
-            xcf=xcf_s; % use only surface crevasses if basal crevasses
-            %lead to unstable model behavior
+            xcf=xcf_s;
             if xcf<20e3 || xcf > 70e3 || isnan(xcf)
                 xcf = interp1(feval(fit(x',(h-crev_s)','poly1'),x),x,0,'linear','extrap');
                 %xcf = x0(c0);
             end
         end
-        
+
         % calculate the thickness required to remain grounded at each grid cell
         Hf = -(rho_sw./rho_i).*hb; % flotation thickness (m)
         % find the location of the grounding line and use a floating
-        % geometry from the grounding linU_widthavge to the calving front
+        % geometry from the grounding line to the calving front
         if ~isempty(find(Hf-H>0,1,'first'))
             if length(Hf)>=find(Hf-H>0,1,'first')+1
                 xgl = interp1(Hf(find(Hf-H>0,1,'first')-1:find(Hf-H>0,1,'first')+1)...
@@ -70,8 +68,7 @@ t = (t_start:dt:t_end);
         if xgl>xcf % grounding line can't be past calving front
             xgl=xcf;
         end
-        XGL(i) = xgl; % save grounding line position over time
-        
+
         % create coordinate system that hits cf and gl exactly
         % has resolution dxmax near the ice divide
         % has resolution dxmin from gl to c
@@ -85,31 +82,91 @@ t = (t_start:dt:t_end);
             xn = [xn xn(end)+dx:dx:xcf];
         end
         clear dx; dxn = [xn(2:end)-xn(1:end-1) xn(end)-xn(end-1)];
-        
+
         % get geometry on new coordinates
         c = length(xn); gl = dsearchn(xn',xgl); % indeces for cf and gl
         %if the crevasses never intersect sea level
-        if isempty(c) == 1 % set the calving front to a default minimum ice thickness value
+        if isempty(c) == 1 %set the calving front to a default minimum ice thickness value
             c = find(H<Hc,1,'first');
         end
         if isempty(c)==1 % set c to length of x if criteria still not met
             c=length(x);
             disp('calving criteria not met');
         end
-        
+
         hb = interp1(x0,hb0,xn,'linear','extrap');
         W = interp1(x0,W0,xn,'linear','extrap');
         H = interp1(x,H,xn,'linear','extrap');
         U = interp1(x,U,xn,'linear','extrap');
+        dUdx = interp1(x,dUdx,xn,'linear','extrap');
         A = interp1(x0,A0,xn,'linear','extrap');
-        beta = interp1(x,beta,xn,'linear','extrap');
-        x = xn; dx = dxn; clear xn dxn; %EE: added the clear statement 14/09/21
-        
+        beta = interp1(x0,beta0,xn,'linear','extrap'); beta(gl+1:end)=0;
+        x = xn; dx = dxn;
+
         % calculate surface elevation
         h = hb+H; % surface elevation (m a.s.l.)
         h(gl+1:c) = (1-rho_i/rho_sw).*H(gl+1:c); %adjust the surface elevation of ungrounded ice to account for buoyancy
         H(h<0)=0-hb(h<0); h(h<0)=0; % surface cannot go below sea level
         h(h-H<hb) = hb(h-H<hb)+H(h-H<hb); % thickness cannot go beneath bed elevation
+
+        % plot geometry, speed, & grounding line and calving front positions
+        col = parula(length(t)+20); % color scheme for plots
+        if plot_timeSteps
+            if t(i)==t_start
+                figure(1); clf
+                set(gcf,'Position',[0 100 1300 400]);
+                ax1 = axes('Position',[0.06 0.12 0.27 0.78]); % glacier geometry
+                hold on; grid on;
+                set(gca,'FontSize',14,'linewidth',2);
+                %title('Glacier Geometry');
+                legend('Location','northeast');
+                xlim([0 75]); ylim([min(hb)-100 max(h)+200]);
+                xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
+                % ice surface
+                plot(x(1:c)./10^3,h(1:c),'color',col(i,:),'linewidth',2,'displayname','2009');
+                % calving front
+                plot(x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(i,:),'linewidth',2,'HandleVisibility','off');
+                % floating bed
+                plot(x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(i,:),'linewidth',2,'HandleVisibility','off');
+                % bed elevation
+                plot(x0./10^3,hb0,'k','linewidth',2,'HandleVisibility','off');
+                % mean sea level
+                plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
+                ax2 = axes('Position',[0.38 0.1 0.28 0.8]); % ice speed
+                hold on; grid on;
+                set(gca,'FontSize',14,'linewidth',2);
+                title('Ice Speed'); legend('Location','northeast');
+                xlim([0 65]); ylim([0 1500]);
+                xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})');
+                % ice speed
+                plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','2009');
+                ax3 = axes('Position',[0.7 0.1 0.28 0.8]); % calving front position
+                hold on; grid on;
+                set(gca,'FontSize',14,'linewidth',2);
+                title('Terminus & Grounding Line Positions'); legend('Location','best');
+                xlim([30 65]); ylim([0 t_end./3.1536e7]);
+                xlabel('Distance Along Centerline (km)'); ylabel('Year');
+                % terminus & grounding line positions
+                plot(x(c)/10^3,t(i)./3.1536e7,'.','markersize',15,'color',col(i,:),'displayname','2009');
+                plot(ax3,x(gl)./10^3,t(i)./3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off');
+            elseif mod(i-1,round(length(t)/10))==0 % display every length(t)/20
+                figure(1);
+                % ice surface
+                plot(ax1,x(1:c)/10^3,h(1:c),'-','color',col(i,:),'linewidth',2,'displayname',num2str(round(t(i)./3.1536e7)+2009));
+                plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');
+                plot(ax1,[x(c);x(c)]/10^3,[h(c);h(c)-H(c)],'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');
+                % calving front
+                plot(ax1,x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(i,:),'linewidth',2,'HandleVisibility','off');
+                % floating bed (gl:c)
+                plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(i,:),'linewidth',2,'HandleVisibility','off');
+                % ice speed
+                plot(ax2,x(1:c)/10^3,U(1:c).*3.1536e7,'-','Color',col(i,:),'linewidth',2,'DisplayName',num2str(round(t(i)./3.1536e7)+2009));
+                % calving front position
+                plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
+                % grounding line position
+                plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
+            end
+        end
         
         % calculate the effective pressure (ice overburden pressure minus water
         % pressure) assuming an easy & open connection between the ocean and
@@ -119,62 +176,67 @@ t = (t_start:dt:t_end);
         N_marine = rho_i*g*H(sl+1:length(x))+(rho_sw*g*hb(sl+1:length(x))); % effective pressure where the bed is below sea level (Pa)
         N = [N_ground N_marine];
         N(N<0)=0; % cannot have negative values
-        
+
         % Solve for new velocity
-        [U,dUdx,~,~,~,~,~,~,~,~,~,~,~] = U_convergence(x,U,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i);
-        %EE: removed U0 and dUdx from inputs to U_convergence 15/09/21
-        
+        [U,dUdx,~,~,~] = U_convergence(x,U,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i);
+
         % calculate ice flux
         F = U.*H.*W; % ice flux (m^3 s^-1)
         F(isnan(F))=0;
-        F(1)=F(2)+F0;
-        
+        F(1)=F(2);
+
         % implement SMB, SMR, delta_SMB, & delta_SMR
-        smr = zeros(1,c);
+        SMR = zeros(1,c);
         for k=gl+1:c
-            smr(k) = SMR0-0.001*(SMR0)*(k-gl+1);
+            SMR(k) = SMR0-0.001*(SMR0)*(k-gl+1);
         end
-        smb = interp1(x0,SMB0+Q0,x);
-            
+        SMB = interp1(x0,SMB0+Q0,x);
+
         % calculate the  change in ice thickness from continuity
         clearvars dHdt
         dHdt(1) = (-1/W(1))*(F(1)-F(2))/(x(1)-x(2)); % forward difference
         dHdt(2:c-1) = (-1./W(2:c-1)).*(F(1:c-2)-F(3:c))./(x(1:c-2)-x(3:c)); % central difference
         dHdt(c:length(x)) = (-1./W(c:length(x))).*(F(c-1:length(x)-1)-F(c:length(x)))./(x(c-1:length(x)-1)-x(c:length(x))); % backward difference
         dH = dHdt.*dt;
-        
+
         % new thickness (change from dynamics, SMB, & SMR)
-        Hn = H+dH+(smb.*dt)+(smr.*dt);
+        Hn = H+dH+(SMB.*dt)+(SMR.*dt)-(interp1(x0,RO0,x)*dt);
         Hn(Hn < 0) = 0; % remove negative values
         H = Hn; % set as the new thickness value
-        
+
         % stop the model if it behaves unstably (monitored by ice thickness and speed)
         if max(H) > H_max
-            disp(['Adjust dt']);
+            disp([num2str(d_fw),' m failed']);
+            J = NaN;           
             break;
         end
-        if mean(U) < U_min
-            disp('Too slow!');
+        if mean(U) < U_min/3.1536e7
+            disp([num2str(d_fw),' m failed']);
+            J = NaN;
             break;
         end
         if any(~isfinite(H(1:c))) || any(~isfinite(U(1:c))) || any(~isfinite(h(1:c)))
-            disp('non finite values');
+            disp([num2str(d_fw),' m failed']);
+            J = NaN;  
             break;
+        end
+
+        if t(i)==t_end
+            % calculate cost of resulting terminus position
+            % modified from Morlighem et al., 2010; Larour et al., 2012; Kyrke-Smith et al., 2018
+            U_err = 33/3.1536e7; % m/s
+            h_err = 22; % m
+            xcf_err = 15; % m
+            J = abs((xcf-xcf_2018-xcf_err)/xcf_2018);%+... % surface elevation misfit term
+            %nanmean(sqrt((U-interp1(x0,U_2018,x)).^2)-U_err)/nanmean(U_2018);%+... % speed misfit term
         end
         
     end
-    
-    % calculate cost of parameter solutions
-    % modified from Morlighem et al., 2010; Larour et al., 2012; Kyrke-Smith et al., 2018
-    U_err = 33/3.1536e7; % m/s
-    h_err = 22; % m
-    K = log(beta); K(~isfinite(K))=0;
-    J = nanmean(sqrt((U-interp1(x0(1:dsearchn(x0',xcf_2018)),U_2018(1:dsearchn(x0',xcf_2018)),x)).^2)-U_err)/nanmean(U_2018(1:dsearchn(x0',xcf_2018)))+... % speed misfit term
-        nanmean(abs(gradient(gradient(K)))); % regularization term to penalize changes in beta gradient        
-        %nanmean(sqrt((h-interp1(x0,h_2018,x)).^2)-h_err)./nanmean(h_2018); % surface elevation misfit term
 
-%catch
-%    J=NaN;
-%end
+    
+catch
+    J=NaN; x=NaN; U=NaN; xcf=NaN;
+    disp([num2str(d_fw),' m failed']);
+end
 
 end

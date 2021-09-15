@@ -1,5 +1,5 @@
 %% solve the stress balance equations to obtain speed values (U)
-function [U,dUdx,Td,Tlatb,Tlon,vm,G_minus,G,G_plus,Hm,gamma,eta,Am] = U_convergence(x,U,U0,dUdx,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i)
+function [U,dUdx,Td,Tlatb,Tlon,vm,G_minus,G,G_plus,Hm,gamma,eta,Am] = U_convergence(x,U,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i)
 
 b=1; 
 
@@ -27,15 +27,23 @@ while b
         Um(1:c-1) = (U(2:c)+U(1:c-1))./2; % forward difference
         Um(c) = (U(c)+U(c-1))./2; % backward difference at c
         
-        dUmdx(1:c-1) = (U(2:c)-U(1:c-1))/(x(2:c)-x(1:c-1)); % forward difference
-        dUmdx(c) = (U(c)-U(c-1))/(x(c)-x(c-1)); % backward difference at c
-        
         dUdx(1) = (U(2)-U(1))./(x(2)-x(1)); % forward difference
         dUdx(2:c-1) = (U(3:c)-U(1:c-2))./(x(3:c)-x(1:c-2)); % central difference
         dUdx(c) = (U(c)-U(c-1))/(x(c)-x(c-1)); % backward difference at c
         
+                
+%         dUmdx(1:c-1) = (U(2:c)-U(1:c-1))/(x(2:c)-x(1:c-1)); % forward difference
+%         dUmdx(c) = (U(c)-U(c-1))/(x(c)-x(c-1)); % backward difference at c
+        %EE: replaced solving for dUdx on the staggered grid commented-out
+        %above with the calculation below so it is consistent with the
+        %method used to calculate other variables on the staggered grid...
+        %appears to result in much better dUmdx calculations 15/09/21
+        dUmdx(1:c-1) = (dUdx(2:c)+dUdx(1:c-1))./2; % forward difference
+        dUmdx(c) = (dUdx(c)+dUdx(c-1))./2; % backward difference at c
+        
         vm = ((E.*Am).^(-1/n)).*(abs(dUmdx)).^((1-n)/n);
-        vm(vm>7e+14) = 7e+14; %set a maximum value for very low strain rates
+%         vm(vm>7e+14) = 7e+14; %set a maximum value for very low strain rates
+        vm(vm>8e+16) = 8e+16; %EE: replaced much lower threshold w/ what I used in my flowline modeling 15/09/2021
         vm(c) = vm(c-1);
         
         if m > 1
