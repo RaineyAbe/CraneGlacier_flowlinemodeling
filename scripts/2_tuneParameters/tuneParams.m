@@ -12,7 +12,7 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
 % define home path in directory
 homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
 addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']); % path to cmocean color palettes
-addpath([homepath,'scripts/2_tuneParmeters/']); % path to tuning functions
+addpath([homepath,'scripts/2_tuneParameters/']); % path to tuning functions
 addpath([homepath,'scripts/']); % path to U_convergence
 addpath([homepath,'inputs-outputs/']);
 
@@ -96,8 +96,8 @@ d_fw=3; % initial guess for depth of fresh water in crevasses
 tic
 fh = @(betai)betaSolve(A0,A,betai,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,d_fw,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,xcf_2018,SMB0,Q0,SMR0,H_max,U_min,F0);
 % solve for beta at the resolution of the stress-coupling length
-beta0 = 1*ones(1,13); % initial guess for beta
-[beta,~] = fmincon(fh,beta0,[],[],[],[],0*ones(1,length(beta0)),5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-4,'MaxFunctionEvaluations',1e5));
+beta0 = 1.3*ones(1,13); % initial guess for beta
+[beta,~] = fmincon(fh,beta0,[],[],[],[],0*ones(1,length(beta0)),5*ones(1,length(beta0)));%,[],optimoptions('fmincon','StepTolerance',1e-3,'MaxFunctionEvaluations',1e5));
 % grab velocity from beta solution
 [~,Un,xn,xcf,beta0x] = betaSolve(A0,A,beta,H,x,U,hb,n,E,m,dx0,rho_i,g,rho_sw,rho_fw,d_fw,sigma_b,dUdx,c0,x0,hb0,W0,U_2018,xcf_2018,SMB0,Q0,H_max,U_min,F0);
 beta = interp1(beta0x,beta,x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;

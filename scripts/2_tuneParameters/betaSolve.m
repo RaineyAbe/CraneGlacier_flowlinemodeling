@@ -127,7 +127,7 @@ t = (t_start:dt:t_end);
         % calculate ice flux
         F = U.*H.*W; % ice flux (m^3 s^-1)
         F(isnan(F))=0;
-        F(1)=F(2)+F0;
+        %F(1)=F(2)+F0;
         
         % implement SMB, SMR, delta_SMB, & delta_SMR
         smr = zeros(1,c);
