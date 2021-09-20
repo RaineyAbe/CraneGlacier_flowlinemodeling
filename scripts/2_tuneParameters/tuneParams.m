@@ -52,21 +52,22 @@ DFW0 = 0; % m
 tic
 fh = @(betai)betaSolve(homepath,x0,betai,DFW0,U_2018,xcf_2018);
 % solve for beta at the resolution of the stress-coupling length
-beta0 = 1.5*ones(1,5); % initial guess for beta
-[beta,~] = fmincon(fh,beta0,[],[],[],[],1*ones(1,length(beta0)),3*ones(1,length(beta0)));%,[],optimoptions('fmincon','StepTolerance',1e-2,'MaxFunctionEvaluations',1e4));
+beta0 = 1.1*ones(1,13); % initial guess for beta
+[beta,~] = fmincon(fh,beta0,[],[],[],[],0*ones(1,length(beta0)),5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-2,'MaxFunctionEvaluations',1e4));
 % grab velocity from beta solution
 [~,Un,xn,xcf,beta0x] = betaSolve(homepath,x0,beta0,DFW0,U_2018,xcf_2018);
 beta = interp1(beta0x',beta',x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
 % stop timer
 toc
 
+% test a beta value
+% beta0 = 1.1*ones(1,13); % initial guess for beta
+% % grab velocity from beta solution
+% [~,Un,xn,xcf,beta0x] = betaSolve(homepath,x0,beta0,DFW0,U_2018,xcf_2018);
+% beta = interp1(beta0x',beta0',x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
+
 % plot results
-% solve for beta at the resolution of the stress-coupling length
-beta = 1.8*ones(1,length(x0));%feval(fit([x0(1);x0(end)],[1.2;1.2],'poly1'),x0);%1.7*ones(1,13); % initial guess for beta
-% grab velocity from beta solution
-[~,Un,xn,xcf,beta0x] = betaSolve(homepath,x0,beta,DFW0,U_2018,xcf_2018);
-beta = interp1(beta0x',beta',x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
-figure(1); clf; hold on;
+figure(3); clf; hold on;
 set(gcf,'position',[200 200 900 700],'defaultAxesColorOrder',[0 0 1; 0 0 0]);
 yyaxis left; cla; hold on;
 set(gca,'fontsize',18,'linewidth',2); grid on; legend('Location','northwest');

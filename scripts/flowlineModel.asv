@@ -140,7 +140,7 @@ end
 %----------RUN FLOWLINE MODEL----------
 %--------------------------------------
 
-for i=1:length(t)
+for i=1:201%length(t)
 
     % find the calving front location (based on Benn et al., 2007 & Nick et al., 2010)
     Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
@@ -222,15 +222,21 @@ for i=1:length(t)
 
     % get geometry on new coordinates
     c = length(xn);
+    % if there is a sudden jump in H (large gradient) past the grounding
+    % line, set that to c
     H = interp1(x,H,xn,'linear','extrap');
-     % if there is a sudden jump in H (large gradient) past the grounding
-    % line, set that to 
         % thickness gradient
-        dHdx = gradient(H);
-        if any(dHdx>50)
-            c = find(dHdx>50,1,'first')-1;            
-            H = H(1:c);
+        dHdx(1) = (H(2)-H(1))/(xn(2)-x(1)); 
+        dHdx(2:c-1) = (H(3:c-1)-H(2:c-2))/(xn(3:c-1)-xn(2:c-2));
+        dHdx(c) = (H(c)-H(c-1))/(xn(c)-xn(c-1));
+        if any(dHdx>5)
+            c = find(dHdx>5,1,'first');
+            H = interp1(x,H,xn,'linear','extrap');
             xn = xn(1:c);
+        end
+        if t(i)==8*3.1536e7
+            figure(3); 
+            hold on; plot(xn,dHdx(1:c),'linewidth',2,'color',col(i,:));
         end
     gl = dsearchn(xn',xgl); % indices for xcf and xgl
     hb = interp1(x0,hb0,xn,'linear','extrap');

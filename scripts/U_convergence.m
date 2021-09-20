@@ -1,5 +1,5 @@
 %% solve the stress balance equations to obtain speed values (U)
-function [U,dUdx,Td,Tlatb,Tlon,vm,G_minus,G,G_plus,Hm,gamma,eta,Am] = U_convergence(x,U,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i)
+function [U,dUdx] = U_convergence(x,U,U0,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i)
 
 b=1; 
 
@@ -79,7 +79,7 @@ while b
     % upper boundary condition
     G(1) = G(2);%(-2./(dx(1)^2))*(H(1)*vm(1)+Hm(1)*vm(1))-(beta(1).*N(1).*eta(1))-...
             %(((gamma(1).*H(1))./W(1)).*((5/(2*E*A(1).*W(1))).^(1/n))); 
-    T(1) = T(2);%U0(1)*G(1);%(rho_i.*g.*H(1).*(h(2)-h(1))./(x(2)-x(1)));%U(1)*G(1);
+    T(1) = U0(1)*G(1);%(rho_i.*g.*H(1).*(h(2)-h(1))./(x(2)-x(1)));%U(1)*G(1);
     % calving front condition
     G_minus(c) = -1;
     G(c) = 1;
