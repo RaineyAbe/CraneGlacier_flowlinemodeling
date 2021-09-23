@@ -1,4 +1,4 @@
-function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL] = flowlineModel(homepath,plotTimeSteps,plotMisfits,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_SMR)
+function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF)
 % Rainey Aberle, 2021
 % Adapted from code authored by Enderlin et al. (2013), doi:10.5194/tc-7-1007-2013
 % Function to run the flowline model using variables saved in the
@@ -46,7 +46,9 @@ while b==1
     
     % load initial conditions
     load('flowlineModelInitialization.mat','x0','h0','hb0','W0','c0',...
-        'A0','Q0','SMB0','SMR0','U0');
+        'A0','Q0','SMB0','SMR0','RO0','U0');
+    gl0=c0;
+    SMR_mean_fit = load('LarsenC_MeanMeltRate.mat').mr_mean_fit;
     % set default values for beta0 and d_fw0 if not provided
 %     if isempty(varargin{7})
 %         beta0 = load('flowlineModelInitialization.mat','beta0');
@@ -97,6 +99,11 @@ while b==1
     n = 3; % flow law exponent
     E = 1; % enhancement factor
 
+    % ocean thermal forcing
+    TF0 = 0.2; % ^oC - estimated from Larsen B icebergs
+    % estimate initial melt rate using Eqn from Slater et al. (2020):
+    mdot0 = (3*10^-4*-hb0(gl0)*((sum(RO0(1:gl0)))*86400)^0.39 + 0.15)*TF0^1.18/86400; % m/s
+    
     % calving parameters
     Hc = 100; % m -> set the calving front to a default minimum ice thickness value if calving criteria is not met
     sigma_b = 1000; % back pressure (Pa) - similar to that employed at Helheim Glacier (Nick et al., 2009)
@@ -143,48 +150,44 @@ end
 for i=1:length(t)
 
     % find the calving front location (based on Benn et al., 2007 & Nick et al., 2010)
-    Rxx = 2*nthroot(dUdx./(E.*A),n); % resistive stress (Pa)
-    % increase d_fw linearly at each time increment to reach delta_DFW by 2100
-    if t(i) >= 10*3.1536e7
-        delta_DFWi = delta_DFW/(2100-2019)*(t(i)/3.1536e7-10); % total increase in smr from 2019 rate
-    else
-        delta_DFWi = 0;
-    end
-    crev_s = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*(DFW+delta_DFWi)); % surface crevasse penetration depth (m)
-    Hab = H+rho_sw/rho_i*(hb); % height above buoyancy (m)
-    crev_b = rho_i/(rho_sw-rho_i).*(Rxx./(rho_i*g)-Hab); % basal crevasse depth (m)    % calving front located where the inland-most crevasse intersects sea level
     if i==1 % use observed calving front position for first iteration
         c=c0;
         xcf = x0(c0);
     else
-        % extend h-crev_s and h_crev_b using the average linear trend
-        % to allow for glacier advance
-        h_crev_s = h-crev_s; 
-        h_crev_b = h-crev_b; 
-        % calving front located where the inland-most crevasse intersects sea level
-        c_s = find(h_crev_s<0,1,'first'); % (m along centerline)        
-        c_b = find(h_crev_b<0,1,'first'); % (m along centerline)
-        % use fit function to extrapolate if criteria not met
-        if isempty(c_s)         
-            h_crev_s_trend = feval(fit(x(c-50:c)',h_crev_s(c-50:c)','poly1'),0:mean(dx):70e3)';
-            c_s = find(h_crev_s_trend<0,1,'first'); 
-        end
-        if isempty(c_b) 
-            h_crev_b_trend = feval(fit(x(c-50:c)',h_crev_b(c-50:c)','poly1'),0:mean(dx):70e3)';
-            c_b = find(h_crev_b_trend<0,1,'first'); 
-        end
-%         xcf_s = interp1(h(find(h-crev_s<0,1,'first')-1:find(h-crev_s<0,1,'first')+1)...
-%             -crev_s(find(h-crev_s<0,1,'first')-1:find(h-crev_s<0,1,'first')+1),...
-%             x(find(h-crev_s<0,1,'first')-1:find(h-crev_s<0,1,'first')+1),0,'linear','extrap'); % (m along centerline)        
-%         xcf_b = interp1(h(find(h-crev_b<0,1,'first')-1:find(h-crev_b<0,1,'first')+1)...
-%             -crev_b(find(h-crev_b<0,1,'first')-1:find(h-crev_b<0,1,'first')+1),...
-%             x(find(h-crev_b<0,1,'first')-1:find(h-crev_b<0,1,'first')+1),0,'linear','extrap'); % (m along centerline)
-        if c_s>c_b
-            c = c_s;
+        % to allow for advance, extrapolate U, dUdx, h, hb, and H past the calving front
+        U_cf = interp1(x(1:c),U(1:c),x0,'linear','extrap');
+        dUdx_cf(1) = (U_cf(2)-U_cf(1))/(x0(2)-x0(1)); % forward difference at upper boundary
+        dUdx_cf(2:length(x0)-1) = (U_cf(3:length(x0))-U_cf(1:length(x0)-2))...
+            /(x0(3:length(x0))-x0(1:length(x0)-2)); % central difference
+        dUdx_cf(length(x0)) = (U_cf(length(x0))-U_cf(length(x0)-1))/(x0(end)-x0(end-1)); % backward difference at end
+        h_cf = interp1(x(1:c),h(1:c),x0,'linear','extrap');
+            h_cf(c-50:end) = feval(fit(x0(c-50:c)',h(c-50:c)','poly1'),x0(c-50:end))';
+        hb_cf = hb0;    
+        H_cf = interp1(x(1:c),H(1:c),x0,'linear','extrap'); 
+        Rxx = 2*nthroot(dUdx_cf./(E.*A0),n); % resistive stress (Pa)
+        % increase DFW linearly at each time increment to reach delta_DFW by 2100
+        if t(i) >= 10*3.1536e7
+            delta_DFWi = delta_DFW/(2100-2019)*(t(i)/3.1536e7-10); % total increase in smr from 2019 rate
         else
-            c = c_b;
-        end  
-        xcf = mean(dx)*c;
+            delta_DFWi = 0;
+        end
+        DFW=DFW0+delta_DFWi;
+        crev_s = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*(DFW)); % surface crevasse penetration depth (m)
+        Hab = H_cf+rho_sw/rho_i*(hb_cf); % height above buoyancy (m)
+        crev_b = rho_i/(rho_sw-rho_i).*(Rxx./(rho_i*g)-Hab); % basal crevasse depth (m)    % calving front located where the inland-most crevasse intersects sea level        
+        xcf_s = interp1(h_cf(find(h_cf-crev_s<0,1,'first')-1:find(h_cf-crev_s<0,1,'first')+1)...
+            -crev_s(find(h_cf-crev_s<0,1,'first')-1:find(h_cf-crev_s<0,1,'first')+1),...
+            x0(find(h_cf-crev_s<0,1,'first')-1:find(h_cf-crev_s<0,1,'first')+1),0,'linear','extrap'); % (m along centerline)        
+%         xcf_b = interp1(h_cf(find(h_cf-crev_b<0,1,'first')-1:find(h_cf-crev_b<0,1,'first')+1)...
+%             -crev_b(find(h_cf-crev_b<0,1,'first')-1:find(h_cf-crev_b<0,1,'first')+1),...
+%             x0(find(h_cf-crev_b<0,1,'first')-1:find(h_cf-crev_b<0,1,'first')+1),0,'linear','extrap'); % (m along centerline)
+%         % calving front located where the inland-most crevasse intersects sea level
+%         if xcf_s<xcf_b
+%             xcf = xcf_s;
+%         else
+%             xcf = xcf_b;
+%         end
+        xcf=xcf_s;
     end
     
     % calculate the thickness required to remain grounded at each grid cell
@@ -210,9 +213,9 @@ for i=1:length(t)
     % has resolution dxmax near the ice divide
     % has resolution dxmin from gl to c
     % and has smooth variation between
-    xl = round(xgl/dx0); %number of ideal grid spaces needed to reach the grounding line
-    dx = xgl/xl; %new grid spacing (should be ~dx0)
-    xn = 0:dx:xgl; %new distance vector
+    xl = round(xgl/dx0); % number of ideal grid spaces needed to reach the grounding line
+    dx = xgl/xl; % new grid spacing (should be ~dx0)
+    xn = 0:dx:xgl; % new distance vector
     if xcf-xgl > 0
         xl = round((xcf-xgl)/dx0);
         dx = (xcf-xgl)/xl;
@@ -223,8 +226,8 @@ for i=1:length(t)
     % get geometry on new coordinates
     c = length(xn);
     H = interp1(x,H,xn,'linear','extrap');
-     % if there is a sudden jump in H (large gradient) past the grounding
-    % line, set that to 
+    % if there is a sudden jump in H (large gradient) past the grounding
+    % line, set that to the previous point
         % thickness gradient
         dHdx = gradient(H);
         if any(dHdx>50)
@@ -325,19 +328,25 @@ for i=1:length(t)
     F(isnan(F))=0;
     F(1)=F(2);
 
-    % implement SMB, SMR, delta_SMB, & delta_SMR
-    if t(i)/3.1536e7<10 % use original SMB & SMR for first 10 model years
-        SMR = zeros(1,c);
-        for k=gl+1:c
-            SMR(k) = SMR0-0.001*(SMR0)*(k-gl+1);
-        end
+    % implement SMB, SMR, RO, delta_SMB, & delta_SMR
+    if t(i)/3.1536e7<10 % use original SMB & SMR for first 10 model years  
         SMB = interp1(x0,SMB0+Q0,x);
-    elseif t(i)/3.1536e7>=10 % implement changes after 10 model years
+        RO = interp1(x0,RO0,x);
+        delta_mdot = 0; % m/s
         SMR = zeros(1,c);
-        % increase SMR linearly at each time increment to reach delta_smr by 2100
-        delta_SMRi = delta_SMR/(2100-2019)*(t(i)/3.1536e7-10); % total increase in smr from 2019 rate
-        for k=gl+1:c
-            SMR(k) = SMR0+delta_SMRi-0.001*(SMR0+delta_SMRi)*(k-gl+1);
+        % use the Larsen C mean melt rate profile to scale SMR
+        % using the max initial SMR
+        if gl<c
+            SMR(gl+1:c) = (SMR0+delta_mdot)/(SMR_mean_fit.a+1)*feval(SMR_mean_fit,x(gl+1:c)-x(gl+1)); 
+        end
+    elseif t(i)/3.1536e7>=10 % implement changes after 10 model years
+        RO = (interp1(x0,SMB0,x)-SMB)+interp1(x0,RO0,x);        
+        % calculate additional melt due to the increase in subglacial discharge
+        TFi = delta_TF/(2100-2019)*(t(i)/3.1536e7-10); % total increase in TF from 2019 
+        delta_mdot = ((3*10^-4*-hb(gl)*((sum(RO(1:gl))*86400)^0.39) + 0.15)*((TFi+TF0)^1.18))/86400-mdot0; % m/s
+        SMR = zeros(1,c);
+        if gl<c
+            SMR(gl+1:c) = (SMR0-delta_mdot)/(SMR_mean_fit.a+1)*feval(SMR_mean_fit,x(gl+1:c)-x(gl));
         end
         delta_SMBi = delta_SMB/(2100-2019)*(t(i)/3.1536e7-10); % total increase in smb from 2019 rate 
         SMB = interp1(x0,SMB0+Q0,x);
@@ -345,7 +354,32 @@ for i=1:length(t)
             SMB(k) = SMB(k)+delta_SMBi*(h0(1)-h(k))/(h0(1)-h0(c0)); 
         end
     end
-
+    if plotClimateParams
+        if i==1
+            figure(10); clf; set(gcf,'position',[200 500 1000 500]);
+            subplot(1,3,1); hold on; grid on; % SMB
+            set(gca,'fontsize',14,'fontname','Arial','linewidth',2);
+            ylabel('SMB (m a^{-1})');
+            plot(x/10^3,SMB/3.1536e7,'linewidth',2,'color',col(i,:));
+            subplot(1,3,2); hold on; grid on; % DFW
+            set(gca,'fontsize',14,'fontname','Arial','linewidth',2);
+            xlabel('Year'); ylabel('DFW (m)');
+            plot(t(i)/3.1536e7+2009,DFW,'.','markersize',15,'color',col(i,:));
+            subplot(1,3,3); hold on; grid on; % SMR
+            set(gca,'fontsize',14,'fontname','Arial','linewidth',2);
+            ylabel('SMR (m a^{-1})');
+            plot(x/10^3,SMR/3.1536e7,'linewidth',2,'color',col(i,:));
+        elseif mod(i-1,round(length(t)/10))==0 % display every length(t)/10
+            figure(10);
+            subplot(1,3,1); % SMB
+            plot(x/10^3,SMB/3.1536e7,'linewidth',2,'color',col(i,:));
+            subplot(1,3,2); % DFW
+            plot(t(i)/3.1536e7+2009,DFW,'.','markersize',15,'color',col(i,:));
+            subplot(1,3,3); % SMR
+            plot(x/10^3,SMR/3.1536e7,'linewidth',2,'color',col(i,:));
+        end
+    end
+    
     % calculate the  change in ice thickness from continuity
     clearvars dHdt
     dHdt(1) = (-1/W(1))*(F(1)-F(2))/(x(1)-x(2)); % forward difference
@@ -354,7 +388,7 @@ for i=1:length(t)
     dH = dHdt.*dt;
 
     % new thickness (change from dynamics, SMB, & SMR)
-    Hn = H+dH+(SMB.*dt)+(SMR.*dt);
+    Hn = H+dH+(SMB.*dt)+(SMR.*dt)-(interp1(x0,RO0,x)*dt);
     Hn(Hn < 0) = 0; % remove negative values
     H = Hn; % set as the new thickness value
 
@@ -419,7 +453,7 @@ if plotMisfits
             text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                     (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
                     '(d)','backgroundcolor','w','fontsize',18,'linewidth',1);
-        yyaxis right; ylabel('Basal Roughness Factor (s^{1/m} m^{-1/m})'); ylim([0 1.4]);
+        yyaxis right; ylabel('Basal Roughness Factor (s^{1/m} m^{-1/m})'); ylim([min(beta0)-0.2 max(beta)+0.2]);
             plot(x/10^3,movmean(beta,5),'-','linewidth',2,'color',[0 0.4 0.8],'displayname','\beta');
     
     % display grounding line misfit

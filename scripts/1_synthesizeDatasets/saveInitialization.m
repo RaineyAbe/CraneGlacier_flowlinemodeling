@@ -49,8 +49,14 @@ end
 h0(isnan(h0))=0; % replace NaNs with zeros
 
 % 3. glacier bed elevation
-%hb0 = load('Crane_observedBed_Tate.mat').hb.hb0;
 hb0 = load('delineatedBedWidthAveraged.mat').hb_adj;
+% smooth certain regions to decrease misfit with observations
+hb0(16:26) = movmean(hb0(16:26),4);
+hb0(135:end) = hb0(135:end)*0.8;
+hb0(130:134) = hb0(130:134)*0.8;
+hb0(127:130) = hb0(127:130)*0.9;
+hb0=movmean(hb0,5);
+hb0(50:130) = movmean(hb0(50:130),30);
 if size(hb0)==[186 1]
     hb0=hb0';
 end
@@ -75,7 +81,7 @@ end
 
 % 7. basal roughness factor, beta
 beta0 = load('betaSolution.mat').beta;
-beta0x = load('betaSolution.mat').x;
+beta0x = load('betaSolution.mat').xn;
 
 % 8. surface mass balance
 % Use the mean value at each point along the centerline for 2009-2019 
@@ -119,7 +125,7 @@ if regrid
     W0 = interp1(x0,W0,xi); W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);
     U0 = interp1(x0,U0,xi); U0(find(isnan(U0),1,'first'):end) = U0(find(isnan(U0),1,'first')-1);
     A0 = interp1(x0,A0,xi); A0(find(isnan(A0),1,'first'):end) = A0(find(isnan(A0),1,'first')-1);
-    beta0 = interp1(beta0x,beta0,xi); beta0(find(isnan(beta0),1,'first'):end) = 0;    
+    beta0(find(isnan(beta0),1,'first'):end) = beta0(find(isnan(beta0),1,'first')-1);   
     SMB0 = interp1(x0,SMB0,xi); SMB0(find(isnan(SMB0),1,'first'):end) = SMB0(find(isnan(SMB0),1,'first')-1);
     RO0 = interp1(x0,RO0,xi); RO0(find(isnan(RO0),1,'first'):end) = RO0(find(isnan(RO0),1,'first')-1);
     Q0 = interp1(x0,Q0,xi); Q0(find(isnan(Q0),1,'first'):end) = Q0(find(isnan(Q0),1,'first')-1);

@@ -16,7 +16,7 @@
 clear all; close all;
 
 % Define homepath
-homepath = '/Users/raineyaberle/Desktop/Research/CraneGlacier_flowlinemodeling/';
+homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
 
 % Add path to required functions
 addpath([homepath,'matlabFunctions/hugheylab-nestedSortStruct']);
@@ -24,7 +24,7 @@ addpath([homepath,'matlabFunctions/']);
 
 bed_save = 0;           % = 1 to save bed
 surface_save = 0;       % = 1 to save surface
-velocity_save = 1;      % = 1 to save velocity
+velocity_save = 0;      % = 1 to save velocity
 terminus_save = 0;      % = 1 to save terminus positions
 dHdt_save = 0;          % = 1 to save dHdt
 figures_save = 0;       % = 1 to save figures 
@@ -171,8 +171,8 @@ else
 end
 
 % Load bathymetry observations
-%    hb.bathym = load('bathymetryData.mat').cl_trough;
-%    hb.bathym = -1.*hb.bathym; % Data reported in depth beneath the surface (convert to negative values for plotting)
+bathym = load('bathymetryData.mat').cl_trough;
+bathym = -1.*bathym; % Data reported in depth beneath the surface (convert to negative values for plotting)
 
 % Load terminus positions
 cd([homepath,'inputs-outputs/']);
@@ -240,7 +240,7 @@ end
 
 % Plot observed bed profile and bathymetry observations
 plot(x./10^3,hb,'-k','linewidth',2,'displayname','Bed (2018)');
-%plot(x(1:length(hb.bathym))./10^3,hb.bathym,'--c','linewidth',2,'displayname','Bathymetry (2006)');
+plot(x(1:length(bathym))./10^3,bathym,'--c','linewidth',2,'displayname','Bathymetry (2006)');
 hold off;
 
 % calculate & plot dHdt
@@ -369,8 +369,8 @@ else
 end
 
 % Plot velocities
+n = [2 4 6 8 9 14 15:19];
 col = parula(length(n)+2); % Color scheme for plotting u profiles
-n = [2 4 6 8 9 14 15:20];
 figure(2); subplot(2,1,2);
 for i=1:length(n)
     plot(x./10^3,U(n(i)).speed.*3.1536e7,'-','color',col(i,:),'linewidth',2,...
@@ -495,6 +495,9 @@ h_2009(find(isnan(h_2009),1,'first'):end) = 0;
 % load width
 W = load('calculatedWidth.mat').width.W;
 
+% use bathymetry observations for centerline bed where they exist
+hb(~isnan(bathym)) = bathym(~isnan(bathym));
+
 % calculate thickness
 H = h_2009-hb;
 
@@ -526,7 +529,7 @@ plot(x/10^3,h_2009,'-b','linewidth',2,'DisplayName','h');
 % save results
 if save_hb_adj
     save('delineatedBedWidthAveraged.mat','hb_adj','x');
-    disp('hb_adj saved');
+    disp('hb_adj and hb_adj2 saved');
 end
 
 %% 6. Width-averaged speed

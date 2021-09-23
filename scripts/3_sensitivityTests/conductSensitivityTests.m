@@ -1,7 +1,6 @@
 %% Glacier Flowline Model: Sensitivity Tests for Crane Glacier, Antarctic Peninsula
-% Last edited: Spring 2021
-% Adapted by Rainey Aberle from Ellyn Enderlin's flowline model package 
-% (Enderlin et al., 2013)
+% Rainey Aberle 
+% Fall 2021
 % 
 %   0. Define time and space independent variables by loading the flowline 
 %       initialization file and regridding to the desired grid spacing. 
@@ -15,56 +14,78 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
     
 % define home path in directory and add necessary paths
 homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
-addpath([homepath,'scripts/3_sensitivityTests/']); % add path to U_convergence
+addpath([homepath,'scripts/']); % add path to U_convergence
 addpath([homepath,'../matlabFunctions/cmocean_v2.0/cmocean']);
 addpath([homepath,'inputs-outputs/']);
 
-%% 1. conduct sensitivity tests for SMB & d_fw independently
+%% 1. conduct sensitivity tests for SMB & DFW independently
 
 % (1) Run through the the designated number of model years with no change 
-%   in SMB or SMR and save the output. 
 % (2) Run through simulated 2009-2019, then continue evolving the model  
-%   under new scenarios: \Delta(SMB) &/or \Delta(SMR) and compare changes 
+%   under new scenarios: Delta_SMB & Delta_FWD and compare changes 
 %   in geometry and speed with the no change scenario.  
 
 close all; 
 
-saveFinal = 0;         % = 1 to save final geometry and speed 
+saveFinal = 1;         % = 1 to save final conditions in homepath/3_sensitivityTests/results/
 plotTimeSteps = 1;     % = 1 to plot geometry, speed, cf/gl positions every decade
-plotClimateParams = 0; % = 1 to plot climate parameters
 plotMisfits = 0;       % = 1 to plot misfit with 2018 conditions
-timeseriesSave = 0;    % = 1 to save figures for time series
+plotClimateParams = 1; % = 1 to plot climate parameters
 
 % load no change conditions
 load('2100_noChange.mat'); % load no change variables
     
-% set up changes in SMB & d_fw
-% note: decrease SMB & SMR in increments of 0.5 m a-1 (1.585e-8) starting
-%   from 1 m a-1 until reaching max SMR found at other Antarctic ice shelves: 
-%   ~6 m a^-1 (Adusumilli et al., 2020)
+% set up changes in SMB & DFW
+% - decrease maximum SMB by increments of 0.5 m a-1 down to -10 m a-1
+% - increase DFW by increments of 1 m up to 10 m
 delta_SMB0 = (0:-1:-10)./3.1536e7; % m/s change in SMB at the calving front (used to increase gradient)
-delta_DFW0 = 0:10; % m change in d_fw 
+delta_DFW0 = 0:10; % m change in DFW 
 
 % define time stepping (s)
-dt = 0.001*3.1536e7;
+dt = 0.01*3.1536e7;
 t_start = 0*3.1536e7;
 t_end = 91*3.1536e7;
 
 % loop through scenarios
 for j=1%:length(delta_SMB0)
 
-    beta0 = load('flowlineModelInitialization.mat').beta0;
-    DFW0 = load('flowlineModelInitialization.mat').d_fw0;
-    delta_SMB = delta_SMB0(j);
-    delta_DFW = 0;%delta_DFW0(j);
+    load('flowlineModelInitialization.mat');
+    delta_SMB = 0;%delta_SMB0(j);
+    delta_DFW = delta_DFW0(j);
+    delta_TF = 0;
 
     %try
         % run flowline model
-        [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL] = flowlineModel(homepath,plotTimeSteps,plotMisfits,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,0);
+        [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF);
         
+        % save geometry & speed
+        if saveFinal
+            cd([homepath,'scripts/3_sensitivityTests/results/1_SMB_DFW/']);
+            if delta_DFW==0 && delta_SMR==0 && delta_SMB==0 
+                h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; DFW2=DFW0; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
+                save('SMB0_DFW0_geom.mat','h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
+                cd([homepath,'inputs-outputs/']);
+                h1=h; H1=H; hb1=hb; c1=c; U1=U; x1=x; gl1=dsearchn(x1',XGL(end)); DFW1=DFW0; Fgl1=Fgl; XGL1=XGL; XCF1=XCF; 
+                save('2100_noChange.mat','h1','H1','hb1','c1','U1','gl1','x1','DFW1','Fgl1','XGL1','XCF1');
+                disp('2100_noChange saved');
+            else
+                fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_DFW',num2str(delta_DFW),'m_geom.mat'];
+                DFW2 = DFW0+delta_DFW;
+                h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; DFW2=DFW0; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
+                save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
+            end
+            disp('geometry saved.');
+        else
+            disp('geometry not saved.');
+        end
+
         % plot results
-        if t(i)==t_end
-            h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; FWD2=FWD; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
+        b=1;
+        while b==1
+            cd([homepath,'inputs-outputs/']);
+            load('2100_noChange.mat');
+            h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; DFW2=DFW0; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
+            gl1=dsearchn(x2',XGL(end)); 
             figure(10); clf % sensitivity test changes
             hold on; grid on;
             set(gcf,'Position',[491 80 886 686]);
@@ -72,7 +93,7 @@ for j=1%:length(delta_SMB0)
             xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
             legend('Location','east'); xlim([0 85]); ylim([min(hb0)-100 max(h)+100]);
             title(['SMR = + ',num2str(round(delta_SMR.*3.1536e7,1)),'m/a, SMB = + ',...
-                num2str(round(delta_SMB*3.1536e7,1)),'m/a, FWD = ',num2str(FWD),'m']);
+                num2str(round(delta_SMB*3.1536e7,1)),'m/a, DFW = ',num2str(DFW2),'m']);
             ax1=get(gca);
                 % ice surface
                 plot(x1(1:c1)/10^3,h1(1:c1),'-k','linewidth',2,'displayname','no change');
@@ -108,25 +129,9 @@ for j=1%:length(delta_SMB0)
                 plot(x/10^3,hb,'k','linewidth',2,'HandleVisibility','off');
                 % mean sea level
                 plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off'); drawnow
+            b=b+1;
         end
 
-        % save geometry & speed
-        if saveFinal
-            cd([homepath,'scripts/3_sensitivityTests/results/1_SMR_SMB_FWD/']);
-            if delta_DFW==0 && delta_SMR==0 && delta_SMB==0 
-                save(['SMR0_SMB0_geom.mat'],'h2','H2','c2','U2','gl2','x2','FWD2','Fgl2','XGL2','XCF2');
-            elseif delta_DFW==0 
-                fileName = ['SMR',num2str(delta_SMR),'_SMB',num2str(delta_SMB),'_geom.mat'];
-                save(fileName,'h2','H2','c2','U2','gl2','x2','FWD2','Fgl2','XGL2','XCF2');
-            else
-                fileName = ['FWD_',num2str(FWD),'m_geom.mat'];
-                save(fileName,'h2','H2','c2','U2','gl2','x2','FWD2','Fgl2','XGL2','XCF2');
-            end
-            disp('geometry saved.');
-        else
-            disp('geometry not saved.');
-        end
-        
     %catch
     %    disp(['iteration ',num2str(j),' failed']);
     %end
@@ -147,12 +152,12 @@ end
 
 close all; 
 
-saveFinal = 1;     % = 1 to save final geometry and speed 
-plotTimeSteps = 0; % = 1 to plot geometry, speed, cf/gl positions every decade
+saveFinal = 1;         % = 1 to save final conditions in homepath/3_sensitivityTests/results/
+plotTimeSteps = 1;     % = 1 to plot geometry, speed, cf/gl positions every decade
+plotMisfits = 0;       % = 1 to plot misfit with 2018 conditions
 plotClimateParams = 1; % = 1 to plot climate parameters
 
 % load no change conditions
-cd([homepath,'inputs-outputs/']);
 load('2100_noChange.mat'); % load no change variables
     
 % set up changes in TF
@@ -162,7 +167,6 @@ delta_TF0 = (0:0.1:1); % ^oC change in TF
 dt = 0.01*3.1536e7;
 t_start = 0*3.1536e7;
 t_end = 91*3.1536e7;
-t = (t_start:dt:t_end);
 
 % define thermal forcing
 TF0 = 0.2; % ^oC - estimated from Larsen B icebergs
@@ -175,11 +179,6 @@ mdot0 = (3*10^-4*-hb0(gl0)*((sum(RO0(1:gl0)))*86400)^0.39 + 0.15)*TF0^1.18/86400
 
 % loop through scenarios
 for j=1:length(delta_TF0)
-
-    % initialize variables
-    x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; hb=hb0; H=H0; beta=beta0; FWD=FWD0; 
-    
-    XCF = NaN*ones(1,length(t)); XGL = NaN*ones(1,length(t)); % store xcf and xgl over time
 
     delta_TF = delta_TF0(j);
 
@@ -354,9 +353,6 @@ for j=1:length(delta_TF0)
                 RO = interp1(x0,RO0,x);
                 % no additional melt
                 delta_mdot = 0;                
-                % use the Larsen C mean melt rate profile to scale SMR
-                % using the max initial SMR
-                SMR(gl+1:c) = (SMR0+delta_mdot)/(SMR_mean_fit.a+1)*feval(SMR_mean_fit,x(gl+1:c)-x(gl+1));
                 % plot
                 if i==1 && plotClimateParams
                     figure(2); clf
@@ -436,7 +432,7 @@ for j=1:length(delta_TF0)
 
         % plot results
         if t(i)==t_end
-            h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; FWD2=FWD; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
+            h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; DFW2=FWD; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
             figure(10); clf % sensitivity test changes
             hold on; grid on;
             set(gcf,'Position',[491 80 886 686]);
@@ -816,7 +812,7 @@ for j=1:length(delta_SMB0)
 
         % plot results
         if t(i)==t_end
-            h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; FWD2=FWD; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
+            h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; DFW2=FWD; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
             figure(10); clf % sensitivity test changes
             hold on; grid on;
             set(gcf,'Position',[491 80 886 686]);
@@ -1193,7 +1189,7 @@ for j=1:length(delta_SMB0)
 
         % plot results
         if t(i)==t_end
-            h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; FWD2=FWD; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
+            h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; DFW2=FWD; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
             figure(10); clf % sensitivity test changes
             hold on; grid on;
             set(gcf,'Position',[491 80 886 686]);

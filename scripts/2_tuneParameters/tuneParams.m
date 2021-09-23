@@ -31,7 +31,8 @@ h_2018 = load('surfaceElevationObs.mat').h(36).surface;
 U_2018 = movmean(double(interp1(cl.x,U_2018,x0)),10);
 h_2018 = interp1(cl.x,h_2018,x0);
 % 2018 observed calving front position
-termx = load('LarsenB_centerline.mat').centerline.termx(58); termy = load('LarsenB_centerline.mat').centerline.termy(58);
+termx = load('LarsenB_centerline.mat').centerline.termx(58); 
+termy = load('LarsenB_centerline.mat').centerline.termy(58);
 xcf_2018 = cl.x(dsearchn([cl.X cl.Y],[termx termy]));
 clear termx termy
 % 2019 observed calving front position
@@ -41,8 +42,8 @@ clear termx termy
 
 %% 2. solve for beta using observed surface speed
 
-save_beta = 0;    % = 1 to save parameter solutions
-save_figure = 0;   % = 1 to save figures
+save_beta = 1;    % = 1 to save parameter solutions
+save_figure = 1;   % = 1 to save figures
 
 % initial guess for depth of fresh water in crevasses
 DFW0 = 0; % m
@@ -52,7 +53,7 @@ DFW0 = 0; % m
 tic
 fh = @(betai)betaSolve(homepath,x0,betai,DFW0,U_2018,xcf_2018);
 % solve for beta at the resolution of the stress-coupling length
-beta0 = 1.1*ones(1,13); % initial guess for beta
+beta0 = [0.5 0.7 1.4 1.2 2.1*ones(1,7)]; % initial guess for beta
 [beta,~] = fmincon(fh,beta0,[],[],[],[],0*ones(1,length(beta0)),5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-2,'MaxFunctionEvaluations',1e4));
 % grab velocity from beta solution
 [~,Un,xn,xcf,beta0x] = betaSolve(homepath,x0,beta0,DFW0,U_2018,xcf_2018);
@@ -61,7 +62,7 @@ beta = interp1(beta0x',beta',x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
 toc
 
 % test a beta value
-% beta0 = 1.1*ones(1,13); % initial guess for beta
+% beta0 = [0.5 0.7 1.4 1.2 2.1*ones(1,7)]; % initial guess for beta
 % % grab velocity from beta solution
 % [~,Un,xn,xcf,beta0x] = betaSolve(homepath,x0,beta0,DFW0,U_2018,xcf_2018);
 % beta = interp1(beta0x',beta0',x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
@@ -69,17 +70,17 @@ toc
 % plot results
 figure(3); clf; hold on;
 set(gcf,'position',[200 200 900 700],'defaultAxesColorOrder',[0 0 1; 0 0 0]);
-yyaxis left; cla; hold on;
+yyaxis left; cla; hold on; ylim([min(beta)-0.1 max(beta)+0.1]);
 set(gca,'fontsize',18,'linewidth',2); grid on; legend('Location','northwest');
 xlabel('Distance Along Centerline (km)');ylabel('\beta (s^{1/m} m^{-1/m})');
 plot(x0/10^3,beta,'b','linewidth',2,'displayname','\beta');
-yyaxis right; cla; ylabel('U (m a^{-1})');
+yyaxis right; cla; ylabel('U (m a^{-1})'); ylim([0 900]);
 plot(x0(1:dsearchn(x0',xcf_2018))/10^3,U_2018(1:dsearchn(x0',xcf_2018))*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
 plot(xn/10^3,Un*3.1536e7,'-k','linewidth',2,'displayname','U_{sol}');
 
 if save_figure
     cd([homepath,'figures/']);
-    figure(1);
+    figure(3);
     saveas(gcf,'betaSolution.png','png');
     disp('figure saved');
 end
@@ -92,15 +93,15 @@ if save_beta
     disp('beta solution saved');
 end
 
-%% 3. tune DFW using 2018 speed and terminus position
+%% 3. tune DFW using 2019 terminus position
 
 % define settings
 DFWBounds = [0 5]; % range of possible fwd values (m)
-method = 'b';       % = 'g' to solve by gradient descent
+method = 'g';       % = 'g' to solve by gradient descent
                     % = 'b' to solve by brute force
-plotTimeSteps = 0; % = 1 to plot geometry, speed, grounding line/terminus positions over time
-plotMisfits = 0;    % = 1 to plot misfit in model year 2018 with observed conditions
-save_DFW = 1;      % = 1 to save resulting DFW
+plotTimeSteps = 0;  % = 1 to plot geometry, speed, grounding line/terminus positions over time
+plotMisfits = 1;    % = 1 to plot misfit in model year 2018 with observed conditions
+save_DFW = 1;       % = 1 to save resulting DFW
 save_figure = 1;    % = 1 to save figure resulting from brute force method
 
 % load beta0 from previous step
@@ -113,15 +114,15 @@ if strcmp(method,'g')
     tic
     
     % create function handle for the beta solve function
-    fh = @(DFW)DFWSolve(homepath,plotTimeSteps,plotMisfits,beta0,DFW,xcf_2018);
-    DFW0 = 3; % initial guesses fwd
+    fh = @(DFW)DFWSolve(homepath,plotTimeSteps,plotMisfits,beta0,DFW,xcf_2019);
+    DFW0 = 0; % initial guess DFW
     % solve for fwd which minimize the cost function J
     [DFW,fval] = fmincon(fh,DFW0,[],[],[],[],DFWBounds(1),DFWBounds(2));   
     
     % stop timer
     toc
     
-    disp(['optimal fwd = ',num2str(DFW),' m']);
+    disp(['optimal DFW = ',num2str(DFW),' m']);
     
 elseif strcmp(method,'b')
     
@@ -129,11 +130,11 @@ elseif strcmp(method,'b')
     tic
     
     % loop through possible fwd values
-    DFW0 = DFWBounds(1):0.2:DFWBounds(2);
+    DFW0 = DFWBounds(1):DFWBounds(2);
     J = NaN*ones(1,length(DFW0)); % initialize cost function
     for j=1:length(DFW0)
         DFW=DFW0(j);
-        [J(j),~,~,~] = DFWSolve(homepath,plotTimeSteps,plotMisfits,beta0,DFW,xcf_2018);
+        [J(j),~,~,~] = DFWSolve(homepath,plotTimeSteps,plotMisfits,beta0,DFW,xcf_2019);
     end
     
     % save fwd with lowest cost
@@ -143,12 +144,12 @@ elseif strcmp(method,'b')
     toc
 
      % plot results
-    [~,x,U,xcf] = DFWSolve(homepath,plotTimeSteps,plotMisfits,beta0,DFW,xcf_2018);
+    [~,x,U,xcf] = DFWSolve(homepath,plotTimeSteps,plotMisfits,beta0,DFW,xcf_2019);
     figure(3); clf; hold on;
     set(gcf,'position',[200 300 1000 500]);
     subplot(1,2,1); hold on;
     set(gca,'fontsize',18,'linewidth',2); grid on;
-    plot(DFW0,J,'.','markersize',15);
+    plot(DFW0,J,'.k','markersize',15);
     plot(DFW,J(Ibest),'*r','markersize',15,'linewidth',2);
     xlabel('d_{fw} (m)'); ylabel('Cost');
     subplot(1,2,2); hold on;
