@@ -8,6 +8,7 @@
 %   - Beta Solution
 %   - Sensitivity Tests
 %   - Regional glacier terminus time series
+%   - 2018 Model Misfits
 
 close all; clear all;
 
@@ -16,12 +17,10 @@ homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flow
 addpath([homepath,'matlabFunctions/']);
 addpath([homepath,'matlabFunctions/gridLegend_v1.4/']);
 addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']);
-addpath([homepath,'scripts/3_sensitivityTests/']); % add path to U_convergence
 addpath([homepath,'inputs-outputs/']);
 addpath([homepath,'scripts/']);
 
 % Load Crane centerline
-cd([homepath,'inputs-outputs']);
 cl.Xi = load('Crane_centerline.mat').x; cl.Yi = load('Crane_centerline.mat').y;
 
 % Define x as distance along centerline
@@ -436,16 +435,9 @@ linewidth = 2;      % line width
 markersize = 10;    % marker size
 
 % load sensitivity test no change variables
-cd([homepath,'inputs-outputs']);
-load('2100_noChange.mat');
 % load observations/parameters
-x_cl = load('Crane_centerline.mat').x; y_cl = load('Crane_centerline.mat').y; 
-    % define x as distance along centerline
-    x0 = zeros(1,length(y_cl));
-    for i=2:length(x0)
-        x0(i) = sqrt((x_cl(i)-x_cl(i-1))^2+(y_cl(i)-y_cl(i-1))^2)+x0(i-1);
-    end
 load('flowlineModelInitialization.mat')
+load('2100_noChange.mat');
 smb_mean = load('2100_SMB_mean.mat').smb_mean;
 
 % define time stepping (s)
@@ -493,7 +485,8 @@ loop=1; % loop to minimize plotting commands
 while loop==1
     figure(5); clf 
     set(gcf,'Position',[100 200 1000 1000]);
-    % SMB
+    % (1) 
+    %   (a) SMB
     axA=axes('position',[0.08 0.73 0.25 0.25]); hold on; grid on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[]);
         ylabel('Elevation (m)');         
@@ -532,7 +525,7 @@ while loop==1
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             '(j)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1);     
-    % TF   
+    %   (b) TF   
     axB=axes('position',[0.4 0.73 0.25 0.25]); hold on; grid on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[]);
         xlim([25 90]); ylim([-800 600]);
@@ -567,7 +560,7 @@ while loop==1
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             '(k)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1);         
-    % d_fw    
+    %   (c) DFW
     axC=axes('position',[0.72 0.73 0.25 0.25]); hold on; grid on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[]);
         xlim([25 90]); ylim([-800 600]);
@@ -606,7 +599,7 @@ while loop==1
     % axes for other perturbations
     figure(6); clf 
     set(gcf,'Position',[150 200 700 1000]);
-    % SMB_enh  
+    % (2) SMB_enhanced  
     axAA=axes('position',[0.1 0.73 0.38 0.24]); hold on; grid on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[]);
         ylabel('Elevation (m)'); 
@@ -644,7 +637,7 @@ while loop==1
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.89+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
             '(g)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1);         
-    % SMB_enh + TF
+    % (3) SMB_enh + TF
     axBB=axes('position',[0.6 0.73 0.38 0.24]); hold on; grid on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[]);
         xlim([25 90]); ylim([-800 600]);
@@ -766,25 +759,38 @@ while loop==1
     loop=loop+1; % exit loop        
 end
 
-% (1) loop through results, split into SMB and FWD change scenarios
-cd([homepath,'scripts/3_sensitivityTests/results/1_SMB_FWD/']);
+% (1) loop through results, split into each scenario
+cd([homepath,'scripts/3_sensitivityTests/results/1_SMB_DFW_TF/']);
 files = dir('*geom.mat');
 for i=1:length(files)
-    if contains(files(i).name,'SMB0') && contains(files(i).name,'_geom.mat')
+    if contains(files(i).name,'SMB0') && contains(files(i).name,'DFW0') && contains(files(i).name,'TF0_')
         files(i).change = 0;
         files(i).changeIn = 'SMB';
         files(i).name = files(i).name; 
         files(length(files)+1).change = 0;
-        files(length(files)).changeIn = 'FWD';
-        files(length(files)).name = files(i).name;                        
-    elseif contains(files(i).name,'SMR0') && contains(files(i).name,'_geom.mat')
+        files(length(files)).changeIn = 'DFW';
+        files(length(files)).name = files(i).name;
+        files(length(files)+1).change = 0; 
+        files(length(files)).changeIn = 'TF';
+        files(length(files)).name = files(i).name;        
+    % (a) SMB
+    elseif contains(files(i).name,'DFW0m') && contains(files(i).name,'TF0_')
         files(i).change = str2double(files(i).name(regexp(files(i).name,'B')+1:...
-            regexp(files(i).name,'_geom')-1)).*3.1536e7; 
+            regexp(files(i).name,'_D')-1)); 
         files(i).changeIn = 'SMB';  
-    elseif contains(files(i).name,'FWD') && contains (files(i).name,'_geom.mat')
-        files(i).change = str2double(files(i).name(regexp(files(i).name,'D_')+2:...
-            regexp(files(i).name,'m')-1))-FWD0; % m 
-        files(i).changeIn = 'FWD';         
+        files(i).name = files(i).name;
+    % (b) DFW
+    elseif contains(files(i).name,'SMB0') && contains (files(i).name,'TF0_')
+        files(i).change = str2double(files(i).name(regexp(files(i).name,'W')+1:...
+            regexp(files(i).name,'m_')-1))-DFW0; % m 
+        files(i).changeIn = 'DFW';  
+        files(i).name = files(i).name;
+    % (c) TF
+    elseif contains(files(i).name,'SMB0') && contains (files(i).name,'DFW0m')        
+        files(i).change = str2double(files(i).name(regexp(files(i).name,'TF')+2:...
+            regexp(files(i).name,'_geom')-1)); % m 
+        files(i).changeIn = 'TF';  
+        files(i).name = files(i).name;        
     end
 end
     
@@ -793,11 +799,12 @@ files = struct2table(files);
 files = sortrows(files,[8,7]);
 % save indices for SMB & SMR
 ISMB = flipud(find(strcmp('SMB',table2array(files(:,8)))));
-IFWD = find(strcmp('FWD',table2array(files(:,8))));
+IDFW = find(strcmp('DFW',table2array(files(:,8))));
+ITF = find(strcmp('TF',table2array(files(:,8))));
 files = table2struct(files);
 
-% SMB
-dsmb = zeros(length(ISMB),1); % change in SMB
+% (a) SMB
+dSMB = zeros(length(ISMB),1); % change in SMB
 dHgl = zeros(length(ISMB),1); % change in thickness at the grounding line
 dUgl = zeros(length(ISMB),1); % change in ice speed at the grounding line
 dL = zeros(length(ISMB),1); % change in length
@@ -841,7 +848,7 @@ for i=1:length(ISMB)
         plot(ax17,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',colF(1,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max}'); 
     end
     % save results 
-    dsmb(i) = files(ISMB(i)).change; % m/a
+    dSMB(i) = files(ISMB(i)).change; % m/a
     dUgl(i) = (U2(gl2)-U1(gl1)).*3.1536e7; % m/a     
     dL(i) = x2(c2)-x1(c1); % m   
     dgl(i) = x2(gl2)-x1(gl1); % m
@@ -849,39 +856,27 @@ for i=1:length(ISMB)
 end
 % create table to store result quantities
 varNames = {'dsmb','dL','dxgl','dHgl','dUgl','Fsmb'};
-T_smb = table(round(dsmb),round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),Fsmb,'VariableNames',varNames);
+T_SMB = table(round(dSMB),round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),Fsmb,'VariableNames',varNames);
 
-% TF
-cd([homepath,'scripts/3_sensitivityTests/results/2_TF/']);
-dTF = zeros(length(IFWD),1); % change in TF
-dsmr = zeros(length(IFWD),1); % change in smr due to TF
-dHgl = zeros(length(IFWD),1); % change in mean thickness
-dUgl = zeros(length(IFWD),1); % change in mean ice speed
-dL = zeros(length(IFWD),1); % change in length
-dgl = zeros(length(IFWD),1); % change in grounding line position
-Ugl = zeros(length(IFWD),1); % speed at grounding line 
-F = zeros(length(IFWD),1); % grounding line discharge
+% (b) TF
+dTF = zeros(length(ITF),1); % change in TF
+dsmr = zeros(length(ITF),1); % change in smr due to TF
+dHgl = zeros(length(ITF),1); % change in mean thickness
+dUgl = zeros(length(ITF),1); % change in mean ice speed
+dL = zeros(length(ITF),1); % change in length
+dgl = zeros(length(ITF),1); % change in grounding line position
+Ugl = zeros(length(ITF),1); % speed at grounding line 
+F = zeros(length(ITF),1); % grounding line discharge
 % define thermal forcing
 TF0 = 0.2; % ^oC - estimated from Larsen B icebergs
-clear f; f = dir('*geom.mat');
-% sort files by perturbation magnitude
-for i=1:length(f)
-    f(i).change = str2double(f(i).name(regexp(f(i).name,'F')+1:...
-                  regexp(f(i).name,'_geom')-1)); % ^oC
-end
-f = struct2table(f);
-f = sortrows(f,7,'ascend');
-f = table2struct(f); 
-for i=1:length(f)
-    load(f(i).name);
+for i=1:length(ITF)
+    load(files(ITF(i)).name);
     W = interp1(x0,W0,x2); % interpolate width on spatial grid
     % F (Gt/a) = (U m/s)*(A m^2)*(917 kg/m^3)*(3.1536e7 s/a)*(1e-12 Gt/kg)
     % use the mean of a rectangular and an ellipsoidal bed
     F(i) = (H2(gl2)*U2(gl2)*W(gl2)*pi*1/4)*917*1e-12*3.1536e7; % Gt/a
     % extract change in TF
-    dTF(i) = f(i).change; % m/a
-    % estimate initial melt rate using Eqn from Slater et al. (2020):
-    mdot0 = (3*10^-4*-hb0(gl1)*((sum(RO0(1:gl1)))*86400)^0.39 + 0.15)*(TF0^1.18)/86400; % m/s
+    dTF(i) = files(ITF(i)).change; % m/a
     figure(5); hold on;
         % ice surface
         plot(axB,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
@@ -903,40 +898,38 @@ for i=1:length(f)
     % calving front position and ice mass discharge
     figure(7);
     plot(ax11,TF0+dTF(i),F(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
-    if i==length(f)
+    if i==length(ITF)
         figure(8);
         plot(ax16,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-','color',colF(2,:),'linewidth',linewidth+0.5,'displayName','\DeltaTF');        
         plot(ax17,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',colF(2,:),'linewidth',linewidth+0.5,'displayName','\DeltaTF_{max}');
     end
     % save results for data table
     % calculate additional melt due to the increase in subglacial discharge
-    dsmr(i) = ((3*10^-4*(h2(gl2)-H2(gl2))*((sum(RO0)*86400)^0.39) +0.15)*((TF0+dTF(i))^1.18)-mdot0)*3.1536e7; % m/a
     dUgl(i) = (U2(gl2)-U1(gl1)).*3.1536e7; % m/a     
     dL(i) = x2(c2)-x1(c1); % m   
     dgl(i) = x2(gl2)-x1(gl1); % m
     Ugl(i) = U2(gl2)*3.1536e7; % m/a
 end
-varNames = {'dTF','dSMR','dL','dgl','dHgl','dUgl','Fgl'};
-T_TF = table(dTF,dsmr,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
+varNames = {'dTF','dL','dgl','dHgl','dUgl','Fgl'};
+T_TF = table(dTF,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
 
-% FWD
-cd([homepath,'scripts/3_sensitivityTests/results/1_SMB_FWD/']);
-dfwd = zeros(length(IFWD),1); % change in FWD
-dHgl = zeros(length(IFWD),1); % change in mean thickness
-dUgl = zeros(length(IFWD),1); % change in mean ice speed
-dL = zeros(length(IFWD),1); % change in length
-dgl = zeros(length(IFWD),1); % change in grounding line position
-Ugl = zeros(length(IFWD),1); % speed at grounding line 
-Ffwd = zeros(length(IFWD),1); % grounding line discharge
-col1 = cmocean('thermal',length(IFWD)+3); col1(1,:)=[];col1(end-1:end,:)=[];
-for i=1:length(IFWD)
+% (c) DFW
+dDFW = zeros(length(IDFW),1); % change in DFW
+dHgl = zeros(length(IDFW),1); % change in mean thickness
+dUgl = zeros(length(IDFW),1); % change in mean ice speed
+dL = zeros(length(IDFW),1); % change in length
+dgl = zeros(length(IDFW),1); % change in grounding line position
+Ugl = zeros(length(IDFW),1); % speed at grounding line 
+Fdfw = zeros(length(IDFW),1); % grounding line discharge
+col1 = cmocean('thermal',length(IDFW)+3); col1(1,:)=[];col1(end-1:end,:)=[];
+for i=1:length(IDFW)
     % load file
-    load(files(IFWD(i)).name);
+    load(files(IDFW(i)).name);
     % calculate grounding line discharge
     W = interp1(x0,W0,x2); % interpolate width on spatial grid
     % F (Gt/a) = (U m/s)*(A m^2)*(917 kg/m^3)*(3.1536e7 s/a)*(1e-12 Gt/kg)
     % use the mean of a rectangular and an ellipsoidal bed
-    Ffwd(i) = (H2(gl2)*U2(gl2)*W(gl2))*pi*1/4*917*1e-12*3.1536e7; % Gt/a    
+    Fdfw(i) = (H2(gl2)*U2(gl2)*W(gl2))*pi*1/4*917*1e-12*3.1536e7; % Gt/a    
     % plot
     figure(5); hold on;
         % ice surface
@@ -952,21 +945,21 @@ for i=1:length(IFWD)
         % dH
         dHgl(i) = H2(gl2)-H1(gl1); % m
         % cf and gl positions
-        plot(axL,x2(gl2)/10^3,files(IFWD(i)).change+FWD0,'x',...
+        plot(axL,x2(gl2)/10^3,files(IDFW(i)).change+DFW0,'x',...
             'markersize',10,'linewidth',linewidth,'color',col1(i,:));
-        plot(axL,x2(c2)/10^3,files(IFWD(i)).change+FWD0,'o',...
+        plot(axL,x2(c2)/10^3,files(IDFW(i)).change+FWD0,'o',...
             'markersize',10,'linewidth',linewidth,'color',col1(i,:));        
     % ice mass discharge
     figure(7); 
-    plot(ax12,files(IFWD(i)).change+FWD0,Ffwd(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));    
+    plot(ax12,files(IDFW(i)).change+DFW0,Fdfw(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));    
     % calving front position and grounding line discharge over time
-    if i==length(IFWD)
+    if i==length(IDFW)
         figure(8);
         plot(ax16,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-','color',colF(3,:),'linewidth',linewidth+0.5,'displayName','\Deltad_{fw,max}');        
         plot(ax17,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',colF(3,:),'linewidth',linewidth+0.5,'displayName','\Deltad_{fw,max}'); 
     end
     % save results 
-    dfwd(i) = files(IFWD(i)).change; % m/a
+    dDFW(i) = files(IDFW(i)).change; % m/a
     dUgl(i) = (U2(gl2)-U1(gl1)).*3.1536e7; % m/a     
     dL(i) = x2(c2)-x1(c1); % m   
     dgl(i) = x2(gl2)-x1(gl1); % m
@@ -974,30 +967,30 @@ for i=1:length(IFWD)
 end
 % create table to store result quantities
 varNames = {'dfwd','dL','dxgl','dHgl','dUgl','Ffwd'};
-T_fwd = table(dfwd,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),Ffwd,'VariableNames',varNames);
+T_DFW = table(dDFW,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),Fdfw,'VariableNames',varNames);
 
-% (3) SMB_enh
-cd([homepath,'scripts/3_sensitivityTests/results/3_SMB_enh/']);
-dsmb_enh = zeros(length(IFWD),1); % change in SMB_enh
-dHgl = zeros(length(IFWD),1); % change in mean thickness
-dUgl = zeros(length(IFWD),1); % change in mean ice speed
-dL = zeros(length(IFWD),1); % change in length
-dgl = zeros(length(IFWD),1); % change in grounding line position
-Ugl = zeros(length(IFWD),1); % speed at grounding line 
-F = zeros(length(IFWD),1); % grounding line discharge
+% (2) SMB_enh
+cd([homepath,'scripts/3_sensitivityTests/results/2_SMB_enh/']);
+dsmb_enh = zeros(length(IDFW),1); % change in SMB_enh
+dHgl = zeros(length(IDFW),1); % change in mean thickness
+dUgl = zeros(length(IDFW),1); % change in mean ice speed
+dL = zeros(length(IDFW),1); % change in length
+dgl = zeros(length(IDFW),1); % change in grounding line position
+Ugl = zeros(length(IDFW),1); % speed at grounding line 
+F = zeros(length(IDFW),1); % grounding line discharge
 % define thermal forcing
 TF0 = 0.2; % ^oC - estimated from Larsen B icebergs
-clear f; f = dir('*geom.mat');
+clear files; files = dir('*geom.mat');
 % sort files by perturbation magnitude
-for i=1:length(f)
-    f(i).change = str2double(f(i).name(regexp(f(i).name,'B')+1:...
-                  regexp(f(i).name,'_geom')-1)).*3.1536e7; % m/a
+for i=1:length(files)
+    files(i).change = str2double(files(i).name(regexp(files(i).name,'B')+1:...
+                  regexp(files(i).name,'_enh')-1)); % m/a
 end
-f = struct2table(f);
-f = sortrows(f,7,'descend');
-f = table2struct(f); 
-for i=1:length(f)
-    load(f(i).name);
+files = struct2table(files);
+files = sortrows(files,7,'descend');
+files = table2struct(files); 
+for i=1:length(files)
+    load(files(i).name);
     W = interp1(x0,W0,x2); % interpolate width on spatial grid
     % F (Gt/a) = (U m/s)*(A m^2)*(917 kg/m^3)*(3.1536e7 s/a)*(1e-12 Gt/kg)
     % use the mean of a rectangular and an ellipsoidal bed
@@ -1025,13 +1018,13 @@ for i=1:length(f)
     % calving front position and ice mass discharge
     figure(7);
     plot(ax13,smb_mean(i)*3.1536e7,F(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
-    if i==length(f)
+    if i==length(files)
         figure(8);
         plot(ax16,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-','color',colF(4,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{enh,max}');        
         plot(ax17,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',colF(4,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{enh,max}');
     end
     % save results 
-    dsmb_enh(i) = f(i).change; % m/a
+    dsmb_enh(i) = files(i).change; % m/a
     % calculate additional melt due to the increase in subglacial discharge
     dsmr(i) = ((3*10^-4*(h2(gl2)-H2(gl2))*((-dsmb_enh(i)*86400)^0.39) +0.15)*(TF0^1.18)-mdot0)*3.1536e7; % m/a
     dUgl(i) = (U2(gl2)-U1(gl1)).*3.1536e7; % m/a     
@@ -1039,39 +1032,36 @@ for i=1:length(f)
     dgl(i) = x2(gl2)-x1(gl1); % m
     Ugl(i) = U2(gl2)*3.1536e7; % m/a
 end
-varNames = {'dSMB_enh','dSMR','dL','dgl','dHgl','dUgl','Fgl'};
+varNames = {'dSMB_enh','dTF','dL','dgl','dHgl','dUgl','Fgl'};
 T_smb_enh = table(dsmb_enh,dsmr,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
 
-% (4) SMB_enh + TF
-cd([homepath,'scripts/3_sensitivityTests/results/4_SMB_enh+TF/']);
-dsmb_enh = zeros(length(IFWD),1); % change in SMB_enh
-dTF = zeros(length(IFWD),1); % change in TF
-dsmr = zeros(length(IFWD),1); % change in SMR
-dHgl = zeros(length(IFWD),1); % change in mean thickness
-dUgl = zeros(length(IFWD),1); % change in mean ice speed
-dL = zeros(length(IFWD),1); % change in length
-dgl = zeros(length(IFWD),1); % change in grounding line position
-Ugl = zeros(length(IFWD),1); % speed at grounding line 
-F = zeros(length(IFWD),1); % grounding line discharge
-clear f; f = dir('*geom.mat');
+% (3) SMB_enh + TF
+cd([homepath,'scripts/3_sensitivityTests/results/3_SMB_enh+TF/']);
+dsmb_enh = zeros(length(IDFW),1); % change in SMB_enh
+dTF = zeros(length(IDFW),1); % change in TF
+dHgl = zeros(length(IDFW),1); % change in mean thickness
+dUgl = zeros(length(IDFW),1); % change in mean ice speed
+dL = zeros(length(IDFW),1); % change in length
+dgl = zeros(length(IDFW),1); % change in grounding line position
+Ugl = zeros(length(IDFW),1); % speed at grounding line 
+F = zeros(length(IDFW),1); % grounding line discharge
+clear files; files = dir('*geom.mat');
 % sort files by perturbation magnitude
-for i=1:length(f)
-    f(i).change_TF = str2double(f(i).name(regexp(f(i).name,'F')+1:...
-                  regexp(f(i).name,'_SMB')-1)); % ^oC
-    f(i).change_SMB = str2double(f(i).name(regexp(f(i).name,'B')+1:...
-                  regexp(f(i).name,'_geom')-1))*3.1536e7; % m/a
+for i=1:length(files)
+    files(i).change_TF = str2double(files(i).name(regexp(files(i).name,'F')+1:...
+                  regexp(files(i).name,'geom')-1)); % ^oC
+    files(i).change_SMB = str2double(files(i).name(regexp(files(i).name,'B')+1:...
+                  regexp(files(i).name,'_enh')-1)); % m/a
 end
-f = struct2table(f);
-f = sortrows(f,7,'ascend');
-f = table2struct(f); 
-for i=1:length(f)
-    load(f(i).name);
+files = struct2table(files);
+files = sortrows(files,7,'ascend');
+files = table2struct(files); 
+for i=1:length(files)
+    load(files(i).name);
     W = interp1(x0,W0,x2); % interpolate width on spatial grid
     % F (Gt/a) = (U m/s)*(A m^2)*(917 kg/m^3)*(3.1536e7 s/a)*(1e-12 Gt/kg)
     % use the mean of a rectangular and an ellipsoidal bed
     F(i) = (H2(gl2)*U2(gl2)*W(gl2)*pi*1/4)*917*1e-12*3.1536e7; % Gt/a
-    % estimate initial melt rate using Eqn from Slater et al. (2020):
-    mdot0 = (3*10^-4*-hb0(gl1)*((sum(RO0(1:gl1)))*86400)^0.39 + 0.15)*TF0^1.18/86400; % m/s
     figure(6); hold on;
         % ice surface
         plot(axBB,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
@@ -1084,30 +1074,28 @@ for i=1:length(f)
         % ice surface speed
         plot(axFF,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5); 
         % cf and gl positions
-        plot(axHH,x2(gl2)/1e3,f(i).change_TF,'x',...
+        plot(axHH,x2(gl2)/1e3,files(i).change_TF,'x',...
             'markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
-        plot(axHH,x2(c2)/1e3,f(i).change_TF,'o',...
+        plot(axHH,x2(c2)/1e3,files(i).change_TF,'o',...
             'markersize',markersize,'linewidth',linewidth,'color',col1(i,:));        
     % ice mass discharge
     figure(7);
-    plot(ax14,f(i).change_TF,F(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
-    if i==length(f)
+    plot(ax14,files(i).change_TF,F(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
+    if i==length(files)
         figure(8);
         plot(ax16,t/3.1536e7+2009,movmean(XCF2/10^3,100),'-','color',colF(5,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{enh,max} & \DeltaTF_{max}');                
         plot(ax17,t/3.1536e7+2009,movmean(Fgl2,100),'-','color',colF(5,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{enh,max} & \DeltaTF_{max}');
     end  
     % save results 
-    dsmb_enh(i) = f(i).change_SMB; % m/a
-    dTF(i) = f(i).change_TF; % m/a
-    % calculate additional melt due to the increase in subglacial discharge
-    dsmr(i) = ((3*10^-4*(h2(gl2)-H2(gl2))*((-dsmb_enh(i)*86400)^0.39) +0.15)*((TF0+dTF(i))^(1.18))-mdot0)*3.1536e7; % m/a
+    dsmb_enh(i) = files(i).change_SMB; % m/a
+    dTF(i) = files(i).change_TF; % m/a
     dUgl(i) = (U2(gl2)-U1(gl1)).*3.1536e7; % m/a     
     dL(i) = x2(c2)-x1(c1); % m   
     dgl(i) = x2(gl2)-x1(gl1); % m
     Ugl(i) = U2(gl2)*3.1536e7; % m/a
 end
-varNames = {'dSMB_enh','dTF','dSMR','dL','dgl','dHgl','dUgl','Fgl'};
-T_smb_enh_TF = table(dsmb_enh,dTF,dsmr,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
+varNames = {'dSMB_enh','dTF','dL','dgl','dHgl','dUgl','Fgl'};
+T_smb_enh_TF = table(dsmb_enh,dTF,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
 
 % save figures 
 if save_figures
@@ -1198,23 +1186,23 @@ cd([homepath,'data/terminus/regional/Edgeworth/']); % enter folder
         end
     end
     % initialize f
-    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    clear f; files(1).lon = NaN; files(1).lat = NaN; files(1).date = NaN;
     % loop through files to grab terminus positions
     for j=1:length(files)
         if ~contains(files(j).name,'CL')
             file = shaperead(files(j).name);
             % loop through file
             for k=1:length(file)
-                f(length(f)+1).lon = file(k).X; % Lon
-                f(length(f)).lat = file(k).Y; % Lat
+                files(length(files)+1).lon = file(k).X; % Lon
+                files(length(files)).lat = file(k).Y; % Lat
                 % convert to polar stereographic coordinates
-                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
-                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+                [files(length(files)).X,files(length(files)).Y] = wgs2ps(files(length(files)).lon,files(length(files)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                files(length(files)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(files(length(files)).X) nanmean(files(length(files)).Y)])); % x
             end
         end 
     end
     % plot
-    col1 = parula(length(f)); % color scheme for plotting
+    col1 = parula(length(files)); % color scheme for plotting
     ax2=axes('position',[0.39 0.58 0.23 0.4]); hold on; grid on;      
         set(gca,'fontname',fontname,'fontsize',fontsize);
         xlabel('Easting (km)'); ylabel('Northing (km)');
@@ -1227,8 +1215,8 @@ cd([homepath,'data/terminus/regional/Edgeworth/']); % enter folder
         % arrow
         line2arrow(l1,'color','k','linewidth',linewidth,'headwidth',20,'headlength',20);
         % plot terminus positions
-        for j=1:length(f)
-            plot(f(j).X/10^3,f(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
+        for j=1:length(files)
+            plot(files(j).X/10^3,files(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
         end
         % plot label
         text((ax2.XLim(2)-ax2.XLim(1))*0.88+ax2.XLim(1),(max(ax2.YLim)-min(ax2.YLim))*0.925+min(ax2.YLim),...
@@ -1251,23 +1239,23 @@ cd([homepath,'data/terminus/regional/Drygalski/']); % enter folder
         end
     end
     % initialize f
-    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    clear f; files(1).lon = NaN; files(1).lat = NaN; files(1).date = NaN;
     % loop through files to grab terminus positions
     for j=1:length(files)
         if ~contains(files(j).name,'CL')
             file = shaperead(files(j).name);
             % loop through file
             for k=1:length(file)
-                f(length(f)+1).lon = file(k).X; % Lon
-                f(length(f)).lat = file(k).Y; % Lat
+                files(length(files)+1).lon = file(k).X; % Lon
+                files(length(files)).lat = file(k).Y; % Lat
                 % convert to polar stereographic coordinates
-                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
-                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+                [files(length(files)).X,files(length(files)).Y] = wgs2ps(files(length(files)).lon,files(length(files)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                files(length(files)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(files(length(files)).X) nanmean(files(length(files)).Y)])); % x
             end
         end 
     end
     % plot
-    col1 = parula(length(f)); % color scheme for plotting
+    col1 = parula(length(files)); % color scheme for plotting
     ax3=axes('position',[0.72 0.58 0.24 0.4]); hold on; grid on;      
         set(gca,'fontname',fontname,'fontsize',fontsize);
         xlabel('Easting (km)'); ylabel('Northing (km)');
@@ -1280,8 +1268,8 @@ cd([homepath,'data/terminus/regional/Drygalski/']); % enter folder
         % arrow
         line2arrow(l3,'color','k','linewidth',linewidth,'headwidth',20,'headlength',20);        
         % plot terminus positions
-        for j=1:length(f)
-            plot(f(j).X/10^3,f(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
+        for j=1:length(files)
+            plot(files(j).X/10^3,files(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
         end
         % plot label
         text((ax3.XLim(2)-ax3.XLim(1))*0.88+ax3.XLim(1),(max(ax3.YLim)-min(ax3.YLim))*0.925+min(ax3.YLim),...
@@ -1304,23 +1292,23 @@ cd([homepath,'data/terminus/regional/HekGreen/']); % enter folder
         end
     end
     % initialize f
-    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    clear f; files(1).lon = NaN; files(1).lat = NaN; files(1).date = NaN;
     % loop through files to grab terminus positions
     for j=1:length(files)
         if ~contains(files(j).name,'CL')
             file = shaperead(files(j).name);
             % loop through file
             for k=1:length(file)
-                f(length(f)+1).lon = file(k).X; % Lon
-                f(length(f)).lat = file(k).Y; % Lat
+                files(length(files)+1).lon = file(k).X; % Lon
+                files(length(files)).lat = file(k).Y; % Lat
                 % convert to polar stereographic coordinates
-                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
-                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+                [files(length(files)).X,files(length(files)).Y] = wgs2ps(files(length(files)).lon,files(length(files)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                files(length(files)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(files(length(files)).X) nanmean(files(length(files)).Y)])); % x
             end
         end 
     end
     % plot
-    col1 = parula(length(f)); % color scheme for plotting
+    col1 = parula(length(files)); % color scheme for plotting
     ax4=axes('position',[0.08 0.08 0.23 0.4]); hold on; grid on;      
         set(gca,'fontname',fontname,'fontsize',fontsize);
         xlabel('Easting (km)'); ylabel('Northing (km)');
@@ -1333,8 +1321,8 @@ cd([homepath,'data/terminus/regional/HekGreen/']); % enter folder
         % arrow
         line2arrow(l4,'color','k','linewidth',linewidth,'headwidth',20,'headlength',20);        
         % plot terminus positions
-        for j=1:length(f)
-            plot(f(j).X/10^3,f(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
+        for j=1:length(files)
+            plot(files(j).X/10^3,files(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
         end
         text((ax4.XLim(2)-ax4.XLim(1))*0.88+ax4.XLim(1),(max(ax4.YLim)-min(ax4.YLim))*0.925+min(ax4.YLim),...
             '(c)','edgecolor','k','fontsize',fontsize,'linewidth',1,'backgroundcolor','w'); 
@@ -1356,23 +1344,23 @@ cd([homepath,'data/terminus/regional/Jorum/']); % enter folder
         end
     end
     % initialize f
-    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    clear f; files(1).lon = NaN; files(1).lat = NaN; files(1).date = NaN;
     % loop through files to grab terminus positions
     for j=1:length(files)
         if ~contains(files(j).name,'CL')
             file = shaperead(files(j).name);
             % loop through file
             for k=1:length(file)
-                f(length(f)+1).lon = file(k).X; % Lon
-                f(length(f)).lat = file(k).Y; % Lat
+                files(length(files)+1).lon = file(k).X; % Lon
+                files(length(files)).lat = file(k).Y; % Lat
                 % convert to polar stereographic coordinates
-                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
-                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+                [files(length(files)).X,files(length(files)).Y] = wgs2ps(files(length(files)).lon,files(length(files)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                files(length(files)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(files(length(files)).X) nanmean(files(length(files)).Y)])); % x
             end
         end 
     end
     % plot
-    col1 = parula(length(f)); % color scheme for plotting
+    col1 = parula(length(files)); % color scheme for plotting
     ax5=axes('position',[0.39 0.08 0.23 0.4]); hold on; grid on;      
         set(gca,'fontname',fontname,'fontsize',fontsize);
         xlabel('Easting (km)'); ylabel('Northing (km)');
@@ -1385,8 +1373,8 @@ cd([homepath,'data/terminus/regional/Jorum/']); % enter folder
         % arrow
         line2arrow(l5,'color','k','linewidth',linewidth,'headwidth',20,'headlength',20);        
         % plot terminus positions
-        for j=1:length(f)
-            plot(f(j).X/10^3,f(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
+        for j=1:length(files)
+            plot(files(j).X/10^3,files(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
         end
         text((ax5.XLim(2)-ax5.XLim(1))*0.88+ax5.XLim(1),(max(ax5.YLim)-min(ax5.YLim))*0.925+min(ax5.YLim),...
             '(d)','edgecolor','k','fontsize',fontsize,'linewidth',1,'backgroundcolor','w'); 
@@ -1408,23 +1396,23 @@ cd([homepath,'data/terminus/regional/Crane/']); % enter folder
         end
     end
     % initialize f
-    clear f; f(1).lon = NaN; f(1).lat = NaN; f(1).date = NaN;
+    clear f; files(1).lon = NaN; files(1).lat = NaN; files(1).date = NaN;
     % loop through files to grab terminus positions
     for j=1:length(files)
         if ~contains(files(j).name,'CL')
             file = shaperead(files(j).name);
             % loop through file
             for k=1:length(file)
-                f(length(f)+1).lon = file(k).X; % Lon
-                f(length(f)).lat = file(k).Y; % Lat
+                files(length(files)+1).lon = file(k).X; % Lon
+                files(length(files)).lat = file(k).Y; % Lat
                 % convert to polar stereographic coordinates
-                [f(length(f)).X,f(length(f)).Y] = wgs2ps(f(length(f)).lon,f(length(f)).lat,'StandardParallel',-71,'StandardMeridian',0);
-                f(length(f)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(f(length(f)).X) nanmean(f(length(f)).Y)])); % x
+                [files(length(files)).X,files(length(files)).Y] = wgs2ps(files(length(files)).lon,files(length(files)).lat,'StandardParallel',-71,'StandardMeridian',0);
+                files(length(files)).x = x(dsearchn([cl.X' cl.Y'],[nanmean(files(length(files)).X) nanmean(files(length(files)).Y)])); % x
             end
         end 
     end
     % plot
-    col1 = parula(length(f)); % color scheme for plotting
+    col1 = parula(length(files)); % color scheme for plotting
     ax6=axes('position',[0.72 0.08 0.23 0.4]); hold on; grid on;      
         set(gca,'fontname',fontname,'fontsize',fontsize);
         xlabel('Easting (km)'); ylabel('Northing (km)');
@@ -1437,8 +1425,8 @@ cd([homepath,'data/terminus/regional/Crane/']); % enter folder
         % arrow
         line2arrow(l6,'color','k','linewidth',linewidth,'headwidth',20,'headlength',20);        
         % plot terminus positions
-        for j=1:length(f)
-            plot(f(j).X/10^3,f(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
+        for j=1:length(files)
+            plot(files(j).X/10^3,files(j).Y/10^3,'color',col1(j,:),'linewidth',linewidth);
         end
         text((ax6.XLim(2)-ax6.XLim(1))*0.88+ax6.XLim(1),(max(ax6.YLim)-min(ax6.YLim))*0.925+min(ax6.YLim),...
             '(e)','edgecolor','k','fontsize',fontsize,'linewidth',1,'backgroundcolor','w'); 

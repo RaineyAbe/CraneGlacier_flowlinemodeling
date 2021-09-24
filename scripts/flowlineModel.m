@@ -1,4 +1,4 @@
-function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF)
+function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance)
 % Rainey Aberle, 2021
 % Adapted from code authored by Enderlin et al. (2013), doi:10.5194/tc-7-1007-2013
 % Function to run the flowline model using variables saved in the
@@ -328,9 +328,9 @@ for i=1:length(t)
     F(isnan(F))=0;
     F(1)=F(2);
 
-    % implement SMB, SMR, RO, delta_SMB, & delta_SMR
+    % implement SMB, SMR, RO, delta_SMB, delta_SMR, & delta_TF
     if t(i)/3.1536e7<10 % use original SMB & SMR for first 10 model years  
-        SMB = interp1(x0,SMB0+Q0,x);
+        SMB = interp1(x0,SMB0,x);
         RO = interp1(x0,RO0,x);
         delta_mdot = 0; % m/s
         SMR = zeros(1,c);
@@ -340,18 +340,23 @@ for i=1:length(t)
             SMR(gl+1:c) = (SMR0+delta_mdot)/(SMR_mean_fit.a+1)*feval(SMR_mean_fit,x(gl+1:c)-x(gl+1)); 
         end
     elseif t(i)/3.1536e7>=10 % implement changes after 10 model years
-        RO = (interp1(x0,SMB0,x)-SMB)+interp1(x0,RO0,x);        
+        SMB = interp1(x0,SMB0,x);
+        delta_SMBi = delta_SMB/(2100-2019)*(t(i)/3.1536e7-10); % total increase in smb from 2019 rate 
+        for k=1:c
+            SMB(k) = SMB(k)+delta_SMBi*(h0(1)-h(k))/(h0(1)-h0(c0)); 
+        end
         % calculate additional melt due to the increase in subglacial discharge
-        TFi = delta_TF/(2100-2019)*(t(i)/3.1536e7-10); % total increase in TF from 2019 
-        delta_mdot = ((3*10^-4*-hb(gl)*((sum(RO(1:gl))*86400)^0.39) + 0.15)*((TFi+TF0)^1.18))/86400-mdot0; % m/s
+        TFi = delta_TF/(2100-2019)*(t(i)/3.1536e7-10); % total increase in TF from 2019
+        % increase runoff due to surface melting if running the 'enhanced SMB' scenario        
+        if SMB_enhance
+            RO = (interp1(x0,SMB0,x)-SMB)+interp1(x0,RO0,x);   
+        else
+            RO = interp1(x0,RO0,x);
+        end
+        delta_mdot = ((3*10^-4*-hb(gl)*nthroot((sum(RO(1:gl))*86400),1/0.39) + 0.15)*((TFi+TF0)^1.18))/86400-mdot0; % m/s
         SMR = zeros(1,c);
         if gl<c
             SMR(gl+1:c) = (SMR0-delta_mdot)/(SMR_mean_fit.a+1)*feval(SMR_mean_fit,x(gl+1:c)-x(gl));
-        end
-        delta_SMBi = delta_SMB/(2100-2019)*(t(i)/3.1536e7-10); % total increase in smb from 2019 rate 
-        SMB = interp1(x0,SMB0+Q0,x);
-        for k=1:c
-            SMB(k) = SMB(k)+delta_SMBi*(h0(1)-h(k))/(h0(1)-h0(c0)); 
         end
     end
     if plotClimateParams
@@ -360,7 +365,8 @@ for i=1:length(t)
             subplot(1,3,1); hold on; grid on; % SMB
             set(gca,'fontsize',14,'fontname','Arial','linewidth',2);
             ylabel('SMB (m a^{-1})');
-            plot(x/10^3,SMB/3.1536e7,'linewidth',2,'color',col(i,:));
+            plot(x/10^3,SMB*3.1536e7,'linewidth',2,'color',col(i,:));
+            %plot(x/10^3,interp1(x0,Q0,x)*3.1536e7,'--','linewidth',2,'color',col(i,:));
             subplot(1,3,2); hold on; grid on; % DFW
             set(gca,'fontsize',14,'fontname','Arial','linewidth',2);
             xlabel('Year'); ylabel('DFW (m)');
@@ -372,7 +378,8 @@ for i=1:length(t)
         elseif mod(i-1,round(length(t)/10))==0 % display every length(t)/10
             figure(10);
             subplot(1,3,1); % SMB
-            plot(x/10^3,SMB/3.1536e7,'linewidth',2,'color',col(i,:));
+            plot(x/10^3,SMB*3.1536e7,'linewidth',2,'color',col(i,:));
+            %plot(x/10^3,interp1(x0,Q0,x)*3.1536e7,'--','linewidth',2,'color',col(i,:));
             subplot(1,3,2); % DFW
             plot(t(i)/3.1536e7+2009,DFW,'.','markersize',15,'color',col(i,:));
             subplot(1,3,3); % SMR
@@ -388,7 +395,7 @@ for i=1:length(t)
     dH = dHdt.*dt;
 
     % new thickness (change from dynamics, SMB, & SMR)
-    Hn = H+dH+(SMB.*dt)+(SMR.*dt)-(interp1(x0,RO0,x)*dt);
+    Hn = H+dH+(SMB.*dt)+interp1(x0,Q0,x)*dt+(SMR.*dt)-(interp1(x0,RO0,x)*dt);
     Hn(Hn < 0) = 0; % remove negative values
     H = Hn; % set as the new thickness value
 
