@@ -36,11 +36,11 @@ close all;
 saveFinal = 1;         % = 1 to save final conditions in homepath/3_sensitivityTests/results/
 plotTimeSteps = 0;     % = 1 to plot geometry, speed, cf/gl positions every decade
 plotMisfits = 0;       % = 1 to plot misfit with 2018 conditions
-plotClimateParams = 1; % = 1 to plot climate parameters
+plotClimateParams = 0; % = 1 to plot climate parameters
 
 % load no change conditions
-load('2100_noChange.mat'); % load no change variables
-    
+load('2100_noChange.mat'); % load no change variables  
+
 % set up changes in SMB, DFW, & TF
 % - decrease maximum SMB by increments of 0.5 m a-1 down to -10 m a-1
 % - increase DFW by increments of 1 m up to 10 m
@@ -48,6 +48,9 @@ load('2100_noChange.mat'); % load no change variables
 delta_SMB0 = (0:-1:-10)./3.1536e7; % m/s change in SMB at the calving front (used to increase gradient)
 delta_DFW0 = 0:10; % m change in DFW 
 delta_TF0 = 0:0.1:1; % ^oC change in TF
+
+% store mean final SMB for plotting
+smb_mean = NaN*zeros(1,length(delta_SMB0));
 
 % define time stepping (s)
 dt = 0.01*3.1536e7;
@@ -61,13 +64,13 @@ for j=1:length(delta_SMB0)
     
     % Switch scenarios on and off
     delta_SMB = delta_SMB0(j);
-    delta_DFW = 0;%delta_DFW0(j);
-    delta_TF = delta_TF0(j);
+    delta_DFW = 0; %delta_DFW0(j);
+    delta_TF = 0; %delta_TF0(j);
     SMB_enhance = 1; % = 1 to increase SMR due to decreased SMB    
 
     %try
         % run flowline model
-        [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance);
+        [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean(j)] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance);
         
         % save geometry & speed
         if saveFinal

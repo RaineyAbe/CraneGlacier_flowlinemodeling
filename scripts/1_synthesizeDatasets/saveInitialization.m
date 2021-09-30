@@ -50,16 +50,17 @@ h0(isnan(h0))=0; % replace NaNs with zeros
 
 % 3. glacier bed elevation
 hb0 = load('delineatedBedWidthAveraged.mat').hb_adj;
-% smooth certain regions to decrease misfit with observations
-hb0(16:26) = movmean(hb0(16:26),4);
-hb0(135:end) = hb0(135:end)*0.8;
-hb0(130:134) = hb0(130:134)*0.8;
-hb0(127:130) = hb0(127:130)*0.9;
-hb0=movmean(hb0,5);
-hb0(50:130) = movmean(hb0(50:130),30);
+hb0(1:2) = hb0(3);
+% smooth slightly
+hb0=movmean(hb0,20);
 if size(hb0)==[186 1]
+
     hb0=hb0';
 end
+% increase elevation near terminus
+hb0(136:end) = hb0(136:end)+100;
+% smooth the transition
+hb0(125:135) = interp1([x0(124);x0(136)],[hb0(124);hb0(136)],x0(125:135));
 
 % 4. glacier width
 W0 = load('calculatedWidth.mat').width.W;

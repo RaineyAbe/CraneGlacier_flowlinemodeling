@@ -36,7 +36,7 @@ plotClimateParams = 0; % = 1 to plot SMB, SMR, DFW
 % Run flowline model
 addpath([homepath,'scripts/']);
 try 
-    [x,U,~,~,~,~,~,xcf,~,~,~,~] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta,DFW0,0,0,0);
+    [x,U,~,~,~,~,~,xcf,~,~,~,~] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta,DFW0,0,0,0,0);
 
     % calculate cost of parameter solutions
     % modified from Morlighem et al., 2010; Larour et al., 2012; Kyrke-Smith et al., 2018

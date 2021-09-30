@@ -22,13 +22,6 @@ homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flow
 addpath([homepath,'matlabFunctions/hugheylab-nestedSortStruct']);
 addpath([homepath,'matlabFunctions/']);
 
-bed_save = 0;           % = 1 to save bed
-surface_save = 0;       % = 1 to save surface
-velocity_save = 0;      % = 1 to save velocity
-terminus_save = 0;      % = 1 to save terminus positions
-dHdt_save = 0;          % = 1 to save dHdt
-figures_save = 0;       % = 1 to save figures 
-
 % Load Crane centerline
 cd([homepath,'inputs-outputs/']);
 cl.X = load('Crane_centerline.mat').x; cl.Y = load('Crane_centerline.mat').y;
@@ -44,14 +37,20 @@ end
 h_geoid = geoidheight(cl.Lat,cl.Lon);
 
 %% 2. Glacier ice surface elevation (PGC & OIB), bed (OIB), and surface speeds (ITS_LIVE & TSX)
+% Note: OIB columns
+% Elevation = 5
+% Surface elevation = surface(5) - elevation(7)
+% Thickness = 4
+% Bed = elevation(5) - thickness(4)
+% Convert elevations to geoid
+% No data values = -9999
 
-%Note: OIB columns
-%Elevation = 5
-%Surface elevation = surface(5) - elevation(7)
-%Thickness = 4
-%Bed = elevation(5) - thickness(4)
-%Convert elevations to geoid
-%No data values = -9999
+bed_save = 1;           % = 1 to save bed
+surface_save = 0;       % = 1 to save surface
+velocity_save = 0;      % = 1 to save velocity
+terminus_save = 0;      % = 1 to save terminus positions
+dHdt_save = 0;          % = 1 to save dHdt
+figures_save = 0;       % = 1 to save figures 
 
 % If bed not previously saved, load and interpolate bed observations
 if bed_save
@@ -59,15 +58,10 @@ if bed_save
     % interpolate to centerline
     
     % Load Tate's OIB file
-    obs = load('TateBed_IRMCR1B_20181016_01_005.mat');
-    obs=obs.mdata_WGS84;
-    hb0 = obs.bedElevation;
-    h0 = obs.Surface_Elev;
-    lat_hb = obs.Latitude;
-    lon_hb = obs.Longitude;
-    
-    % Convert coordinates to Antarctic polar stereographic
-    [x_hb0,y_hb0] = wgs2ps(lon_hb,lat_hb,'StandardParallel',-71,'StandardMeridian',0);
+    obs = load('OIBPicks_2018_005.mat').CraneOIBPicks_2018;
+    hb0 = obs.hb_geoid;
+    x_hb0 = obs.Easting;
+    y_hb0 = obs.Northing;
     
     % Interpolate bed elevation for each point along the centerline
     % within a certain distance
@@ -82,22 +76,21 @@ if bed_save
             hb(i)=NaN;
         end
     end
-    
-    hb(1) = hb(2);
-    
+    % set end values as constant
+    hb(170:end) = hb(170);
+        
     % save hb and coordinates in structure
     HB.hb0 = hb; HB.X = cl.X'; HB.Y = cl.Y';
-    clear hb; hb=HB; clear HB;
     
     % Save resulting bed profile as variable
     cd([homepath,'inputs-outputs/']);
-    save('observedBed_Tate.mat','hb');
+    save('observedBed.mat','HB');
     disp('bed variable saved');
     
 else
     
     cd([homepath,'inputs-outputs/']);
-    hb = load('observedBed_Tate.mat').hb.hb0;
+    hb = load('observedBed.mat').HB.hb0;
     
 end
 
@@ -277,8 +270,8 @@ end
 % final elevations
 if bed_save
     cd([homepath,'inputs-outputs/']);
-    save('observedBed.mat','hb_bathymobs','-append');
-    disp('bed saved');
+    save('observedBed.mat','bathym','-append');
+    disp('bathymetry saved');
 end
 
 % Ice speeds (TSX, & ITS_LIVE)
@@ -496,7 +489,7 @@ h_2009(find(isnan(h_2009),1,'first'):end) = 0;
 W = load('calculatedWidth.mat').width.W;
 
 % use bathymetry observations for centerline bed where they exist
-hb(~isnan(bathym)) = bathym(~isnan(bathym));
+%hb(~isnan(bathym)) = bathym(~isnan(bathym));
 
 % calculate thickness
 H = h_2009-hb;
@@ -529,7 +522,7 @@ plot(x/10^3,h_2009,'-b','linewidth',2,'DisplayName','h');
 % save results
 if save_hb_adj
     save('delineatedBedWidthAveraged.mat','hb_adj','x');
-    disp('hb_adj and hb_adj2 saved');
+    disp('hb_adj saved');
 end
 
 %% 6. Width-averaged speed

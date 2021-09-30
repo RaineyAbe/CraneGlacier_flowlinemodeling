@@ -30,7 +30,7 @@ t_end = 10*3.1536e7;
 % run flowline model
 try
     
-    [x,U,h,hb,H,gl,c,xcf,dUdx,~,~,~] = flowlineModel(homepath,plotTimeSteps,plotMisfits,0,dt,t_start,t_end,beta0,DFW0,0,0,0);
+    [x,U,h,hb,H,gl,c,xcf,dUdx,~,~,~] = flowlineModel(homepath,plotTimeSteps,plotMisfits,0,dt,t_start,t_end,beta0,DFW0,0,0,0,0);
     
      % calculate cost of resulting terminus position
     % modified from Morlighem et al., 2010; Larour et al., 2012; Kyrke-Smith et al., 2018

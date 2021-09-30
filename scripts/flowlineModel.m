@@ -1,4 +1,4 @@
-function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance)
+function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance)
 % Rainey Aberle, 2021
 % Adapted from code authored by Enderlin et al. (2013), doi:10.5194/tc-7-1007-2013
 % Function to run the flowline model using variables saved in the
@@ -106,7 +106,7 @@ while b==1
     
     % calving parameters
     Hc = 100; % m -> set the calving front to a default minimum ice thickness value if calving criteria is not met
-    sigma_b = 1000; % back pressure (Pa) - similar to that employed at Helheim Glacier (Nick et al., 2009)
+    sigma_b = 10e3; % back pressure (Pa) - similar to that employed at Helheim Glacier (Nick et al., 2009)
 
     % maximum & minimum thickness & speed cut-off to check for instability
     H_max = 2000; % maximum thickness (m)
@@ -386,7 +386,9 @@ for i=1:length(t)
             plot(x/10^3,SMR/3.1536e7,'linewidth',2,'color',col(i,:));
         end
     end
-    
+    if t(i)==t_end
+        smb_mean = mean(SMB(1:c),'omitnan');
+    end
     % calculate the  change in ice thickness from continuity
     clearvars dHdt
     dHdt(1) = (-1/W(1))*(F(1)-F(2))/(x(1)-x(2)); % forward difference

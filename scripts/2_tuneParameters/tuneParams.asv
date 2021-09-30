@@ -53,7 +53,7 @@ DFW0 = 1; % m
 tic
 fh = @(betai)betaSolve(homepath,x0,betai,DFW0,U_2018,xcf_2018);
 % solve for beta at the resolution of the stress-coupling length
-beta0 = [0.6 1.1 0.8 0.9 1.7 2.0 2.0*ones(1,5)]; % initial guess for beta
+beta0 = [0.8 0.9 1.0 1.3 1.8 2.2 2.2*ones(1,5)]; % initial guess for beta
 [beta,~] = fmincon(fh,beta0,[],[],[],[],0*ones(1,length(beta0)),5*ones(1,length(beta0)),[],optimoptions('fmincon','StepTolerance',1e-2,'MaxFunctionEvaluations',1e4));
 % grab velocity from beta solution
 [~,Un,xn,xcf,beta0x] = betaSolve(homepath,x0,beta0,DFW0,U_2018,xcf_2018);
@@ -62,7 +62,7 @@ beta = interp1(beta0x',beta',x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
 toc
 
 % test a beta value
-beta0 = [0.6 1.1 0.8 0.9 1.7 2.0 2.0*ones(1,5)]; % initial guess for beta
+beta0 = [0.7 1.1 0.7 0.9 1.7 2.0 2.0*ones(1,5)]; % initial guess for beta
 % grab velocity from beta solution
 [~,Un,xn,xcf,beta0x] = betaSolve(homepath,x0,beta0,DFW0,U_2018,xcf_2018);
 beta = interp1(beta0x',beta0',x0,'pchip'); beta(dsearchn(xn',xcf)+1:end)=NaN;
@@ -97,7 +97,8 @@ end
 
 % define settings
 DFWBounds = [0 10]; % range of possible fwd values (m)
-method = 'b';       % = 'g' to solve by gradient descent, or 'b' to solve by brute force
+method = 'b';       % = 'g' to solve by gradient descent
+                    % = 'b' to solve by brute force
 plotTimeSteps = 0;  % = 1 to plot geometry, speed, grounding line/terminus positions over time
 plotMisfits = 1;    % = 1 to plot misfit in model year 2018 with observed conditions
 save_DFW = 1;       % = 1 to save resulting DFW
