@@ -425,7 +425,7 @@ if plotMisfits
     set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0.8 0.1 0.1]]);
     ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
         set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
-        xlim([0 52]); ylabel('Misfit (m)'); 
+        xlim([0 52]); ylabel('Misfit [m]'); 
         plot(x/10^3,h-interp1(cl.x,h_obs(36).surface,x),'-','linewidth',2,...
             'color',[0.8 0.1 0.1],'HandleVisibility','off');
         % mean surface misfit
@@ -437,10 +437,10 @@ if plotMisfits
         % (a)
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                '(a)','backgroundcolor','w','fontsize',18,'linewidth',1);  
+                ' a ','backgroundcolor','w','fontsize',18,'linewidth',1);  
     ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
         set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
-        xlim([0 52]); ylabel('Misfit (m a^{-1})');
+        xlim([0 52]); ylabel('Misfit [m a^{-1}]');
         plot(x/10^3,(U-interp1(cl.x,U_obs(10).U,x))*3.1536e7,'-','linewidth',2,...
             'color',[0.8 0.1 0.1],'HandleVisibility','off');
         % mean misfit value
@@ -452,27 +452,29 @@ if plotMisfits
         % (b)
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                '(b)','backgroundcolor','w','fontsize',18,'linewidth',1); 
+                ' b ','backgroundcolor','w','fontsize',18,'linewidth',1); 
     set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0 0.4 0.8]]);
-    ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; legend('Location','west'); 
+    ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; 
+        legend('Location','north'); 
         set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
-        xlim([0 52]); ylabel('Elevation (m)'); xlabel('Distance Along Centerline (km)'); 
+        xlim([0 52]); ylabel('Elevation [m]'); xlabel('Distance Along Centerline [km]'); 
         plot(x/10^3,movmean(h,20),'-k','linewidth',2,'displayname','h_{mod}');
         plot(cl.x(1:150)/10^3,h_obs(36).surface(1:150),'--k','linewidth',2,'displayname','h_{obs}');
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                '(c)','backgroundcolor','w','fontsize',18,'linewidth',1);     
+                ' c ','backgroundcolor','w','fontsize',18,'linewidth',1);     
         %yyaxis right; set(ax3,'YTick',[],'YTickLabel',[]);
-    ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; legend('Location','west');
+    ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; 
+        legend('Location','north');
         set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
-        xlim([0 52]); xlabel('Distance Along Centerline (km)'); 
-        yyaxis left; ylabel('Speed (m a^{-1})'); ylim([100 850]);
+        xlim([0 52]); xlabel('Distance Along Centerline [km]'); 
+        yyaxis left; ylabel('Speed [m a^{-1}]'); ylim([100 850]);
             plot(x/10^3,U*3.1536e7,'-k','linewidth',2,'displayname','U_{mod}');
             plot(cl.x(1:145)/10^3,U_obs(10).U(1:145)*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
             text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                     (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                    '(d)','backgroundcolor','w','fontsize',18,'linewidth',1);
-        yyaxis right; ylabel('Basal Roughness Factor (s^{1/m} m^{-1/m})'); ylim([min(beta0)-0.2 max(beta)+0.2]);
+                    ' d ','backgroundcolor','w','fontsize',18,'linewidth',1);
+        yyaxis right; ylabel('Basal Roughness Factor [s^{1/m} m^{-1/m}]'); ylim([min(beta0)-0.2 max(beta)+0.2]);
             plot(x/10^3,movmean(beta,5),'-','linewidth',2,'color',[0 0.4 0.8],'displayname','\beta');
     
     % display grounding line misfit

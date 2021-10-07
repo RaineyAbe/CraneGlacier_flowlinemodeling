@@ -4,17 +4,20 @@
 % https://library.ucsd.edu/dc/object/bb0448974g 
 % and with supplemental processing code available as a GitHub repository: 
 % https://github.com/sioglaciology/ice_shelf_change
+%
+% Rainey Aberle
+% Summer 2021
 
 clear all; close all;
 
 save_figure = 1; % = 1 to save resulting figure
 save_mr = 1; % = 1 to save resulting melt rates
 
-homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/';
-addpath([homepath,'CraneGlacier_flowlinemodeling/matlabFunctions/cmocean_v2.0/cmocean/']);
+homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
+addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']);
 addpath('/Users/raineyaberle/Desktop/Research/matlabFunctions');
 addpath('/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/inputs-outputs/');
-cd([homepath,'ice_shelf_change/']);
+cd([homepath,'../ice_shelf_change/']);
 
 % load grid, basal melt rate (w_b), interpolated basal melt rate
 % (w_b_interp), and basal melt rate uncertainty (w_b_uncert)
@@ -26,6 +29,11 @@ w_b_interp = h5read('ANT_iceshelf_melt_rates_CS2_2010-2018_v0.h5','/w_b_interp')
 w_b_uncert = h5read('ANT_iceshelf_melt_rates_CS2_2010-2018_v0.h5','/w_b_uncert')'; % [m/a]
 
 %% extract melt rates along six transects at the Larsen C ice shelf and plot
+
+% define parameters for plotting
+fontsize = 14; 
+fontname = 'Arial';
+linewidth = 2; 
 
 % define coordinates for six transects
 tsx = [-2.3426e6 -2.1844e6; -2.33193e6 -2.1753e6; -2.2920e6 -2.1649e6; ...
@@ -40,13 +48,20 @@ subplot(1,2,1);
     set(gca,'fontsize',18,'linewidth',2); hold on;
     colormap(cmocean('amp'));
     imagesc(x/10^3,y/10^3,w_b); grid on;
-    xlabel('Easting (km)'); ylabel('Northing (km)');
+    xlabel('Easting [km]'); ylabel('Northing [km]');
     xlim([-2.4e3 -1.9e3]); ylim([0.9e3 1.4e3]);
-    c=colorbar; c.Label.String = "Basal Melt Rate (m a^{-1})"; caxis([0 10]);
+    c=colorbar; c.Label.String = "Submarine Melt Rate [m a^{-1}]"; caxis([0 10]);
     col = cmocean('turbid',7); col(1,:)=[]; % color scheme for plotting
+    % Add text label
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' a ','fontsize',fontsize+2,'linewidth',linewidth-1,'fontname',fontname);          
 subplot(1,2,2); hold on; grid on;
     set(gca,'fontsize',18,'linewidth',2);
-    xlabel('Distance Along Transect (km)'); ylabel('Melt Rate (m/a)');
+    xlabel('Distance Along Transect [km]'); ylabel('Melt Rate [m a^{-1}]');   
+    xlim([0 225]); ylim([-2 14]);
+    % Add text label
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
+        ' b ','fontsize',fontsize+2,'linewidth',linewidth-1,'fontname',fontname); 
     
 % loop through transects
 tsxpts = NaN*ones(length(tsx(:,1)),51); tsypts = NaN*ones(length(tsy(:,1)),51);
@@ -69,7 +84,7 @@ for i=1:length(tsx(:,1))
     if i==length(tsxpts(:,1))
         mr_mean = nanmean(mr);
         % calculate a logarithmic fit
-        mr_mean_fit = fit(X(4,~isnan(mr_mean))',mr_mean(~isnan(mr_mean))','exp2');
+        [mr_mean_fit, gof]= fit(X(4,~isnan(mr_mean))',mr_mean(~isnan(mr_mean))','exp2');
         % plot results on figure
         subplot(1,2,2); plot(X(4,:)/10^3,mr_mean,'-b','linewidth',3);
         plot(X(4,:)/10^3,feval(mr_mean_fit,X(4,:)),'--b','linewidth',3);
@@ -77,20 +92,21 @@ for i=1:length(tsx(:,1))
         disp(['y=',num2str(round(mr_mean_fit.a)),'*exp(',num2str(mr_mean_fit.b),...
             '*x) + ',num2str(mr_mean_fit.c),'*exp(',num2str(mr_mean_fit.d),'*x)']);
     end
-
 end
+% display R^2 value on graph
+text(150,11,['R^2 = ',num2str(gof.rsquare)],'fontsize',fontsize-1,'fontname',fontname,'backgroundcolor','w');
 
 % save melt rate results
 if save_mr
-    cd([homepath,'CraneGlacier_flowlinemodeling/inputs-outputs/']);
+    cd([homepath,'inputs-outputs/']);
     save('LarsenC_MeanMeltRate.mat','mr','mr_mean','X','tsxpts','tsypts','mr_mean_fit');
     disp('melt rates saved');
 end
 
 % save figure
 if save_figure
-    cd([homepath,'CraneGlacier_flowlinemodeling/figures/']);
-    saveas(gcf,'LarsenC_MeanMeltRate.png','png');
+    cd([homepath,'figures/']);
+    exportgraphics(gcf,'LarsenC_MeanMeltRate.png','Resolution',600);
     disp('figure 1 saved')
 end
 
