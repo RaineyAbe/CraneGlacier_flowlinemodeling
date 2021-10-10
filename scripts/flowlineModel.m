@@ -1,4 +1,4 @@
-function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance)
+function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean,dSMR_max] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance)
 % Rainey Aberle, 2021
 % Adapted from code authored by Enderlin et al. (2013), doi:10.5194/tc-7-1007-2013
 % Function to run the flowline model using variables saved in the
@@ -188,6 +188,9 @@ for i=1:length(t)
 %             xcf = xcf_b;
 %         end
         xcf=xcf_s;
+    end
+    if any(H(1:dsearchn(x',xcf))<100)
+        xcf = x(find(H<100,1,'first'));
     end
     
     % calculate the thickness required to remain grounded at each grid cell
@@ -388,6 +391,7 @@ for i=1:length(t)
     end
     if t(i)==t_end
         smb_mean = mean(SMB(1:c),'omitnan');
+        dSMR_max = max(SMR0)-max(SMR);
     end
     % calculate the  change in ice thickness from continuity
     clearvars dHdt
@@ -437,7 +441,7 @@ if plotMisfits
         % (a)
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                ' a ','backgroundcolor','w','fontsize',18,'linewidth',1);  
+                ' a ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');  
     ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
         set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
         xlim([0 52]); ylabel('Misfit [m a^{-1}]');
@@ -452,7 +456,7 @@ if plotMisfits
         % (b)
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                ' b ','backgroundcolor','w','fontsize',18,'linewidth',1); 
+                ' b ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold'); 
     set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0 0.4 0.8]]);
     ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; 
         legend('Location','north'); 
@@ -462,7 +466,7 @@ if plotMisfits
         plot(cl.x(1:150)/10^3,h_obs(36).surface(1:150),'--k','linewidth',2,'displayname','h_{obs}');
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                ' c ','backgroundcolor','w','fontsize',18,'linewidth',1);     
+                ' c ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');     
         %yyaxis right; set(ax3,'YTick',[],'YTickLabel',[]);
     ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; 
         legend('Location','north');
@@ -473,7 +477,7 @@ if plotMisfits
             plot(cl.x(1:145)/10^3,U_obs(10).U(1:145)*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
             text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                     (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                    ' d ','backgroundcolor','w','fontsize',18,'linewidth',1);
+                    ' d ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');
         yyaxis right; ylabel('Basal Roughness Factor [s^{1/m} m^{-1/m}]'); ylim([min(beta0)-0.2 max(beta)+0.2]);
             plot(x/10^3,movmean(beta,5),'-','linewidth',2,'color',[0 0.4 0.8],'displayname','\beta');
     

@@ -51,6 +51,7 @@ delta_TF0 = 0:0.1:1; % ^oC change in TF
 
 % store mean final SMB for plotting
 smb_mean = NaN*zeros(1,length(delta_SMB0));
+dSMR_max = 0; 
 
 % define time stepping (s)
 dt = 0.01*3.1536e7;
@@ -65,12 +66,12 @@ for j=1:length(delta_SMB0)
     % Switch scenarios on and off
     delta_SMB = delta_SMB0(j);
     delta_DFW = 0; %delta_DFW0(j);
-    delta_TF = 0; %delta_TF0(j);
+    delta_TF = delta_TF0(j);
     SMB_enhance = 1; % = 1 to increase SMR due to decreased SMB    
 
     %try
         % run flowline model
-        [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean(j)] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance);
+        [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean(j),dSMR_max] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance);
         
         % save geometry & speed
         if saveFinal
@@ -88,19 +89,19 @@ for j=1:length(delta_SMB0)
             elseif SMB_enhance==1 && delta_TF==0
                 cd([homepath,'scripts/3_sensitivityTests/results/2_SMB_enh/']);
                 fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_enh_geom.mat'];
-                save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
+                save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2','dSMR_max');
                 disp('geometry saved (2)');
             % 3) SMB_enhanced + TF
             elseif SMB_enhance==1 && delta_TF~=0 
                 cd([homepath,'scripts/3_sensitivityTests/results/3_SMB_enh+TF/']);
-                fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_enh_dTF',num2str(delta_TF),'geom.mat'];
-                save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
+                fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_enh_dTF',num2str(delta_TF),'_geom.mat'];
+                save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2','dSMR_max');
                 disp('geometry saved (3)');           
             % 1) SMB, DFW, and TF independent
             else
                 cd([homepath,'scripts/3_sensitivityTests/results/1_SMB_DFW_TF/']);
                 fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_DFW',num2str(DFW2),'m_TF',num2str(delta_TF),'_geom.mat'];
-                save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
+                save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2','dSMR_max');
                 disp('geometry saved (1)');
             end
         else

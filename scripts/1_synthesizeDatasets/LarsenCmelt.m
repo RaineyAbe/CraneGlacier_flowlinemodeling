@@ -54,14 +54,14 @@ subplot(1,2,1);
     col = cmocean('turbid',7); col(1,:)=[]; % color scheme for plotting
     % Add text label
     text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
-        ' a ','fontsize',fontsize+2,'linewidth',linewidth-1,'fontname',fontname);          
+        ' a ','fontsize',fontsize+2,'linewidth',linewidth-1,'fontname',fontname,'fontweight','bold');          
 subplot(1,2,2); hold on; grid on;
     set(gca,'fontsize',18,'linewidth',2);
     xlabel('Distance Along Transect [km]'); ylabel('Melt Rate [m a^{-1}]');   
     xlim([0 225]); ylim([-2 14]);
     % Add text label
     text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
-        ' b ','fontsize',fontsize+2,'linewidth',linewidth-1,'fontname',fontname); 
+        ' b ','fontsize',fontsize+2,'linewidth',linewidth-1,'fontname',fontname,'fontweight','bold'); 
     
 % loop through transects
 tsxpts = NaN*ones(length(tsx(:,1)),51); tsypts = NaN*ones(length(tsy(:,1)),51);
@@ -86,8 +86,8 @@ for i=1:length(tsx(:,1))
         % calculate a logarithmic fit
         [mr_mean_fit, gof]= fit(X(4,~isnan(mr_mean))',mr_mean(~isnan(mr_mean))','exp2');
         % plot results on figure
-        subplot(1,2,2); plot(X(4,:)/10^3,mr_mean,'-b','linewidth',3);
-        plot(X(4,:)/10^3,feval(mr_mean_fit,X(4,:)),'--b','linewidth',3);
+        subplot(1,2,2); plot(X(4,:)/10^3,mr_mean,'-b','linewidth',2);
+        plot(X(4,:)/10^3,feval(mr_mean_fit,X(4,:)),'--b','linewidth',2);
         disp('Best fit logarithmic equation:');
         disp(['y=',num2str(round(mr_mean_fit.a)),'*exp(',num2str(mr_mean_fit.b),...
             '*x) + ',num2str(mr_mean_fit.c),'*exp(',num2str(mr_mean_fit.d),'*x)']);
