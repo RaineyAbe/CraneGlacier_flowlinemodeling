@@ -428,30 +428,32 @@ if plotMisfits
     figure(2); clf;
     set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0.8 0.1 0.1]]);
     ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
-        set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
+        set(gca,'fontsize',16,'fontname','Arial','linewidth',2); 
         xlim([0 52]); ylabel('Misfit [m]'); 
         plot(x/10^3,h-interp1(cl.x,h_obs(36).surface,x),'-','linewidth',2,...
             'color',[0.8 0.1 0.1],'HandleVisibility','off');
         % mean surface misfit
         plot(x/10^3,nanmean(h-interp1(cl.x,h_obs(36).surface,x))*ones(1,length(x)),...
             '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+        % text for mean misfit
         text(max(get(gca,'XLim')),nanmean(h-interp1(cl.x,h_obs(36).surface,x)),...
-            num2str(nanmean(h-interp1(cl.x,h_obs(36).surface,x))),'color',[0.8 0.1 0.1],...
+            sprintf('%.1f',mean(h-interp1(cl.x,h_obs(36).surface,x),'omitnan')),'color',[0.8 0.1 0.1],...
             'fontsize',14);
         % (a)
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
                 ' a ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');  
     ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
-        set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
+        set(gca,'fontsize',16,'fontname','Arial','linewidth',2); 
         xlim([0 52]); ylabel('Misfit [m a^{-1}]');
         plot(x/10^3,(U-interp1(cl.x,U_obs(10).U,x))*3.1536e7,'-','linewidth',2,...
             'color',[0.8 0.1 0.1],'HandleVisibility','off');
         % mean misfit value
-        plot(x/10^3,nanmean(U-interp1(cl.x,U_obs(10).U,x))*3.1536e7*ones(1,length(x)),...
+        plot(x/10^3,mean(U-interp1(cl.x,U_obs(10).U,x),'omitnan')*3.1536e7*ones(1,length(x)),...
             '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+        % text for mean misfit
         text(max(get(gca,'XLim')),nanmean(U-interp1(cl.x,U_obs(10).U,x))*3.1536e7,...
-            num2str(nanmean(U-interp1(cl.x,U_obs(10).U,x))*3.1536e7),'color',[0.8 0.1 0.1],...
+            sprintf('%.1f',mean(U-interp1(cl.x,U_obs(10).U,x),'omitnan')*3.1536e7),'color',[0.8 0.1 0.1],...
             'fontsize',14);
         % (b)
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
@@ -460,7 +462,7 @@ if plotMisfits
     set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0 0.4 0.8]]);
     ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; 
         legend('Location','north'); 
-        set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
+        set(gca,'fontsize',16,'fontname','Arial','linewidth',2); 
         xlim([0 52]); ylabel('Elevation [m]'); xlabel('Distance Along Centerline [km]'); 
         plot(x/10^3,movmean(h,20),'-k','linewidth',2,'displayname','h_{mod}');
         plot(cl.x(1:150)/10^3,h_obs(36).surface(1:150),'--k','linewidth',2,'displayname','h_{obs}');
@@ -470,7 +472,7 @@ if plotMisfits
         %yyaxis right; set(ax3,'YTick',[],'YTickLabel',[]);
     ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; 
         legend('Location','north');
-        set(gca,'fontsize',18,'fontname','Arial','linewidth',2); 
+        set(gca,'fontsize',16,'fontname','Arial','linewidth',2); 
         xlim([0 52]); xlabel('Distance Along Centerline [km]'); 
         yyaxis left; ylabel('Speed [m a^{-1}]'); ylim([100 850]);
             plot(x/10^3,U*3.1536e7,'-k','linewidth',2,'displayname','U_{mod}');

@@ -95,7 +95,7 @@ linewidth = 1.5;      % line width
     im2.AlphaData=0.5; caxis([0 1100]);
     % set axes properties
     ax(2).XLim=xlimits; ax(2).YLim=ylimits; 
-    set(ax(2),'YDir','normal','Visible','off','fontsize',12,'XTick',[],'YTick',[]); hold on; 
+    set(ax(2),'YDir','normal','Visible','off','fontsize',fontsize,'XTick',[],'YTick',[]); hold on; 
     % add legend
     l=legend('Position',[0.23 0.8 0.12 0.07],'Color',[175 175 175]/255,...
         'fontname','arial','fontsize',fontsize);
@@ -235,7 +235,7 @@ close all;
 cd([homepath,'inputs-outputs']);
 
 save_figure = 1; % = 1 to save figure
-fontsize = 14; % fontsize for plots
+fontsize = 16; % fontsize for plots
 font = 'Arial';
 linewidth = 1.5; % line width for plots
 markersize = 10; % marker size for plots
@@ -762,6 +762,7 @@ end
 %% Delineated Bed Elevation Profile
 
 save_figure = 1; % = 1 to save figure
+fontsize = 16; % font size for plot
 
 % load raw picks
 rawX = load('OIBpicks_raw.mat').RawX;
@@ -837,7 +838,7 @@ landsat = dir('LC08_L1GT_218106_20201015_20201104_01_T2_B8.TIF');
     % polar stereographic coordinates of image boundaries
     LS.x = linspace(min(LS.R.XWorldLimits),max(LS.R.XWorldLimits),LS.nx); 
     LS.y = linspace(min(LS.R.YWorldLimits),max(LS.R.YWorldLimits),LS.ny);
-ax2 = axes('pos',[0.62 0.14 0.25 0.33],'fontname','Arial','fontsize',14,...
+ax2 = axes('pos',[0.62 0.14 0.25 0.33],'fontname','Arial','fontsize',fontsize,...
     'XTickLabels',[],'YTickLabels',[],'linewidth',2);
     hold on; 
     imagesc(LS.x/1e3,LS.y/1e3,flipud(LS.im*1.1)); colormap('gray');
@@ -903,7 +904,7 @@ end
 close all;
 
 save_figure = 1;                % = 1 to save figure
-fontsize = 18;                   % font size
+fontsize = 16;                   % font size
 fontname = 'Arial';             % font name
 linewidth = 2.5;                % line width
 markersize = 25;                % marker size
@@ -1002,7 +1003,7 @@ end
 close all;
 
 save_figures = 0;    % = 1 to save figure
-fontsize = 15;      % font size
+fontsize = 16;      % font size
 fontname = 'Arial'; % font name
 linewidth = 2;      % line width
 markersize = 10;    % marker size
@@ -1275,7 +1276,7 @@ while loop==1
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
             'f','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1); 
-    axHH=axes('position',[0.58 0.07 0.38 0.2]); hold on; grid on; % xgl/xcf
+    axHH=axes('position',[0.58 0.08 0.38 0.2]); hold on; grid on; % xgl/xcf
         set(gca,'fontsize',fontsize);
         xlabel('Distance Along Centerline [km]'); ylabel('F_T');
         xlim([25 95]); ylim([-0.1 1.1]);              
@@ -1769,6 +1770,5 @@ if save_figures
     figure(7); exportgraphics(gcf,'sensitivityTests_discharge.png','Resolution',600);
     figure(8); exportgraphics(gcf,'sensitivityTests_QglXcf.png','Resolution',600);
     disp('figures 5-8 saved.');
-    
 end
 
