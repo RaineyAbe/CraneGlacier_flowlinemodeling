@@ -1,4 +1,4 @@
-function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean,dSMR_max] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance)
+function [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean,dSMR_max] = flowline_model(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance)
 % Rainey Aberle, 2021
 % Adapted from code authored by Enderlin et al. (2013), doi:10.5194/tc-7-1007-2013
 % Function to run the flowline model using variables saved in the
@@ -405,7 +405,7 @@ for i=1:length(t)
     Hn(Hn < 0) = 0; % remove negative values
     H = Hn; % set as the new thickness value
 
-    Fgl(i) = F(gl)*pi*1/4*917*1e-12*3.1536e7; % Gt/a
+    Fgl(i) = F(gl)*917*1e-12*3.1536e7; % Gt/a
 
     % stop the model if it behaves unstably (monitored by ice thickness and speed)
     if max(H) > H_max

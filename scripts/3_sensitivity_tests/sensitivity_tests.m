@@ -23,7 +23,7 @@ addpath([homepath,'inputs-outputs/']);
 % (B) Run through simulated 2009-2019, then continue evolving the model  
 %   under new scenarios: 
 %   (1) SMB, DFW, and TF independent change
-%   -- Switch between scenarios on lines 63-65 below.
+%   -- Switch between scenarios on lines 67-69 below.
 %   (2) SMB_enh: increased air temperature --> increased SMR due to 
 %   increased surface runoff
 %   -- Run the SMB independent scenario with SMB_enhance = 1.
@@ -34,7 +34,7 @@ addpath([homepath,'inputs-outputs/']);
 close all; 
 
 saveFinal = 1;         % = 1 to save final conditions in homepath/3_sensitivityTests/results/
-plotTimeSteps = 0;     % = 1 to plot geometry, speed, cf/gl positions every decade
+plotTimeSteps = 1;     % = 1 to plot geometry, speed, cf/gl positions every decade
 plotMisfits = 0;       % = 1 to plot misfit with 2018 conditions
 plotClimateParams = 0; % = 1 to plot climate parameters
 
@@ -71,7 +71,7 @@ for j=1:length(delta_SMB0)
 
     %try
         % run flowline model
-        [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean(j),dSMR_max] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance);
+        [x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,smb_mean(j),dSMR_max] = flowline_model(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,delta_SMB,delta_DFW,delta_TF,SMB_enhance);
         
         % save geometry & speed
         if saveFinal
@@ -79,7 +79,7 @@ for j=1:length(delta_SMB0)
             h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; DFW2 = DFW0+delta_DFW;
             % no change
             if delta_DFW==0 && delta_TF==0 && delta_SMB==0 
-                cd([homepath,'scripts/3_sensitivityTests/results/1_SMB_DFW_TF/']);
+                cd([homepath,'scripts/3_sensitivity_tests/results/1_SMB_DFW_TF/']);
                 save('SMB0_DFW0m_TF0_geom.mat','h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
                 cd([homepath,'inputs-outputs/']);
                 h1=h; H1=H; hb1=hb; c1=c; U1=U; x1=x; gl1=dsearchn(x1',XGL(end)); DFW1=DFW0; Fgl1=Fgl; XGL1=XGL; XCF1=XCF; 
@@ -87,19 +87,19 @@ for j=1:length(delta_SMB0)
                 disp('2100_noChange saved');
             % 2) SMB_enhanced
             elseif SMB_enhance==1 && delta_TF==0
-                cd([homepath,'scripts/3_sensitivityTests/results/2_SMB_enh/']);
+                cd([homepath,'scripts/3_sensitivity_tests/results/2_SMB_enh/']);
                 fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_enh_geom.mat'];
                 save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2','dSMR_max');
                 disp('geometry saved (2)');
             % 3) SMB_enhanced + TF
             elseif SMB_enhance==1 && delta_TF~=0 
-                cd([homepath,'scripts/3_sensitivityTests/results/3_SMB_enh+TF/']);
+                cd([homepath,'scripts/3_sensitivity_tests/results/3_SMB_enh+TF/']);
                 fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_enh_dTF',num2str(delta_TF),'_geom.mat'];
                 save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2','dSMR_max');
                 disp('geometry saved (3)');           
             % 1) SMB, DFW, and TF independent
             else
-                cd([homepath,'scripts/3_sensitivityTests/results/1_SMB_DFW_TF/']);
+                cd([homepath,'scripts/3_sensitivity_tests/results/1_SMB_DFW_TF/']);
                 fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_DFW',num2str(DFW2),'m_TF',num2str(delta_TF),'_geom.mat'];
                 save(fileName,'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2','dSMR_max');
                 disp('geometry saved (1)');

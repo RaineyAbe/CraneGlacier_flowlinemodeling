@@ -88,7 +88,7 @@ beta0x = load('betaSolution.mat').xn;
 % Use the mean value at each point along the centerline for 2009-2019 
 SMB0 = load('downscaledClimateVariables_2009-2019.mat').SMB.downscaled_average_linear./3.1536e7; % m/s
 %RO0 = load('downscaledClimateVariables_2009-2019.mat').RO.downscaled_average_linear./3.1536e7; % m/s
-RO0 = load('downscaledClimateVariables_2009-2019.mat').SF.downscaled_average_linear.*0.05./3.1536e7; % m/s
+RO0 = load('downscaledClimateVariables_2009-2019.mat').SM.downscaled_average_linear.*0.05./3.1536e7; % m/s
     % From Vaughan (2006): ﻿the upper estimates for runoff in 2000 and 2050 are equivalent 
     % to only 11% and 27% of the yearly total snow accumulation for the Antarctic Peninsula, 
     % respectively (given by areas H to J in Vaughan et al., 1999)
