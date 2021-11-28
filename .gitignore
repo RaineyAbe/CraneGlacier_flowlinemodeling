@@ -1,3 +1,5 @@
 inputs-outputs/downscaledClimateVariables_2009-2019.mat
 data
 scripts/1_synthesizeDatasets/OIBPicking
+scripts/1_synthesize_datasets/OIBPicking
+inputs-outputs/OIBpicks_raw.mat
