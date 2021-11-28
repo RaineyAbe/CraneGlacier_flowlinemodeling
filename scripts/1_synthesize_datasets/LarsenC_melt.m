@@ -10,8 +10,8 @@
 
 clear all; close all;
 
-save_figure = 1; % = 1 to save resulting figure
-save_mr = 1; % = 1 to save resulting melt rates
+save_figure = 0; % = 1 to save resulting figure
+save_mr = 0; % = 1 to save resulting melt rates
 
 homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
 addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']);
@@ -94,7 +94,8 @@ for i=1:length(tsx(:,1))
     end
 end
 % display R^2 value on graph
-text(150,11,['R^2 = ',num2str(gof.rsquare)],'fontsize',fontsize-1,'fontname',fontname,'backgroundcolor','w');
+text(155,9,['R^2 = ',num2str(round(gof.rsquare,2))],'fontsize',fontsize-1,...
+    'fontname',fontname,'backgroundcolor','w','color','b');
 
 % save melt rate results
 if save_mr
