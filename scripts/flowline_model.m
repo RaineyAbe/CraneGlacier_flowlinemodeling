@@ -259,14 +259,14 @@ for i=1:length(t)
     if plotTimeSteps
         if t(i)==t_start
             figure(1); clf
-            set(gcf,'Position',[0 100 1300 400]);
-            ax1 = axes('Position',[0.06 0.12 0.27 0.78]); % glacier geometry
+            set(gcf,'Position',[0 100 1300 450]);
+            ax1 = axes('Position',[0.05 0.12 0.27 0.78]); % glacier geometry
             hold on; grid on;
-            set(gca,'FontSize',14,'linewidth',2);
+            set(gca,'FontSize',16,'linewidth',2);
             %title('Glacier Geometry');
             legend('Location','northeast');
-            xlim([0 75]); ylim([min(hb)-100 max(h)+200]);
-            xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
+            xlim([0 95]); ylim([min(hb)-100 max(h)+200]);
+            xlabel('Distance Along Centerline [km]'); ylabel('Elevation [m]');
             % ice surface
             plot(x(1:c)./10^3,h(1:c),'color',col(i,:),'linewidth',2,'displayname','2009');
             % calving front
@@ -277,23 +277,23 @@ for i=1:length(t)
             plot(x0./10^3,hb0,'k','linewidth',2,'HandleVisibility','off');
             % mean sea level
             plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off');
-            ax2 = axes('Position',[0.38 0.1 0.28 0.8]); % ice speed
+            ax2 = axes('Position',[0.37 0.1 0.28 0.8]); % ice speed
             hold on; grid on;
             set(gca,'FontSize',14,'linewidth',2);
-            title('Ice Speed'); legend('Location','northeast');
-            xlim([0 65]); ylim([0 1500]);
-            xlabel('Distance Along Centerline (km)'); ylabel('Speed (m yr^{-1})');
+            %title('Ice Speed'); legend('Location','northeast');
+            xlim([0 95]); ylim([0 1500]);
+            xlabel('Distance Along Centerline [km]'); ylabel('Speed [m a^{-1}]');
             % ice speed
             plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','2009');
             ax3 = axes('Position',[0.7 0.1 0.28 0.8]); % calving front position
             hold on; grid on;
             set(gca,'FontSize',14,'linewidth',2);
-            title('Terminus & Grounding Line Positions'); legend('Location','best');
-            xlim([30 65]); ylim([0 t_end./3.1536e7]);
-            xlabel('Distance Along Centerline (km)'); ylabel('Year');
+            %title('Terminus & Grounding Line Positions'); legend('Location','best');
+            xlim([30 95]); ylim([2009 t_end./3.1536e7+2009]);
+            xlabel('Distance Along Centerline [km]'); ylabel('Year');
             % terminus & grounding line positions
-            plot(x(c)/10^3,t(i)./3.1536e7,'.','markersize',15,'color',col(i,:),'displayname','2009');
-            plot(ax3,x(gl)./10^3,t(i)./3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off');
+            plot(x(c)/10^3,t(i)./3.1536e7+2009,'.','markersize',15,'color',col(i,:),'displayname','2009');
+            plot(ax3,x(gl)./10^3,t(i)./3.1536e7+2009,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off');
         elseif mod(i-1,round(length(t)/10))==0 % display every length(t)/10
             figure(1);
             % ice surface
@@ -307,11 +307,17 @@ for i=1:length(t)
             % ice speed
             plot(ax2,x(1:c)/10^3,U(1:c).*3.1536e7,'-','Color',col(i,:),'linewidth',2,'DisplayName',num2str(round(t(i)./3.1536e7)+2009));
             % calving front position
-            plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
+            plot(ax3,x(c)/10^3,t(i)/3.1536e7+2009,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
             % grounding line position
-            plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
+            plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2009,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
         end
     end
+    
+    % save images
+%     if mod(i-1,round(length(t)/10))==0
+%         saveas(gcf,[homepath,'../write-ups/AGU2021/figures/gifs/SMBenh_TF_',num2str(round(t(i)./3.1536e7)+2009),'.png'],'png');
+%         disp('figure saved');
+%     end 
     
     % calculate the effective pressure (ice overburden pressure minus water
     % pressure) assuming an easy & open connection between the ocean and
@@ -440,9 +446,9 @@ if plotMisfits
             sprintf('%.1f',mean(h-interp1(cl.x,h_obs(36).surface,x),'omitnan')),'color',[0.8 0.1 0.1],...
             'fontsize',14);
         % (a)
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-                (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                ' a ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');  
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+%                 ' a ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');  
     ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
         set(gca,'fontsize',16,'fontname','Arial','linewidth',2); 
         xlim([0 52]); ylabel('Misfit [m a^{-1}]');
@@ -456,32 +462,33 @@ if plotMisfits
             sprintf('%.1f',mean(U-interp1(cl.x,U_obs(10).U,x),'omitnan')*3.1536e7),'color',[0.8 0.1 0.1],...
             'fontsize',14);
         % (b)
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-                (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                ' b ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold'); 
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+%                 ' b ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold'); 
     set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0 0.4 0.8]]);
     ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; 
         legend('Location','north'); 
-        set(gca,'fontsize',16,'fontname','Arial','linewidth',2); 
+        set(gca,'fontsize',20,'fontname','Arial','linewidth',2); 
         xlim([0 52]); ylabel('Elevation [m]'); xlabel('Distance Along Centerline [km]'); 
         plot(x/10^3,movmean(h,20),'-k','linewidth',2,'displayname','h_{mod}');
         plot(cl.x(1:150)/10^3,h_obs(36).surface(1:150),'--k','linewidth',2,'displayname','h_{obs}');
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-                (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                ' c ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');     
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+%                 ' c ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');     
         %yyaxis right; set(ax3,'YTick',[],'YTickLabel',[]);
     ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; 
         legend('Location','north');
-        set(gca,'fontsize',16,'fontname','Arial','linewidth',2); 
+        set(gca,'fontsize',20,'fontname','Arial','linewidth',2); 
         xlim([0 52]); xlabel('Distance Along Centerline [km]'); 
-        yyaxis left; ylabel('Speed [m a^{-1}]'); ylim([100 850]);
+%         yyaxis left; 
+        ylabel('Speed [m a^{-1}]'); ylim([100 850]);
             plot(x/10^3,U*3.1536e7,'-k','linewidth',2,'displayname','U_{mod}');
             plot(cl.x(1:145)/10^3,U_obs(10).U(1:145)*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
-            text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-                    (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-                    ' d ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');
-        yyaxis right; ylabel('Basal Roughness Factor [s^{1/m} m^{-1/m}]'); ylim([min(beta0)-0.2 max(beta)+0.2]);
-            plot(x/10^3,movmean(beta,5),'-','linewidth',2,'color',[0 0.4 0.8],'displayname','\beta');
+%             text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%                     (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+%                     ' d ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');
+%         yyaxis right; ylabel('Basal Roughness Factor [s^{1/m} m^{-1/m}]'); ylim([min(beta0)-0.2 max(beta)+0.2]);
+%             plot(x/10^3,movmean(beta,5),'-','linewidth',2,'color',[0 0.4 0.8],'displayname','\beta');
     
     % display grounding line misfit
     disp('Mean misfits at the grounding line:');

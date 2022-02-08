@@ -13,7 +13,7 @@ clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
 % define home path in directory and add necessary paths
-homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
+homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 addpath([homepath,'scripts/']); % add path to U_convergence
 addpath([homepath,'../matlabFunctions/cmocean_v2.0/cmocean']);
 addpath([homepath,'inputs-outputs/']);
@@ -33,7 +33,7 @@ addpath([homepath,'inputs-outputs/']);
 
 close all; 
 
-saveFinal = 1;         % = 1 to save final conditions in homepath/3_sensitivityTests/results/
+saveFinal = 0;         % = 1 to save final conditions in homepath/3_sensitivityTests/results/
 plotTimeSteps = 1;     % = 1 to plot geometry, speed, cf/gl positions every decade
 plotMisfits = 0;       % = 1 to plot misfit with 2018 conditions
 plotClimateParams = 0; % = 1 to plot climate parameters
@@ -59,7 +59,7 @@ t_start = 0*3.1536e7;
 t_end = 91*3.1536e7;
 
 % loop through scenarios
-for j=1:length(delta_SMB0)
+for j=length(delta_SMB0)
 
     load('flowlineModelInitialization.mat');
     
