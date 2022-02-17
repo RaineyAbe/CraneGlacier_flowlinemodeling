@@ -1,24 +1,28 @@
-% Rainey Aberle
+% Script to create a timeseries of width-averaged geometry, surface speed, and 
+% terminus positions along the Crane Glacier centerline for 1999
+% (pre-ice shelf collapse) to 2017 (post-ice shelf collapse)
+%
+% Rainey Aberle (raineyaberle@u.boisestate.edu)
 % Spring 2022
-% Script to create a timeseries of Crane Glacier geometry, ice speed, and 
-% terminus position along glacier centerline for 2000 (pre-collapse
-% conditions)
-
+%
 % Outline:
 %   0. Initial setup
 %   1. Load centerline coordinates and width
-%   2. Surface velocity (ITS_LIVE & ERS)
-%   3. Create a complete pre-collapse velocity profile
-%   3. Surface elevation (GTOPO30) and bed elevation (OIB picks)
-%   4. Terminus positions (Landsat-derived; Dryak and Enderlin, 2020)
-%   3. Glacier width
-%   4. Terminus positions
-
+%   2. Width-averaged and centerline surface elevations (GOTOPO30 & OIB)
+%   3. Width-averaged surface velocities (ITS_LIVE & ERS)
+%       a. Load velocity datasets, average over glacier width segments
+%       b. Create a complete pre-collapse velocity profile
+%   4. Glacier bed elevation (OIB picks)
+%   5. Width-averaged thicknesses
+%   6. Terminus positions (Landsat-derived; Dryak and Enderlin, 2020)
+%
 % To-Do:
-%   - do surface and terminus before velocity
+%   - crop ITS_LIVE profiles in QGIS 
 %   - smooth pre-collapse velocity profile at transitions
+%   - edit sections 4+
+% -------------------------------------------------------------------------
 
-%% 0. Initial setup
+% 0. Initial setup
 
 clear all; close all;
 
@@ -26,30 +30,65 @@ clear all; close all;
 homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 
 % add path to required functions
-addpath([homepath,'matlabFunctions/hugheylab-nestedSortStruct'],[homepath,'matlabFunctions/']);
+addpath([homepath,'matlabFunctions/hugheylab-nestedSortStruct'], [homepath,'matlabFunctions/']);
 
-
-
-%% 1. Load centerline and width
+%% 1. Load centerline coordinates and width
 
 % -----Centerline-----
 cl.x = load([homepath,'inputs-outputs/Crane_centerline.mat']).x; 
 cl.y = load([homepath,'inputs-outputs/Crane_centerline.mat']).y;
-
 % Define x as distance along centerline
 x = zeros(1,length(cl.x));
 for i=2:(length(cl.x))
     x(i)=sqrt((cl.x(i)-cl.x(i-1))^2+(cl.y(i)-cl.y(i-1))^2)+x(i-1);
 end
-
 % Convert to lon/lat, load geoidheight at each pt along centerline
-[cl.lon,cl.lat] = ps2wgs(cl.x,cl.y,'StandardParallel',-71,'StandardMeridian',0);
-h_geoid = geoidheight(cl.lat,cl.lon);
+[cl.lon, cl.lat] = ps2wgs(cl.x, cl.y, 'StandardParallel', -71, 'StandardMeridian', 0);
+h_geoid = geoidheight(cl.lat, cl.lon);
 
 % -----Width-----
-width = load([homepath,'inputs-outputs/calculatedWidth.mat']).width;
+width = load([homepath, 'inputs-outputs/calculatedWidth.mat']).width;
 
-%% 2. Width-averaged surface velocities
+%% 2. Width-averaged surface elevations (GOTOPO30 & OIB)
+
+% -----GOTOPO30-----
+[GT.h, GT.R] = readgeoraster([homepath,'data/surface_elevations/gt30w120s60_aps.tif']);
+GT.h(GT.h==-9999) = NaN; % set no-data values to NaN
+% extract x and y coordinates
+[GT.ny, GT.nx] = size(GT.h); % number of x and y points
+GT.X = linspace(GT.R.XWorldLimits(1),GT.R.XWorldLimits(2),GT.nx);
+GT.Y = linspace(GT.R.YWorldLimits(1),GT.R.YWorldLimits(2),GT.ny);
+
+% save info in structure
+h(1).h_centerline = interp2(GT.X,GT.Y,flipud(double(GT.h)),cl.x,cl.y);
+h(1).h_width_ave = zeros(1,length(cl.x)); % initialize speed variables
+h(1).date = NaN; % observation date
+h(1).units = "m"; % speed units
+h(1).source = "GTOPO30"; % data source
+% loop through centerline points
+for j=1:length(cl.x)
+    % interpolate speed along each width segment
+    h(1).h_width_ave(j) = mean(interp2(GT.X,GT.Y,flipud(double(GT.h)),width.segsx(j,:),width.segsy(j,:)),'omitnan'); % [m]
+end    
+h(1).numPts = length(h(1).h_width_ave(~isnan(h(1).h_width_ave))); % number of valid data points in centerline profile
+
+% plot
+figure(1); clf; hold on; 
+set(gca,'fontsize',12,'linewidth',1);
+plot(x./10^3, h(1).h_width_ave,'.','markersize',5,'displayname','width-averaged');
+plot(x./10^3, h(1).h_centerline,'.','markersize',5,'displayname','centerline');
+xlabel('distance along centerline [km]');
+ylabel('elevation [m]');
+grid on; legend; 
+
+% save
+save([homepath,'inputs-outputs/surfaceElevationObs_GTOPO30.mat'],'h');
+disp('h saved to file');
+
+%% 3. Width-averaged surface velocities
+% -------------------------------------------------------------------------
+%   a. Load velocity datasets, average over glacier width segments
+% -------------------------------------------------------------------------
 
 % -----ERS (1994)-----
 [ERS(1).A, ERS(1).R] = readgeoraster([homepath,'data/surface_velocities/ENVEO_velocities/LarsenFleming_s19940120_e19940319.1.0_20170928/LarsenFleming_s19940120_e19940319.tif']);
@@ -59,16 +98,20 @@ ERS(1).Y = linspace(ERS(1).R.YWorldLimits(1),ERS(1).R.YWorldLimits(2),ERS(1).ny)
 ERS(1).ux = ERS(1).A(:,:,1); ERS(1).ux(ERS(1).ux==single(1e20)) = NaN; % Easting velocity [m/d]
 ERS(1).uy = ERS(1).A(:,:,2); ERS(1).uy(ERS(1).uy==single(1e20)) = NaN; % Northing velocity [m/d]
 ERS(1).u = sqrt(ERS(1).ux.^2 + ERS(1).uy.^2); % velocity magnitude [m/d]
+% save info in structure
+U(1).date = '1994'; % observation date
+U(1).units = "m/s"; % speed units
+U(1).source = "ERS"; % data source
+% interpolate speed along centerline
+U(1).U_centerline = interp2(ERS(1).X,ERS(1).Y,flipud(ERS(1).u),cl.x,cl.y)./24/60/60; % [m/s];
+% initialize width-averaged speed 
+U(1).U_width_ave = zeros(1,length(cl.x)); 
 % loop through centerline points
-U(1).speed = zeros(1,length(cl.x));
 for j=1:length(cl.x)
     % interpolate speed along each width segment
-    U(1).speed(j) = mean(interp2(ERS(1).X,ERS(1).Y,flipud(ERS(1).u),width.segsx(j,:),width.segsy(j,:)),'omitnan')./24/60/60; % [m/s]
+    U(1).U_width_ave(j) = mean(interp2(ERS(1).X,ERS(1).Y,flipud(ERS(1).u),width.segsx(j,:),width.segsy(j,:)),'omitnan')./24/60/60; % [m/s]
 end    
-U(1).date = 1994; 
-U(1).units = "m/s";
-U(1).source = "ERS";
-U(1).numPts = length(U(1).speed(~isnan(U(1).speed)));
+U(1).numPts = length(U(1).U_width_ave(~isnan(U(1).U_width_ave))); % number of valid data points in centerline profile
 
 % -----ERS (1995)-----
 [ERS(2).A, ERS(2).R] = readgeoraster([homepath,'data/surface_velocities/ENVEO_velocities/glacapi_iv_LB_ERS_1995_v2.tif']);
@@ -78,77 +121,100 @@ ERS(2).Y = linspace(ERS(2).R.YWorldLimits(1),ERS(2).R.YWorldLimits(2),ERS(2).ny)
 ERS(2).ux = ERS(2).A(:,:,1); ERS(2).ux(ERS(2).ux==single(3.4028235e+38)) = NaN; % Easting velocity [m/d]
 ERS(2).uy = ERS(2).A(:,:,2); ERS(2).uy(ERS(2).uy==single(3.4028235e+38)) = NaN; % Northing velocity [m/d]
 ERS(2).u = sqrt(ERS(2).ux.^2 + ERS(2).uy.^2); % velocity magnitude [m/d]
+% save info in structure
+U(2).date = '1995'; % observation date
+U(2).units = "m/s"; % speed units
+U(2).source = "ERS"; % data source
+% interpolate speed along centerline
+U(2).U_centerline = interp2(ERS(2).X,ERS(2).Y,flipud(ERS(2).u),cl.x,cl.y)./24/60/60; % [m/s];
+% initialize width-averaged speed
+U(2).U_width_ave = zeros(1,length(cl.x)); 
 % loop through centerline points
-U(2).speed = zeros(1,length(cl.x));
 for j=1:length(cl.x)
     % interpolate speed along each width segment
-    U(2).speed(j) = mean(interp2(ERS(2).X,ERS(2).Y,flipud(ERS(2).u),width.segsx(j,:),width.segsy(j,:)),'omitnan')./24/60/60; % [m/s]
+    U(2).U_width_ave(j) = mean(interp2(ERS(2).X,ERS(2).Y,flipud(ERS(2).u),width.segsx(j,:),width.segsy(j,:)),'omitnan')./24/60/60; % [m/s]
 end    
-U(2).date = 1995; 
-U(2).units = "m/s";
-U(2).source = "ERS";
-U(2).numPts = length(U(2).speed(~isnan(U(2).speed)));
+U(2).numPts = length(U(2).U_width_ave(~isnan(U(2).U_width_ave))); % number of valid data points in width-averaged profile
 
 % -----ITS_LIVE (1999-2017)-----
-
 % grab file names
-ILfiles = dir([homepath,'data/surface_velocities/ANT*.nc']);
+ILfiles = dir([homepath,'data/surface_velocities/ITS_LIVE/ANT*.nc']);
+% Loop through files
+for i=1:length(ILfiles)
 
-% Loop through all files, interpolate along centerline
-for i=3:length(ILfiles)+2
-
-    X = ncread([homepath,'data/surface_velocities/',ILfiles(i).name],'x');
-    Y = ncread([homepath,'data/surface_velocities/',ILfiles(i).name],'y');
-    u = (ncread([homepath,'data/surface_velocities/',ILfiles(i).name],'v')')./3.1536e7; % m/s
+    X = ncread([homepath,'data/surface_velocities/ITS_LIVE/',ILfiles(i).name],'x'); % X [m]
+    Y = ncread([homepath,'data/surface_velocities/ITS_LIVE/',ILfiles(i).name],'y'); % Y [m]
+    u = (ncread([homepath,'data/surface_velocities/ITS_LIVE/',ILfiles(i).name],'v')')./3.1536e7; % u [m/s]
     u(u==-32767) = NaN; %Replace no data values with NaN
-    u_err = ((ncread([homepath,'data/surface_velocities/',ILfiles(i).name],'v_err'))')./3.1536e7; % m/s
-
+    u_err = ((ncread([homepath,'data/surface_velocities/ITS_LIVE/',ILfiles(i).name],'v_err'))')./3.1536e7; % u error [m/s]
     % save info in structure
-    U(i).date = str2double(ILfiles(i).name(11:14));                 % observation date
-    U(i).units = "m/s";                                             % speed units
-    U(i).source = "ITS-LIVE";                                       % speed data source
-    
+    U(i+2).date = ILfiles(i).name(11:14); % observation date
+    U(i+2).units = "m/s"; % speed units
+    U(i+2).source = "ITS-LIVE"; % speed data source
+    % interpolate speed along centerline
+    U(i+2).U_centerline = interp2(X,Y,u,cl.x,cl.y); % [m/s];
+    % initialize width-averaged speed
+    U(i+2).U_width_ave = zeros(1,length(cl.x));
     % loop through centerline points
-    U(i).speed = zeros(1,length(cl.x));
     for j=1:length(width.W)
-        
         % interpolate speed along each width segment
-        U(i).speed(j) = mean(interp2(X,Y,u,width.segsx(j,:),width.segsy(j,:)),'omitnan');
-        U(i).speed_err(j) = mean(interp2(X,Y,u_err,width.segsx(j,:),width.segsy(j,:)),'omitnan');
-        
+        U(i+2).U_width_ave(j) = mean(interp2(X,Y,u,width.segsx(j,:),width.segsy(j,:)),'omitnan');
+        U(i+2).U_err(j) = mean(interp2(X,Y,u_err,width.segsx(j,:),width.segsy(j,:)),'omitnan');
     end    
-    U(i).numPts = length(U(i).speed(~isnan(U(i).speed)));           % number of data points
-
+    U(i+2).numPts = length(U(i+2).U_width_ave(~isnan(U(i+2).U_width_ave)));           % number of data points
 end
 
-% plot
-col = parula(length(U)+1);
-figure(1); clf; hold on;
-set(gca,'fontsize',12);
+% -----plot speeds-----
+col = parula(length(U)+1); % color palette for plotting lines
+figure(2); clf; hold on;
+set(gca,'fontsize',12,'linewidth',1);
 legend('location','west');
 xlabel('distance along centerline [km]');
 ylabel('speed [m/yr]')
 for i=1:length(U)
-    plot(x/10^3,U(i).speed,'color',col(i,:),'displayname',num2str(U(i).date),'linewidth',1);
+    plot(x/10^3,U(i).U_width_ave*3.1536e7,'color',col(i,:),'displayname',num2str(U(i).date),'linewidth',1);
 end
 
-%% 3. Create a complete pre-collapse velocity profile
+% save 
+save([homepath,'inputs-outputs/speedsWidthAveraged.mat'],'U');
+disp('U saved to file');
 
-% normalize 2017 profile from 0 (at ice divide) to 1 (near terminus)
-I = find([U.date]==2017); % 2017 structure index
-Umovmed = movmedian(U(I).speed,3);
-Unorm = normalize(Umovmed,'range');
+% -------------------------------------------------------------------------
+%   b. Create a complete pre-collapse velocity profile
+% -------------------------------------------------------------------------
 
-% calculate a multiplier and constant for velocity profile
-scalar = Umovmed(20)-Unorm(20);
-multiplier = (Umovmed(end)-scalar)/Unorm(end);
+% grab velocity profiles for pre-collapse (t1) and post-collapse (t2)
+Ut1 = U(1).U_width_ave; % 1994
+Ut1(find(~isnan(U(2).U_width_ave),1,'first'):end) = U(2).U_width_ave(find(~isnan(U(2).U_width_ave),1,'first'):end); % 1995
+Ut2 = U(end).U_width_ave;
 
-% combine 1994/95 profiles
-Ufull = movmedian(U(13).speed,3); 
-Ufull(find(~isnan(U(14).speed),1,'first'):end) = U(14).speed(find(~isnan(U(14).speed),1,'first'):end);
-% apply relationship
-scalar = Ufull(1) - Umovmed(1);
-Ufull(isnan(Ufull)) = Unorm(isnan(Ufull)) .* multiplier + scalar; 
+% normalize t2 profile from 0 to 1
+Ut2_norm = normalize(Ut2,'range');
+
+% rescale to t1 range
+Ut1_fill = rescale(Ut2_norm, Ut1(1), Ut1(end));
+
+% save to file (append)
+i = length(U)+1;
+U(i).U_width_ave = Ut1_fill; 
+U(i).date = 'pre-collapse';
+U(i).units = 'm/s';
+U(i).source = 'ERS/ITS_LIVE';
+U(i).U_centerline = NaN;
+U(i).numPts = NaN;
+U(i).U_err = NaN;
+save([homepath,'inputs-outputs/speedsWidthAveraged.mat'],'U','-append');
+disp('U appended and saved to file');
+
+% plot
+figure(3); clf; hold on;
+set(gca,'fontsize',12,'linewidth',1);
+plot(x/10^3, Ut1*3.1536e7, 'displayname', 't_1');
+plot(x/10^3, Ut1_fill*3.1536e7, 'displayname', 't_1 filled');
+plot(x/10^3, Ut2*3.1536e7, 'displayname', 't_2');
+xlabel('distance along centerline [km]');
+ylabel('speed [m/yr]');
+grid on; legend;
 
 %% 2. Glacier ice surface elevation (ASTER DEM), bed (OIB), and surface speeds (ITS_LIVE)
 
