@@ -1,4 +1,4 @@
-% Script to create a timeseries of width-averaged geometry, surface speed, and 
+% Script to create timeseries of width-averaged geometry, surface speed, and 
 % terminus positions along the Crane Glacier centerline for 1999
 % (pre-ice shelf collapse) to 2017 (post-ice shelf collapse)
 %
@@ -17,7 +17,8 @@
 %   6. Terminus positions (Landsat-derived; Dryak and Enderlin, 2020)
 %
 % To-Do:
-%   - crop ITS_LIVE profiles in QGIS 
+%   - surface: ASTER
+%   - only read portion of ITS_LIVE to speed up process 
 %   - smooth pre-collapse velocity profile at transitions
 %   - edit sections 4+
 % -------------------------------------------------------------------------
@@ -30,7 +31,7 @@ clear all; close all;
 homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 
 % add path to required functions
-addpath([homepath,'matlabFunctions/hugheylab-nestedSortStruct'], [homepath,'matlabFunctions/']);
+addpath([homepath,'functions/hugheylab-nestedSortStruct'], [homepath,'functions/']);
 
 %% 1. Load centerline coordinates and width
 
@@ -51,39 +52,198 @@ width = load([homepath, 'inputs-outputs/calculatedWidth.mat']).width;
 
 %% 2. Width-averaged surface elevations (GOTOPO30 & OIB)
 
-% -----GOTOPO30-----
+k=0; % counter for number of files
+
+% -----GOTOPO30 (~1996)-----
 [GT.h, GT.R] = readgeoraster([homepath,'data/surface_elevations/gt30w120s60_aps.tif']);
 GT.h(GT.h==-9999) = NaN; % set no-data values to NaN
 % extract x and y coordinates
 [GT.ny, GT.nx] = size(GT.h); % number of x and y points
 GT.X = linspace(GT.R.XWorldLimits(1),GT.R.XWorldLimits(2),GT.nx);
 GT.Y = linspace(GT.R.YWorldLimits(1),GT.R.YWorldLimits(2),GT.ny);
-
 % save info in structure
-h(1).h_centerline = interp2(GT.X,GT.Y,flipud(double(GT.h)),cl.x,cl.y);
-h(1).h_width_ave = zeros(1,length(cl.x)); % initialize speed variables
-h(1).date = NaN; % observation date
-h(1).units = "m"; % speed units
-h(1).source = "GTOPO30"; % data source
+k = k+1; 
+h(k).h_centerline = interp2(GT.X,GT.Y,flipud(double(GT.h)),cl.x,cl.y);
+h(k).h_width_ave = zeros(1,length(cl.x)); % initialize speed variables
+h(k).date = '1996'; % observation date
+h(k).units = "m"; % speed units
+h(k).source = "GTOPO30"; % data source
 % loop through centerline points
 for j=1:length(cl.x)
     % interpolate speed along each width segment
-    h(1).h_width_ave(j) = mean(interp2(GT.X,GT.Y,flipud(double(GT.h)),width.segsx(j,:),width.segsy(j,:)),'omitnan'); % [m]
+    h(k).h_width_ave(j) = mean(interp2(GT.X,GT.Y,flipud(double(GT.h)),width.segsx(j,:),width.segsy(j,:)),'omitnan'); % [m]
 end    
-h(1).numPts = length(h(1).h_width_ave(~isnan(h(1).h_width_ave))); % number of valid data points in centerline profile
+h(k).numPts = length(h(k).h_centerline(~isnan(h(k).h_centerline))); % number of valid data points in centerline profile
 
-% plot
-figure(1); clf; hold on; 
+% -----ASTER (2001-2002)-----
+Afn = dir([homepath,'data/surface_elevations/ASTER/AST14DEM*_aps.tif']);
+% loop through files
+for i=1:length(Afn)
+    A(i).fn = Afn(i).name;
+    [A(i).h, A(i).R] = readgeoraster([homepath,'data/surface_elevations/ASTER/',A(i).fn]);
+    A(i).h = double(A(i).h);
+    A(i).h(A(i).h==-9999) = NaN; % set no data values to NaN
+    [A(i).ny, A(i).nx] = size(A(i).h); % number of x and y points
+    A(i).X = linspace(A(i).R.XWorldLimits(1),A(i).R.XWorldLimits(2),A(i).nx);
+    A(i).Y = linspace(A(i).R.YWorldLimits(1),A(i).R.YWorldLimits(2),A(i).ny);
+    
+    % save info in structure
+    k = k+1;
+    h(k).h_centerline = interp2(A(i).X, A(i).Y, flipud(double(A(i).h)), cl.x, cl.y);
+    h(k).h_width_ave = zeros(1,length(cl.x)); % initialize speed variables
+    h(k).date = A(i).fn(17:26); % observation date
+    h(k).units = "m"; % elevation units
+    h(k).source = "ASTER"; % data source
+    % loop through centerline points
+    for j=1:length(width.W)
+        % interpolate speed along each width segment
+        h(k).h_width_ave(j) = mean(interp2(A(i).X, A(i).Y, flipud(A(i).h), width.segsx(j,:), width.segsy(j,:)),'omitnan');
+    end    
+    h(k).numPts = length(h(k).h_width_ave(~isnan(h(k).h_width_ave))); % number of data points
+
+end
+
+% -----OIB (2009-12, 2016-18)-----
+OIB_files = dir([homepath,'data/surface_elevations/OIB_L2/C*.csv']);
+% loop through files
+for i=1:length(OIB_files)
+    
+    % load file
+    OIB(i).fn = OIB_files(i).name; % file name
+    file = readmatrix([homepath,'data/surface_elevations/OIB_L2/',OIB(i).fn]); % full csv file
+    file(file==-9999) = NaN; % replace no data values with NaN
+    % extract coordinates
+    OIB(i).lat = file(:,1);
+    OIB(i).lon = file(:,2);
+    % convert to Antarctic polar stereographic 
+    [OIB(i).X, OIB(i).Y] = wgs2ps(OIB(i).lon, OIB(i).lat, 'StandardParallel',-71,'StandardMeridian',0);
+    
+    % extract surface elevations closest to each centerline point
+    maxDist = 1500; % maximum distance from centerline
+    OIB(i).h = zeros(1,length(cl.x)); % initialize variable
+    % loop through centerline points
+    for j=1:length(cl.x)
+        I = dsearchn([OIB(i).X OIB(i).Y],[cl.x(j) cl.y(j)]); % index of closest point
+        if pdist([OIB(i).X(I) OIB(i).Y(I); cl.x(j) cl.y(j)],'euclidean')<=maxDist
+            OIB(i).h(j) = file(I,5)-file(I,7)-h_geoid(j);
+        else
+            OIB(i).h(j)= NaN;
+        end
+    end
+
+    % Save in h structure
+    k = k+1;
+    h(k).h_centerline = OIB(i).h;
+    h(k).h_width_ave = NaN;
+    h(k).date = OIB(i).fn(18:25);
+    h(k).units = 'm'; 
+    h(k).source = 'OIB'; 
+    h(k).numPts = length(h(k).h_centerline(~isnan(h(k).h_centerline))); % number of valid data points in centerline profile
+    h(k).h_width_ave_adj = NaN;
+    
+end
+
+% -----remove outliers-----
+max_slope = 0.2; % [m/m]
+% loop through h profiles
+for i=1:length(h)
+    % if not from OIB
+    if ~contains(h(i).source, 'OIB')
+    
+        % initialize variables
+        h(i).slope_width_ave = zeros(1,length(x));
+        h(i).h_width_ave_adj = zeros(1,length(x));
+        % calculate slope
+        h(i).slope_width_ave(1) = (h(i).h_width_ave(2) - h(i).h_width_ave(1)) / (x(2) - x(1)); % forward difference
+        h(i).slope_width_ave(2:end-1) = (h(i).h_width_ave(3:end) - h(i).h_width_ave(1:end-2)) ./ (x(3:end) - x(1:end-2)); % central difference
+        h(i).slope_width_ave(end) = (h(i).h_width_ave(end) - h(i).h_width_ave(end-1)) / (x(end) - x(end-1)); % backward difference
+        % loop through centerline points
+        for j=1:length(cl.x)
+            if abs(h(i).slope_width_ave(j)) < max_slope && h(i).h_width_ave(j) > 0
+                h(i).h_width_ave_adj(j) = h(i).h_width_ave(j);
+            else 
+                h(i).h_width_ave_adj(j) = NaN;
+            end
+        end
+    else
+        h(i).slope_width_ave = NaN;
+        h(i).h_width_ave_adj = NaN;
+    end
+end
+
+% -----calculate h spatial mean for pre-collapse profiles----- 
+% loop through h profiles
+for i=1:length(h)
+    % if not during or after 2002
+    if ~contains(h(i).date, '201') && ~contains(h(i).date, '2002')
+        % add data values to vector
+        h_med(i, :) = h(i).h_width_ave_adj;
+    end
+end
+% calculate spatial median
+h_med = median(h_med, 1, 'omitnan');
+% apply median filter
+h_med_medfilt = medfilt1(h_med, 15, 'omitnan');
+h_med_medfilt(1) = h_med_medfilt(2);
+% add to h variable
+k = k+1;
+h(k).h_centerline = NaN;
+h(k).h_width_ave = h_med_medfilt;
+h(k).date = 'Pre-collapse median profile';
+h(k).units = 'm';
+h(k).source = 'ASTER, GTOPO30';
+h(k).numPts = length(h(k).h_width_ave(~isnan(h(k).h_width_ave)));
+% calculate slope
+h(k).slope_width_ave = zeros(1,length(x));
+h(k).slope_width_ave(1) = (h(k).h_width_ave(2) - h(k).h_width_ave(1)) / (x(2) - x(1)); % forward difference
+h(k).slope_width_ave(2:end-1) = (h(k).h_width_ave(3:end) - h(k).h_width_ave(1:end-2)) ./ (x(3:end) - x(1:end-2)); % central difference
+h(k).slope_width_ave(end) = (h(k).h_width_ave(end) - h(k).h_width_ave(end-1)) / (x(end) - x(end-1)); % backward difference
+
+% -----plot-----
+figure(1); clf;
+set(gcf,'position',[200 70 1050 650]);
+col = parula(length(h)+1); % color scheme for plotting lines
+% centerline
+ax1 = subplot(2,2,1);
+hold on; grid on; legend;
 set(gca,'fontsize',12,'linewidth',1);
-plot(x./10^3, h(1).h_width_ave,'.','markersize',5,'displayname','width-averaged');
-plot(x./10^3, h(1).h_centerline,'.','markersize',5,'displayname','centerline');
+ylabel('elevation [m]');
+title('h_{centerline}');
+% width-averaged 
+ax2 = subplot(2,2,2);
+hold on; grid on; 
+set(gca,'fontsize',12,'linewidth',1);
+title('h_{width-averaged}');
+% slope
+ax3 = subplot(2,2,3);
+hold on; grid on;
+set(gca,'fontsize',12,'linewidth',1);
+xlabel('distance along centerline [km]');
+ylabel('[m/m]');
+title('| dh/dx |');
+% adjusted surface
+ax4 = subplot(2,2,4); 
+hold on; grid on;
+set(gca,'fontsize',12,'linewidth',1);
 xlabel('distance along centerline [km]');
 ylabel('elevation [m]');
-grid on; legend; 
+title('h_{width-averaged, adjusted}');
+for i=1:length(h)-1
+    plot(ax1, x/10^3, h(i).h_centerline, 'linewidth', 1, 'displayname', num2str(h(i).date(1:4)), 'color', col(i,:));
+    if ~isnan(h(i).h_width_ave)
+        plot(ax2, x/10^3, h(i).h_width_ave, 'linewidth', 1, 'color',col(i,:));
+    end
+    plot(ax3, x/10^3, abs(h(i).slope_width_ave), '.', 'markersize', 1, 'color',col(i,:));
+    plot(ax3, x/10^3, max_slope*ones(1, length(x)), '--k', 'linewidth', 2);
+    plot(ax4, x/10^3, h(i).h_width_ave_adj, 'linewidth', 1, 'color',col(i,:));
+end 
+plot(ax4, x/10^3, h_med_medfilt, '-k', 'linewidth', 2);
 
-% save
-save([homepath,'inputs-outputs/surfaceElevationObs_GTOPO30.mat'],'h');
+% -----save h and figure-----
+save([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat'], 'h');
 disp('h saved to file');
+saveas(figure(1), [homepath,'figures/surfaceElevation.png'], 'png');
+disp('figure saved to file');
 
 %% 3. Width-averaged surface velocities
 % -------------------------------------------------------------------------
@@ -136,7 +296,7 @@ for j=1:length(cl.x)
 end    
 U(2).numPts = length(U(2).U_width_ave(~isnan(U(2).U_width_ave))); % number of valid data points in width-averaged profile
 
-% -----ITS_LIVE (1999-2017)-----
+% -----ITS_LIVE (1999-2018)-----
 % grab file names
 ILfiles = dir([homepath,'data/surface_velocities/ITS_LIVE/ANT*.nc']);
 % Loop through files
@@ -161,10 +321,10 @@ for i=1:length(ILfiles)
         U(i+2).U_width_ave(j) = mean(interp2(X,Y,u,width.segsx(j,:),width.segsy(j,:)),'omitnan');
         U(i+2).U_err(j) = mean(interp2(X,Y,u_err,width.segsx(j,:),width.segsy(j,:)),'omitnan');
     end    
-    U(i+2).numPts = length(U(i+2).U_width_ave(~isnan(U(i+2).U_width_ave)));           % number of data points
+    U(i+2).numPts = length(U(i+2).U_width_ave(~isnan(U(i+2).U_width_ave)));  % number of data points
 end
 
-% -----plot speeds-----
+% -----plot-----
 col = parula(length(U)+1); % color palette for plotting lines
 figure(2); clf; hold on;
 set(gca,'fontsize',12,'linewidth',1);
@@ -175,7 +335,7 @@ for i=1:length(U)
     plot(x/10^3,U(i).U_width_ave*3.1536e7,'color',col(i,:),'displayname',num2str(U(i).date),'linewidth',1);
 end
 
-% save 
+% -----save----- 
 save([homepath,'inputs-outputs/speedsWidthAveraged.mat'],'U');
 disp('U saved to file');
 
@@ -194,7 +354,17 @@ Ut2_norm = normalize(Ut2,'range');
 % rescale to t1 range
 Ut1_fill = rescale(Ut2_norm, Ut1(1), Ut1(end));
 
-% save to file (append)
+% -----plot-----
+figure(3); clf; hold on;
+set(gca,'fontsize',12,'linewidth',1);
+plot(x/10^3, Ut1*3.1536e7, '-b', 'displayname', 't_1', 'linewidth', 2);
+plot(x/10^3, Ut1_fill*3.1536e7, '--b', 'displayname', 't_1 filled', 'linewidth', 2);
+plot(x/10^3, Ut2*3.1536e7, '-m', 'displayname', 't_2', 'linewidth', 2);
+xlabel('distance along centerline [km]');
+ylabel('speed [m/yr]');
+grid on; legend;
+
+% -----save (append)-----
 i = length(U)+1;
 U(i).U_width_ave = Ut1_fill; 
 U(i).date = 'pre-collapse';
@@ -206,26 +376,8 @@ U(i).U_err = NaN;
 save([homepath,'inputs-outputs/speedsWidthAveraged.mat'],'U','-append');
 disp('U appended and saved to file');
 
-% plot
-figure(3); clf; hold on;
-set(gca,'fontsize',12,'linewidth',1);
-plot(x/10^3, Ut1*3.1536e7, 'displayname', 't_1');
-plot(x/10^3, Ut1_fill*3.1536e7, 'displayname', 't_1 filled');
-plot(x/10^3, Ut2*3.1536e7, 'displayname', 't_2');
-xlabel('distance along centerline [km]');
-ylabel('speed [m/yr]');
-grid on; legend;
+%% 2. Bed elevation (OIB)
 
-%% 2. Glacier ice surface elevation (ASTER DEM), bed (OIB), and surface speeds (ITS_LIVE)
-
-% Determine which variables to load and save. 
-% Set to save if not previously saved (1 = save, 0 = don't save)
-bedElev_save = 0;           
-surfElev_save = 1;       
-surfVel_save = 1;      
-figures_save = 0;        
-
-% -----bed elevations (b)-----
 if bedElev_save
     
     % Grab Tate's observed bed & surface, convert coordinates,
@@ -272,64 +424,8 @@ else
     
 end
 
-% -----surface elevations (h)-----
-if surfElev_save
-   
-    % read ASTER DEMs, interpolate surface along centerline
-    fn = dir([homepath,'data/surface_elevations/*_dem.tif']);
-    for i=1:length(fn)
-        % grab filename
-        DEM(i).fn = fn(i).name; 
-        % grab DEM data and spatial reference info
-        [DEM(i).z, DEM(i).R] = readgeoraster(DEM(i).fn);   
-        DEM(i).z = double(DEM(i).z); % convert to double
-        % extract lat and lon grid
-        [DEM(i).ny,DEM(i).nx] = size(DEM(i).z);
-        DEM(i).lon = linspace(min(DEM(i).R.LongitudeLimits),max(DEM(i).R.LongitudeLimits),DEM(i).nx);
-        DEM(i).lat = linspace(min(DEM(i).R.LatitudeLimits),max(DEM(i).R.LatitudeLimits),DEM(i).ny);  
-        
-        % interpolate elevation along centerline
-        h(i).cl = interp2(DEM(i).lon, DEM(i).lat, flipud(DEM(i).z), cl.lon, cl.lat);
-        % apply a median filter
-        h(i).cl_medfilt = medfilt1(h(i).cl, 10);
-        h(i).fn = DEM(i).fn; 
-        h(i).dataset = 'ASTER_DEM';
-    end
+%% 3. Terminus positions (Landsat-derived; Dryak and Enderlin, 2020)
 
-    % read GTOPO30 DEM
-    i=i+1; 
-    [DEM(i).z, DEM(i).R] = readgeoraster([homepath,'data/surface_elevations/gt30w120s60.tif']);
-    DEM(i).z = double(DEM(i).z); % convert to double
-    DEM(i).z(DEM(i).z==-9999) = NaN; % remove no data values
-    % extract lat and lon grid
-    [DEM(i).ny,DEM(i).nx] = size(DEM(i).z);
-    DEM(i).lon = linspace(min(DEM(i).R.LongitudeLimits),max(DEM(i).R.LongitudeLimits),DEM(i).nx);
-    DEM(i).lat = linspace(min(DEM(i).R.LatitudeLimits),max(DEM(i).R.LatitudeLimits),DEM(i).ny);  
-        
-    % interpolate elevation along centerline
-    h(i).cl = interp2(DEM(i).lon, DEM(i).lat, flipud(DEM(i).z), cl.lon, cl.lat);
-    h(i).dataset = 'GTOPO30';
-    
-    % plot
-    figure(1); clf; hold on;
-    legend('location','best');
-    for i = 1:length(h)
-        plot(x/10^3, h(i).cl, 'displayname',h(i).dataset);
-    end
-        
-    % save output
-    save([homepath,'inputs-outputs/surfaceElevationObs_pre-collapse.mat'],h);
-    disp('surface elevations saved');
-    
-else
-    
-    % load surface elevations from file
-    cd([homepath,'inputs-outputs/']);
-    h = load('surfaceElevationObs_2000.mat').h;
-    
-end
-
-% -----terminus positions-----
 termX = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
 termY = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
 termx = x(dsearchn([cl.X cl.Y],[termX' termY']));
@@ -363,191 +459,6 @@ for i=1:length(h)
 end
 clear DV*
 
-% -----surface velocities-----
-if surfVel_save
-        
-%     % load ITS_LIVE velocities
-%     U_files = dir([homepath,'data/surface_velocities/ANT*.nc']);
-%     % Loop through all files, interpolate along centerline
-%     for i=1:length(U_files)
-%         
-%         X = ncread([homepath,'data/surface_velocities/',U_files(i).name],'x');
-%         Y = ncread([homepath,'data/surface_velocities/',U_files(i).name],'y');
-%         u = ncread([homepath,'data/surface_velocities/',U_files(i).name],'v')'; % m/y
-%         u(u==-32767) = NaN; %Replace no data values with NaN
-%         u_err = (ncread([homepath,'data/surface_velocities/',U_files(i).name],'v_err'))';
-%         
-%         U(i).date = str2double(U_files(i).name(11:14));                % observation date
-%         U(i).speed = interp2(X,Y,u,cl.x,cl.y)./3.1536e7;                % interpolated speed (m/s)
-%         U(i).speed_err = interp2(X,Y,u_err,cl.x,cl.y)./3.1536e7;        % interpolated speed error (m/s)
-%         U(i).units = "m/s";                                             % speed units
-%         U(i).source = "ITS-LIVE";                                       % speed data source
-%         U(i).numPts = length(U(i).speed(~isnan(U(i).speed)));           % number of data points
-%         
-%     end
-    
-    % ERS velocities
-    
-    % save u variable as structure
-    save([homepath,'inputs-outputs/centerlineSpeeds_2000-2001.mat'],'U');
-    disp('velocity variable saved');
-    
-else
-    
-    %load surface velocities from file
-    U = load([homepath,'inputs-outputs/centerlineSpeeds_2000-2001.mat']).U;
-    
-end
-
-% -----plot-----
-n = [1 2 3 5 10 13 15 18 29 36]; % indices of surfaces to use for annual tracking
-figure(2); clf
-subplot(2,1,1);
-    ylabel('Elevation (m)'); xlabel('Distance Along Centerline (km)');
-    set(gca,'fontname','Arial','fontsize',12,'linewidth',2,'fontweight','bold');
-    xlim([0 70]); title('a) Observed Glacier Geometry');
-    set(gcf,'Units','centimeters','position',[5 5 20 25]); grid on; legend;
-    col = parula(length(h)+3); % Color scale for plotting surface lines
-for i=1:length(h)
-    if i==4 || i==16
-        
-    elseif any(n==i)
-        hold on; plot(x(1:h(i).Iterm)./10^3,h(i).surface(1:h(i).Iterm),...
-            '-','Color',col(i,:),'linewidth',1.5,'markersize',10,...
-            'displayname',h(i).date(1:4));
-        plot([x(h(i).Iterm)./10^3 x(h(i).Iterm)./10^3],...
-            [hb(h(i).Iterm) h(i).surface(h(i).Iterm)],...
-            'linewidth',1.5,'color',col(i,:),'handlevisibility','off');
-    else
-        hold on; plot(x(1:h(i).Iterm)./10^3,h(i).surface(1:h(i).Iterm),...
-            '-','Color',col(i,:),'linewidth',1.5,'markersize',10,...
-            'handlevisibility','off');
-        plot([x(h(i).Iterm)./10^3 x(h(i).Iterm)./10^3],...
-            [hb(h(i).Iterm) h(i).surface(h(i).Iterm)],...
-            'linewidth',1.5,'color',col(i,:),'handlevisibility','off');
-    end
-end
-% plot observed bed profile and bathymetry observations
-plot(x./10^3,hb,'-k','linewidth',2,'displayname','Bed (2018)');
-plot(x(1:length(bathym))./10^3,bathym,'--c','linewidth',2,'displayname','Bathymetry (2006)');
-hold off;
-
-% Plot velocities
-figure(2);
-subplot(2,1,2); hold on;
-    set(gca,'FontSize',12,'FontName','Arial','linewidth',2,'fontweight','bold');
-    grid on; xlabel('Distance Along Centerline (km)'); ylabel('Speed (m a^{-1})');
-    title('b) Observed Glacier Speed'); legend('Location','northwest');
-n = [2 4 6 8 9 14 15:19];
-col = parula(length(n)+2); % Color scheme for plotting u profiles
-figure(2); subplot(2,1,2);
-for i=1:length(n)
-    plot(x./10^3,U(n(i)).speed.*3.1536e7,'-','color',col(i,:),'linewidth',2,...
-        'displayname',num2str(round(U(n(i)).date)));
-end
-
-if figures_save
-    cd([homepath,'figures/']);
-    figure(2);
-    saveas(gcf,'Crane_centerlineObs.png');
-    disp('figure 2 saved');
-end
-
-hold off;
-
-%% 3. Terminus Position
-
-close all;
-
-% Load LarsenB_centerline variable (Dryak & Enderlin)
-cd([homepath,'inputs-outputs/']);
-centerline = load('LarsenB_centerline.mat').centerline;
-
-% Set up figures
-figure(4); clf % Terminus positions along centerline
-set(gcf,'Position',[50 100 1200 600]);
-subplot(1,2,1);
-    hold on; plot(cl.X,cl.Y,'-m','linewidth',2,'displayname','Centerline');
-    title('Terminus Position Coordinates');
-    set(gca,'FontSize',14,'FontName','Arial','linewidth',2);
-    xlabel('Easting (m)'); ylabel('Northing (m)');
-    xlim([-2.41e6 -2.405e6]); ylim([1.262e6 1.273e6]);
-    legend('Location','northwest');
-    grid on; %axis equal
-subplot(1,2,2); % Terminus positions over time
-    hold on;
-    title('Terminus Position Over Time');
-    set(gca,'FontSize',14,'FontName','Arial','LineWidth',2);
-    xlabel('Year'); ylabel('Distance Along Centerline (km)');
-    xlim([2000 2020]);
-    grid on;
-
-% Loop through all terminus positions/dates, plot
-col = parula(length(centerline.termx)+10); % Color scheme for plotting term positions
-for i=1:length(centerline.termx)
-    
-    termDate = centerline.termdate(i); % Date
-    termx = centerline.termx(i); % Terminus x coord
-    termy = centerline.termy(i); % Terminus y coord
-    xn = dsearchn(cl.Y,termy);
-    if mod(i-1,10) == 0 % Only include every 10 in legend
-        subplot(1,2,1); hold on; plot(termx,termy,'.','color',col(i,:),'markersize',30,'displayname',num2str(termDate));
-        subplot(1,2,2); hold on; plot(termDate,x(xn)/10^3,'.','color',col(i,:),'markersize',30);
-    else
-        subplot(1,2,1); hold on; plot(termx,termy,'.','color',col(i,:),'markersize',30,'handlevisibility','off');
-        subplot(1,2,2); hold on; plot(termDate,x(xn)/10^3,'.','color',col(i,:),'markersize',30);
-    end
-    
-    x_term(i,:) = ([termDate x(xn)]);
-    
-    term(i).decidate = termDate;
-    term(i).X = termx;
-    term(i).Y = termy;
-    term(i).x = x(xn);
-    
-end
-
-% Save term as .mat variable
-if terminus_save
-    cd([homepath,'inputs-outputs']);
-    save('terminusPositions_2002-2019.mat','term');
-end
-
-% Save figure as image
-if figures_save
-    cd([homepath,'figures']);
-    figure(4);
-    saveas(gcf,'Crane_terminusPositions_2002-2019.png');
-    disp('figure 4 saved');
-end
-
-%% 4. OIB bed picks
-
-close all;
-
-cd([homepath,'inputs-outputs/']);
-
-% load OIB picks from previous years
-OIB16_1 = load('OIBPicks_2016_005.mat').CraneOIBPicks_2016;
-OIB16_2 = load('OIBPicks_2016_2.mat').CraneOIBPicks_2016;
-OIB17 = load('OIBPicks_2017_006.mat').CraneOIBPicks_2017;
-% interpolate coordinates to centerline
-OIB16_1.x = x(dsearchn([cl.X cl.Y],[OIB16_1.Easting OIB16_1.Northing]))';
-OIB16_2.x = x(dsearchn([cl.X cl.Y],[OIB16_2.Easting OIB16_2.Northing]))';
-OIB17.x = x(dsearchn([cl.X cl.Y],[OIB17.Easting OIB17.Northing]))';
-
-% plot with 2018 bed
-figure(5); clf; hold on; grid on;
-    set(gca,'fontname','Arial','fontsize',12,'linewidth',2,'fontweight','bold');
-    ylabel('Elevation (m)'); xlabel('Distance Along Centerline (km)');
-    xlim([0 70]); title('OIB Bed Picks');
-    set(gcf,'Units','centimeters','position',[5 7.8 30 20]); grid on; legend;
-    col = winter(4); % color scale for plotting bed elevation lines
-    plot(x/10^3,hb,'color',col(1,:),'linewidth',2,'displayname','2018');
-    plot(OIB17.x/10^3,OIB17.hb_geoid,'color',col(2,:),'linewidth',2,'displayname','2017');
-    plot(OIB16_1.x/10^3,OIB16_1.hb_geoid,'color',col(3,:),'linewidth',2,'displayname','2016 (1)');
-    plot(OIB16_2.x/10^3,OIB16_2.hb_geoid,'color',col(4,:),'linewidth',2,'displayname','2016 (2)');
-    
 %% 5. Width-averaged thickness and bed elevation profile
 % Assume a parabolic bed and take mean thickness at each width segment
 
@@ -558,8 +469,8 @@ save_hb_adj = 1; % = 1 to save adjusted hb
 cd([homepath,'inputs-outputs/']);
 
 % load 2009 surface
-h_2009 = load('surfaceElevationObs.mat').h(1).surface;
-h_2009(find(isnan(h_2009),1,'first'):end) = 0;
+h_2018 = load('surfaceElevationObs.mat').h(1).surface;
+h_2018(find(isnan(h_2018),1,'first'):end) = 0;
 
 % load width
 W = load('calculatedWidth.mat').width.W;
@@ -568,7 +479,7 @@ W = load('calculatedWidth.mat').width.W;
 %hb(~isnan(bathym)) = bathym(~isnan(bathym));
 
 % calculate thickness
-H = h_2009-hb;
+H = h_2018-hb;
 
 % calculate parabolic cross-sectional area 
 % y = a(x-h)^2+k --> Hn = a(x-(W/2))^2-H, where a = 4H/(W^2)
@@ -584,7 +495,7 @@ end
 H_adj = nanmean(Hn,2)'; 
 
 % adjust hb using thickness and surface
-hb_adj = h_2009-H_adj;
+hb_adj = h_2018-H_adj;
 
 % plot results
 figure(6); clf; hold on; legend;
@@ -593,7 +504,7 @@ xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
 set(gca,'linewidth',2,'fontsize',18); grid on;
 plot(x/10^3,hb,'--k','linewidth',2,'DisplayName','hb_{cl}');
 plot(x/10^3,hb_adj,'-k','linewidth',2,'DisplayName','hb_{adj}');
-plot(x/10^3,h_2009,'-b','linewidth',2,'DisplayName','h');
+plot(x/10^3,h_2018,'-b','linewidth',2,'DisplayName','h');
 
 % save results
 if save_hb_adj
