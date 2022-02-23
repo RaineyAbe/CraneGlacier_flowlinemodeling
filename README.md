@@ -1,8 +1,10 @@
 # CraneGlacier_flowlinemodeling
 
-#### Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf collapse and future changes in climate
+Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf collapse and future changes in climate
 
-#### Rainey Aberle and Ellyn Enderlin
+Rainey Aberle and Ellyn Enderlin
+
+---
 
 #### Order of operations (see `workflows/`)
 - `0_synthesize_datasets`
@@ -10,14 +12,19 @@
 - `2_tune_parameters`
 - `3_sensitivity_tests`
 
+---
+
 #### Contact
 
 Rainey Aberle (raineyaberle@u.boisestate.edu)
 
+---
+
 #### Datasets not included in this repository which are used in the workflow
+
 Velocity maps:  
 
-- NASA ITS$\_$LIVE (1999-2018) (Gardner et al., 2021)
+- NASA ITS\_LIVE (1999-2018) (Gardner et al., 2021)
 - ERS-derived (1994-5) (Wuite et al., 2015)
 
 Surface elevation:
@@ -33,9 +40,10 @@ Bed elevation:
 
 - NASA OIB L1B, manually digitized picks using the CReSIS toolbox (Paden)
 
+---
 
 #### References
-Dryak and Enderlin, 2020
+Dryak, M. C., and Enderlin, E. M. (2020). Analysis of Antarctic Peninsula glacier frontal ablation rates with respect to iceberg melt-inferred variability in ocean conditions. _Journal of Glaciology_. _66_(257): 457-470. https://doi.org/10.1017/JOG.2020.21
 
 Gardner, A. S., M. A. Fahnestock, and Scambos, T. A. (2021). MEaSUREs ITS_LIVE Landsat Image-Pair Glacier and Ice Sheet Surface Velocities: Version 1. https://doi.org/10.5067/IMR9D3PEI28U
 
