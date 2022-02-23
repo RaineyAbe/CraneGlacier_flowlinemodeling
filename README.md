@@ -9,7 +9,7 @@ Rainey Aberle and Ellyn Enderlin
 
 ---
 
-#### Order of operations (see `workflows/`)
+### Order of operations (see `workflows/`)
 - `0_synthesize_datasets`
 - `1_steady-state`
 - `2_tune_parameters`
@@ -17,13 +17,13 @@ Rainey Aberle and Ellyn Enderlin
 
 ---
 
-#### Contact
+### Contact
 
 Rainey Aberle (raineyaberle@u.boisestate.edu)
 
 ---
 
-#### Datasets not included in this repository which are used in the workflow
+### Datasets not included in this repository which are used in the workflow
 
 Velocity maps:  
 
@@ -45,7 +45,7 @@ Bed elevation:
 
 ---
 
-#### References
+### References
 Dryak, M. C., and Enderlin, E. M. (2020). Analysis of Antarctic Peninsula glacier frontal ablation rates with respect to iceberg melt-inferred variability in ocean conditions. _Journal of Glaciology_. _66_(257): 457-470. https://doi.org/10.1017/JOG.2020.21
 
 Gardner, A. S., M. A. Fahnestock, and Scambos, T. A. (2021). MEaSUREs ITS_LIVE Landsat Image-Pair Glacier and Ice Sheet Surface Velocities: Version 1. https://doi.org/10.5067/IMR9D3PEI28U
