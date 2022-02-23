@@ -33,7 +33,8 @@ Velocity maps:
 Surface elevation:
 
 - GTOPO30 (~1995) (Gesch et al., 1999)
-- NASA OIB L2 (2009-11, 2016-18)
+- ASTER DEMs (2000-2002)
+- NASA OIB L2 (2009-11, 2016-18) (Paden et al., 2010)
 
 Terminus positions:
 
@@ -41,7 +42,7 @@ Terminus positions:
 
 Bed elevation: 
 
-- NASA OIB L1B, manually digitized picks using the CReSIS toolbox (Paden)
+- NASA OIB L1B, manually digitized bed picks using the CReSIS toolbox (Paden et al., 2014)
 
 ---
 
@@ -51,6 +52,10 @@ Dryak, M. C., and Enderlin, E. M. (2020). Analysis of Antarctic Peninsula glacie
 Gardner, A. S., M. A. Fahnestock, and Scambos, T. A. (2021). MEaSUREs ITS_LIVE Landsat Image-Pair Glacier and Ice Sheet Surface Velocities: Version 1. https://doi.org/10.5067/IMR9D3PEI28U
 
 Gesch, D. B., Verdin, K. L., and Greenlee, S. K. (1999). New land surface digital elevation model covers the Earth. _Eos Trans. AGU_. _80_(6), 69–70, https://doi.org/10.1029/99EO00050
+
+Paden, J., Li, J., Leuschen, C., Rodriguez-Morales, F. and Hale, R. (2010). Icebridge mcords l2 ice thickness, version 1. https://doi.org/63710.5067/GDQ0CUCVTE2Q
+
+Paden, J., Li, J., Leuschen, C., Rodriguez-Morales, F. and Hale, R. (2014). Icebridge mcords l1b geolocated radar echo639strength profiles, version 2. https://doi.org/10.5067/90S1XZRBAX5N
 
 Wuite, J., Rott, H., Hetzenecker, M., Floricioiu, D., De Rydt, J., Gudmundsson, G. H., Nagler, T., and Kern, M. (2015). Evolution of surface velocities and ice discharge of Larsen B outlet glaciers from 1995 to 2013. _9_(3): 957-969. _The Cryosphere._ https://doi.org/10.5194/tc-9-957-2015
 
