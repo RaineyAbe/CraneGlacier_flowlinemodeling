@@ -1,6 +1,5 @@
-% Script to create a timeseries of width-averaged geometry, surface speed, and 
-% terminus positions along the Crane Glacier centerline for 1999
-% (pre-ice shelf collapse) to 2017 (post-ice shelf collapse)
+% Script to create timeseries of glacier width-averaged geometry, surface speed, and 
+% terminus positions for 1999 (pre-ice shelf collapse) to 2017 (post-ice shelf collapse)
 %
 % Rainey Aberle (raineyaberle@u.boisestate.edu)
 % Spring 2022
@@ -8,15 +7,12 @@
 % Outline:
 %   0. Initial setup
 %   1. Load centerline coordinates and width
-%   2. Width-averaged and centerline surface elevations (GOTOPO30 & OIB)
+%   2. Width-averaged and centerline surface elevations (GOTOPO30, ASTER, & OIB)
 %   3. Width-averaged surface velocities (ITS_LIVE & ERS)
 %       a. Load velocity datasets, average over glacier width segments
 %       b. Create a complete pre-collapse velocity profile
 %   4. Terminus positions (Landsat-derived; Dryak and Enderlin, 2020)
 %   5. Width-averaged bed elevation profile
-%
-% To-Do:
-%   - edit section 5
 % -------------------------------------------------------------------------
 
 % 0. Initial setup
@@ -50,7 +46,7 @@ width = load([homepath, 'inputs-outputs/calculatedWidth.mat']).width;
 % -----Fjord end-----
 fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
 
-%% 2. Width-averaged surface elevations (GOTOPO30 & OIB)
+%% 2. Width-averaged surface elevations (GOTOPO30, ASTER, & OIB)
 
 k=0; % counter for number of files
 
@@ -64,9 +60,9 @@ GT.Y = linspace(GT.R.YWorldLimits(1),GT.R.YWorldLimits(2),GT.ny);
 % save info in structure
 k = k+1; 
 h(k).h_centerline = interp2(GT.X,GT.Y,flipud(double(GT.h)),cl.X,cl.Y);
-h(k).h_width_ave = zeros(1,length(cl.X)); % initialize speed variables
+h(k).h_width_ave = zeros(1,length(cl.X)); % initialize elevation variables
 h(k).date = '1996'; % observation date
-h(k).units = "m"; % speed units
+h(k).units = "m"; % elevation units
 h(k).source = "GTOPO30"; % data source
 % loop through centerline points
 for j=1:length(cl.X)
@@ -149,6 +145,23 @@ max_slope = 0.2; % [m/m]
 for i=1:length(h)
     % if not from OIB
     if ~contains(h(i).source, 'OIB')
+        % -----centerline-----
+        % initialize variables
+        h(i).slope_centerline = zeros(1,length(x));
+        h(i).h_centerline_adj = zeros(1,length(x));
+        % calculate slope
+        h(i).slope_centerline(1) = (h(i).h_width_ave(2) - h(i).h_width_ave(1)) / (x(2) - x(1)); % forward difference
+        h(i).slope_centerline(2:end-1) = (h(i).h_width_ave(3:end) - h(i).h_width_ave(1:end-2)) ./ (x(3:end) - x(1:end-2)); % central difference
+        h(i).slope_centerline(end) = (h(i).h_width_ave(end) - h(i).h_width_ave(end-1)) / (x(end) - x(end-1)); % backward difference
+        % loop through centerline points
+        for j=1:length(cl.X)
+            if abs(h(i).slope_centerline(j)) < max_slope && h(i).h_centerline(j) > 0
+                h(i).h_centerline_adj(j) = h(i).h_centerline(j);
+            else 
+                h(i).h_centerline_adj(j) = NaN;
+            end
+        end
+        % -----width-averaged-----
         % initialize variables
         h(i).slope_width_ave = zeros(1,length(x));
         h(i).h_width_ave_adj = zeros(1,length(x));
@@ -170,24 +183,26 @@ for i=1:length(h)
     end
 end
 
-% -----calculate h spatial mean for pre-collapse profiles----- 
+% -----calculate spatial median for pre-collapse h profiles----- 
 % loop through h profiles
 for i=1:length(h)
     % if not during or after 2002
     if ~contains(h(i).date, '201') && ~contains(h(i).date, '2002')
-        % add data values to vector
-        h_med(i, :) = h(i).h_width_ave_adj;
+        % add data values to vectors
+        h_med_centerline(i, :) = h(i).h_centerline;
+        h_med_width_ave(i, :) = h(i).h_width_ave_adj;
     end
 end
 % calculate spatial median
-h_med = median(h_med, 1, 'omitnan');
+h_med_centerline = median(h_med_centerline, 1, 'omitnan');
+h_med_width_ave = median(h_med_width_ave, 1, 'omitnan');
 % apply median filter
-h_med_medfilt = medfilt1(h_med, 15, 'omitnan');
-h_med_medfilt(1) = h_med_medfilt(2);
+h_med_centerline_medfilt = medfilt1(h_med_centerline, 15, 'omitnan'); h_med_centerline_medfilt(1) = h_med_centerline_medfilt(2);
+h_med_width_ave_medfilt = medfilt1(h_med_width_ave, 15, 'omitnan'); h_med_width_ave_medfilt(1) = h_med_width_ave_medfilt(2);
 % add to h variable
 k = k+1;
-h(k).h_centerline = NaN;
-h(k).h_width_ave = h_med_medfilt;
+h(k).h_centerline = h_med_centerline_medfilt;
+h(k).h_width_ave = h_med_width_ave_medfilt;
 h(k).date = 'Pre-collapse median profile';
 h(k).units = 'm';
 h(k).source = 'ASTER, GTOPO30';
@@ -213,36 +228,34 @@ ax2 = subplot(2,2,2);
 hold on; grid on; 
 set(gca,'fontsize',12,'linewidth',1);
 title('h_{width-averaged}');
-% slope
+% centerline, adjusted
 ax3 = subplot(2,2,3);
 hold on; grid on;
 set(gca,'fontsize',12,'linewidth',1);
 xlabel('distance along centerline [km]');
-ylabel('[m/m]');
-title('| dh/dx |');
-% adjusted surface
+ylabel('elevation [m]');
+title('h_{centerline, adjusted}');
+% width-averaged, adjusted
 ax4 = subplot(2,2,4); 
 hold on; grid on;
 set(gca,'fontsize',12,'linewidth',1);
 xlabel('distance along centerline [km]');
-ylabel('elevation [m]');
 title('h_{width-averaged, adjusted}');
 for i=1:length(h)-1
     plot(ax1, x/10^3, h(i).h_centerline, 'linewidth', 1, 'displayname', num2str(h(i).date(1:4)), 'color', col(i,:));
     if ~isnan(h(i).h_width_ave)
         plot(ax2, x/10^3, h(i).h_width_ave, 'linewidth', 1, 'color',col(i,:));
     end
-    plot(ax3, x/10^3, abs(h(i).slope_width_ave), '.', 'markersize', 1, 'color',col(i,:));
-    plot(ax3, x/10^3, max_slope*ones(1, length(x)), '--k', 'linewidth', 2);
+    plot(ax3, x/10^3, h(i).h_centerline_adj, 'linewidth', 1, 'color',col(i,:));
     plot(ax4, x/10^3, h(i).h_width_ave_adj, 'linewidth', 1, 'color',col(i,:));
 end 
-plot(ax4, x/10^3, h_med_medfilt, '-k', 'linewidth', 2);
+plot(ax4, x/10^3, h_med_width_ave_medfilt, '-k', 'linewidth', 2);
 
 % -----save h and figure-----
-save([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat'], 'h');
-disp('h saved to file');
-saveas(figure(1), [homepath,'figures/surfaceElevation.png'], 'png');
-disp('figure saved to file');
+% save([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat'], 'h');
+% disp('h saved to file');
+% saveas(figure(1), [homepath,'figures/surfaceElevation.png'], 'png');
+% disp('figure saved to file');
 
 %% 3. Width-averaged surface velocities
 % -------------------------------------------------------------------------
@@ -406,10 +419,10 @@ U(k).U_centerline = NaN;
 U(k).numPts = NaN;
 U(k).U_err = NaN;
 % save U variable
-save([homepath,'inputs-outputs/speedsWidthAveraged.mat'],'U');
+save([homepath,'inputs-outputs/surfaceSpeeds_widthAveraged_1994-2018.mat'],'U');
 disp('U saved to file');
 % save figures
-saveas(figure(2), [homepath,'figures/centerlineSpeeds.png'], 'png');
+saveas(figure(2), [homepath,'figures/surfaceSpeeds_1994-2018.png'], 'png');
 disp('figure 2 saved');
 saveas(figure(3), [homepath,'figures/pre-collapse_speed.png'], 'png');
 disp('figure 3 saved');
@@ -421,6 +434,9 @@ term.X = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.ter
 term.Y = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
 term.x = x(dsearchn([cl.X cl.Y],[term.X' term.Y']));
 term.date = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
+
+% -----save-----
+save([homepath,'inputs-outputs/terminusPositions_2002-2019.mat']);
 
 % -----plot-----
 figure(4); clf; 
@@ -444,40 +460,43 @@ bathym = load([homepath,'inputs-outputs/observedBed.mat']).bathym;
 %      parabolic bed shape
 % -------------------------------------------------------------------------
 
-% load one surface elevation profile
-h_2018 = load([homepath,'inputs-outputs/surfaceElevationObs.mat']).h(1).surface;
-h_2018(find(isnan(h_2018),1,'first'):end) = 0;
+% load pre-collapse surface elevation profile
+h_pc = load([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat']).h(14).h_width_ave;
+h_pc(find(isnan(h_pc),1,'first'):end) = 0;
 
 % calculate thickness
-H = h_2018-hb;
+H = h_pc - b;
 
 % calculate parabolic cross-sectional area 
 % y = a(x-h)^2+k --> Hn = a(x-(W/2))^2-H, where a = 4H/(W^2)
-Hn = NaN*zeros(length(W),round(max(W/10)));
-for i=1:length(W)
-    xi = 0:10:W(i);
-    a = 4*H(i)/(W(i)^2);
-    Hn(i,1:length(xi)) = -(a.*(xi-W(i)/2).^2-H(i));
+Hn = NaN*zeros(length(width.W),round(max(width.W/10)));
+for i=1:length(width.W)
+    xi = 0:10:width.W(i);
+    a = 4*H(i)/(width.W(i)^2);
+    Hn(i,1:length(xi)) = -(a.*(xi - width.W(i)/2).^2 - H(i));
 end
 
-% adjust H to average over width
-% Area of an ellipse 
-H_adj = nanmean(Hn,2)'; 
+% calculate mean thickness across each width segment
+H_adj = mean(Hn, 2, 'omitnan')'; 
 
-% adjust hb using thickness and surface
-hb_adj = h_2018-H_adj;
+% adjust b using thickness and surface
+b_adj = h_pc-H_adj;
 
-% plot results
-figure(6); clf; hold on; legend;
-set(gcf,'position',[200 200 1000 800]); title('Width-Averaged Bed');
-xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
-set(gca,'linewidth',2,'fontsize',18); grid on;
-plot(x/10^3,hb,'--k','linewidth',2,'DisplayName','hb_{cl}');
-plot(x/10^3,hb_adj,'-k','linewidth',2,'DisplayName','hb_{adj}');
-plot(x/10^3,h_2018,'-b','linewidth',2,'DisplayName','h');
+% -----plot-----
+figure(5); clf; hold on; legend;
+set(gcf,'position',[200 200 750 450]);
+xlabel('distance along centerline [km]'); 
+ylabel('elevation [m]');
+set(gca,'linewidth',2,'fontsize',14); grid on;
+plot(x/10^3,b,'--k','linewidth',2,'DisplayName','b_{cl}');
+plot(x/10^3,b_adj,'-k','linewidth',2,'DisplayName','b_{adj}');
+plot(x/10^3,h_pc,'-b','linewidth',2,'DisplayName','h');
 
-% save results
-if save_hb_adj
-    save('delineatedBedWidthAveraged.mat','hb_adj','x');
-    disp('hb_adj saved');
-end
+% -----save-----
+% bed variable
+save('bedElevation_widthAveraged.mat','b_adj', 'x');
+disp('b_adj saved to file');
+% figure
+saveas(figure(5), [homepath,'figures/bedElevation_widthAveraged.png'], 'png');
+disp('figure 5 saved');
+

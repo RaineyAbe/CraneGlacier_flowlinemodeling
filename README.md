@@ -1,5 +1,7 @@
 # CraneGlacier_flowlinemodeling
 
+_WARNING: Currently editing scripts and workflows as of February 2022. Some scripts may not be fully functional. Will be back up and running in the next few weeks._ 
+
 Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf collapse and future changes in climate
 
 Rainey Aberle and Ellyn Enderlin
@@ -25,12 +27,12 @@ Rainey Aberle (raineyaberle@u.boisestate.edu)
 
 ### Datasets not included in this repository which are used in the workflow
 
-Velocity maps:  
+Velocities:  
 
 - NASA ITS\_LIVE (1999-2018) (Gardner et al., 2021)
 - ERS-derived (1994-5) (Wuite et al., 2015)
 
-Surface elevation:
+Surface elevations:
 
 - GTOPO30 (~1995) (Gesch et al., 1999)
 - ASTER DEMs (2000-2002)
