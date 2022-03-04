@@ -7,7 +7,9 @@
 % Outline:
 %   0. Initial setup
 %   1. Load centerline coordinates and width
-%   2. Width-averaged and centerline surface elevations (GOTOPO30, ASTER, & OIB)
+%   2. Width-averaged surface elevations (GOTOPO30, ASTER, & OIB)
+%       a. Load surface elevation datasets, average over glacier width segments
+%       b. Create a complete pre-collapse surface elevation profile
 %   3. Width-averaged surface velocities (ITS_LIVE & ERS)
 %       a. Load velocity datasets, average over glacier width segments
 %       b. Create a complete pre-collapse velocity profile
@@ -48,7 +50,12 @@ fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
 
 %% 2. Width-averaged surface elevations (GOTOPO30, ASTER, & OIB)
 
-k=0; % counter for number of files
+% -------------------------------------------------------------------------
+%   a. Load surface elevation datasets, average over glacier width
+%   segments where possible
+% -------------------------------------------------------------------------
+
+k=0; % counter for number of files in h structure
 
 % -----GOTOPO30 (~1996)-----
 [GT.h, GT.R] = readgeoraster([homepath,'data/surface_elevations/gt30w120s60_aps.tif']);
@@ -85,7 +92,7 @@ for i=1:length(Afn)
     
     % save info in structure
     k = k+1;
-    h(k).h_centerline = interp2(A(i).X, A(i).Y, flipud(double(A(i).h)), cl.X, cl.Y);
+    h(k).h_centerline = interp2(A(i).X, A(i).Y, flipud(double(A(i).h)), cl.X, cl.Y)';
     h(k).h_width_ave = zeros(1,length(cl.X)); % initialize speed variables
     h(k).date = A(i).fn(17:26); % observation date
     h(k).units = "m"; % elevation units
@@ -139,130 +146,73 @@ for i=1:length(OIB_files)
     
 end
 
-% -----remove outliers-----
-max_slope = 0.2; % [m/m]
-% loop through h profiles
-for i=1:length(h)
-    % if not from OIB
-    if ~contains(h(i).source, 'OIB')
-        % -----centerline-----
-        % initialize variables
-        h(i).slope_centerline = zeros(1,length(x));
-        h(i).h_centerline_adj = zeros(1,length(x));
-        % calculate slope
-        h(i).slope_centerline(1) = (h(i).h_width_ave(2) - h(i).h_width_ave(1)) / (x(2) - x(1)); % forward difference
-        h(i).slope_centerline(2:end-1) = (h(i).h_width_ave(3:end) - h(i).h_width_ave(1:end-2)) ./ (x(3:end) - x(1:end-2)); % central difference
-        h(i).slope_centerline(end) = (h(i).h_width_ave(end) - h(i).h_width_ave(end-1)) / (x(end) - x(end-1)); % backward difference
-        % loop through centerline points
-        for j=1:length(cl.X)
-            if abs(h(i).slope_centerline(j)) < max_slope && h(i).h_centerline(j) > 0
-                h(i).h_centerline_adj(j) = h(i).h_centerline(j);
-            else 
-                h(i).h_centerline_adj(j) = NaN;
-            end
-        end
-        % -----width-averaged-----
-        % initialize variables
-        h(i).slope_width_ave = zeros(1,length(x));
-        h(i).h_width_ave_adj = zeros(1,length(x));
-        % calculate slope
-        h(i).slope_width_ave(1) = (h(i).h_width_ave(2) - h(i).h_width_ave(1)) / (x(2) - x(1)); % forward difference
-        h(i).slope_width_ave(2:end-1) = (h(i).h_width_ave(3:end) - h(i).h_width_ave(1:end-2)) ./ (x(3:end) - x(1:end-2)); % central difference
-        h(i).slope_width_ave(end) = (h(i).h_width_ave(end) - h(i).h_width_ave(end-1)) / (x(end) - x(end-1)); % backward difference
-        % loop through centerline points
-        for j=1:length(cl.X)
-            if abs(h(i).slope_width_ave(j)) < max_slope && h(i).h_width_ave(j) > 0
-                h(i).h_width_ave_adj(j) = h(i).h_width_ave(j);
-            else 
-                h(i).h_width_ave_adj(j) = NaN;
-            end
-        end
-    else
-        h(i).slope_width_ave = NaN;
-        h(i).h_width_ave_adj = NaN;
-    end
-end
+% -------------------------------------------------------------------------
+%   b. Create a complete pre-collapse velocity profile
+% -------------------------------------------------------------------------
 
-% -----calculate spatial median for pre-collapse h profiles----- 
-% loop through h profiles
-for i=1:length(h)
-    % if not during or after 2002
-    if ~contains(h(i).date, '201') && ~contains(h(i).date, '2002')
-        % add data values to vectors
-        h_med_centerline(i, :) = h(i).h_centerline;
-        h_med_width_ave(i, :) = h(i).h_width_ave_adj;
-    end
-end
-% calculate spatial median
-h_med_centerline = median(h_med_centerline, 1, 'omitnan');
-h_med_width_ave = median(h_med_width_ave, 1, 'omitnan');
-% apply median filter
-h_med_centerline_medfilt = medfilt1(h_med_centerline, 15, 'omitnan'); h_med_centerline_medfilt(1) = h_med_centerline_medfilt(2);
-h_med_width_ave_medfilt = medfilt1(h_med_width_ave, 15, 'omitnan'); h_med_width_ave_medfilt(1) = h_med_width_ave_medfilt(2);
-% add to h variable
+% -----centerline-----
+% grab surface elevation profiles for pre-collapse (t1)
+ht1_centerline = h(4).h_centerline; % 2001
+ht1_centerline(find(isnan(ht1_centerline), 1, 'first'):end) = h(3).h_centerline(find(isnan(ht1_centerline), 1, 'first'):end); % 2001
+
+% apply a median filter to remove noise
+ht1_med_centerline = movmedian(ht1_centerline, 15);
+
+% -----width-averaged-----
+% Use centerline profile but add 250 m at top
+scalar = interp1([0 x(end)], [325 50], x);
+ht1_med_width_ave = ht1_med_centerline + scalar;
+
+% -----save to h-----
 k = k+1;
-h(k).h_centerline = h_med_centerline_medfilt;
-h(k).h_width_ave = h_med_width_ave_medfilt;
-h(k).date = 'Pre-collapse median profile';
+h(k).h_width_ave = ht1_med_width_ave;
+h(k).h_centerline = ht1_med_centerline;
+h(k).date = 'Pre-collapse profile';
 h(k).units = 'm';
-h(k).source = 'ASTER, GTOPO30';
-h(k).numPts = length(h(k).h_width_ave(~isnan(h(k).h_width_ave)));
-% calculate slope
-h(k).slope_width_ave = zeros(1,length(x));
-h(k).slope_width_ave(1) = (h(k).h_width_ave(2) - h(k).h_width_ave(1)) / (x(2) - x(1)); % forward difference
-h(k).slope_width_ave(2:end-1) = (h(k).h_width_ave(3:end) - h(k).h_width_ave(1:end-2)) ./ (x(3:end) - x(1:end-2)); % central difference
-h(k).slope_width_ave(end) = (h(k).h_width_ave(end) - h(k).h_width_ave(end-1)) / (x(end) - x(end-1)); % backward difference
+h(k).source = 'ASTER';
+h(k).numPts = NaN;
 
 % -----plot-----
 figure(1); clf;
-set(gcf,'position',[200 70 1050 650]);
+set(gcf,'position',[150 300 1000 400]);
 col = parula(length(h)+1); % color scheme for plotting lines
 % centerline
-ax1 = subplot(2,2,1);
-hold on; grid on; legend;
+ax1 = subplot(1,2,1);
+hold on; grid on; legend('location', 'northeast');
 set(gca,'fontsize',12,'linewidth',1);
+xlabel('distance along centerline [km]');
 ylabel('elevation [m]');
 title('h_{centerline}');
 % width-averaged 
-ax2 = subplot(2,2,2);
+ax2 = subplot(1,2,2);
 hold on; grid on; 
 set(gca,'fontsize',12,'linewidth',1);
+xlabel('distance along centerline [km]');
 title('h_{width-averaged}');
-% centerline, adjusted
-ax3 = subplot(2,2,3);
-hold on; grid on;
-set(gca,'fontsize',12,'linewidth',1);
-xlabel('distance along centerline [km]');
-ylabel('elevation [m]');
-title('h_{centerline, adjusted}');
-% width-averaged, adjusted
-ax4 = subplot(2,2,4); 
-hold on; grid on;
-set(gca,'fontsize',12,'linewidth',1);
-xlabel('distance along centerline [km]');
-title('h_{width-averaged, adjusted}');
-for i=1:length(h)-1
-    plot(ax1, x/10^3, h(i).h_centerline, 'linewidth', 1, 'displayname', num2str(h(i).date(1:4)), 'color', col(i,:));
-    if ~isnan(h(i).h_width_ave)
-        plot(ax2, x/10^3, h(i).h_width_ave, 'linewidth', 1, 'color',col(i,:));
+for i=1:length(h)
+    if i==length(h)   
+        plot(ax1, x/10^3, h(i).h_centerline, '-k', 'linewidth', 2, 'displayname', 'pre-collapse');
+        plot(ax2, x/10^3, h(i).h_width_ave, '-k', 'linewidth', 2, 'handlevisibility', 'off');
+    else
+        plot(ax1, x/10^3, h(i).h_centerline, 'linewidth', 1, 'displayname', num2str(h(i).date(1:4)), 'color', col(i,:));
+        if ~isnan(h(i).h_width_ave)
+            plot(ax2, x/10^3, h(i).h_width_ave, 'linewidth', 1, 'color',col(i,:));
+        end
     end
-    plot(ax3, x/10^3, h(i).h_centerline_adj, 'linewidth', 1, 'color',col(i,:));
-    plot(ax4, x/10^3, h(i).h_width_ave_adj, 'linewidth', 1, 'color',col(i,:));
 end 
-plot(ax4, x/10^3, h_med_width_ave_medfilt, '-k', 'linewidth', 2);
 
 % -----save h and figure-----
-% save([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat'], 'h');
-% disp('h saved to file');
-% saveas(figure(1), [homepath,'figures/surfaceElevation.png'], 'png');
-% disp('figure saved to file');
+save([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat'], 'h');
+disp('h saved to file');
+saveas(figure(1), [homepath,'figures/surfaceElevation.png'], 'png');
+disp('figure saved to file');
 
 %% 3. Width-averaged surface velocities
 % -------------------------------------------------------------------------
 %   a. Load velocity datasets, average over glacier width segments
 % -------------------------------------------------------------------------
 
-k=0; % counter for files
+k=0; % counter for number of files in U structure
 
 % -----ERS (1994)-----
 k=k+1;
@@ -360,62 +310,95 @@ end
 % -----plot-----
 col = parula(length(U)+1); % color scheme for plotting lines
 figure(2); clf; 
-hold on; grid on; legend('location','east outside');
+set(gcf, 'position', [145 200 1100 500]);
+% -----centerline
+ax1 = subplot(1, 2, 1);
+hold on; grid on; 
+legend('position',[0.01 0.2 0.06 0.6]);
 set(gca,'fontsize',12,'linewidth',1);
 xlabel('distance along centerline [km]');
 ylabel('speed [m/yr]');
+title('centerline');
+% -----width-averaged
+ax2 = subplot(1, 2, 2); 
+hold on; grid on; 
+set(gca,'fontsize',12,'linewidth',1);
+xlabel('distance along centerline [km]');
+title('width-averaged');
 for i=1:length(U)
-    plot(x/10^3,U(i).U_width_ave*3.1536e7,'color',col(i,:),'displayname',num2str(U(i).date),'linewidth',1);
+    plot(ax1, x/10^3, U(i).U_centerline*3.1536e7, 'color',col(i,:), 'displayname', num2str(U(i).date), 'linewidth', 1);    
+    plot(ax2, x/10^3, U(i).U_width_ave*3.1536e7, 'color',col(i,:), 'displayname', num2str(U(i).date), 'linewidth', 1);
 end
 
 % -------------------------------------------------------------------------
 %   b. Create a complete pre-collapse velocity profile
 % -------------------------------------------------------------------------
 
-% intersection of centerline with fjord_end
-% I_end = 184;
-
+% -----centerline-----
 % grab velocity profiles for pre-collapse (t1) and post-collapse (t2)
-Ut1 = U(1).U_width_ave; % 1994
-Ut1(find(~isnan(U(2).U_width_ave),1,'first'):end) = U(2).U_width_ave(find(~isnan(U(2).U_width_ave),1,'first'):end); % 1995
-Ut2 = U(21).U_width_ave;
+Ut1_centerline = U(1).U_centerline; % 1994
+Ut1_centerline(find(isnan(Ut1_centerline), 1, 'first'):end) = U(2).U_centerline(find(isnan(Ut1_centerline), 1, 'first'):end);
+Ut2_centerline = U(21).U_centerline; % 2017
+
+% normalize Ut2 profile from 0 to 1
+Ut2_centerline_norm = normalize(Ut2_centerline,'range');
+
+% rescale to Ut1 range
+Ut1_centerline_fill = rescale(Ut2_centerline_norm, Ut1_centerline(1), max(Ut1_centerline));
+% use pre-collapse observed speeds where they exist
+Ut1_centerline_fill(1:82) = Ut1_centerline(1:82); 
+Ut1_centerline_fill(165:end) = Ut1_centerline(165:end);
+
+% -----width-averaged-----
+% grab velocity profiles for pre-collapse (t1) and post-collapse (t2)
+Ut1_width_ave = U(1).U_width_ave; % 1994
+Ut1_width_ave(find(~isnan(U(2).U_width_ave),1,'first'):end) = U(2).U_width_ave(find(~isnan(U(2).U_width_ave),1,'first'):end); % 1995
+Ut2_width_ave = U(21).U_width_ave;
 
 % find intersection points of Ut1 and Ut2
-I1 = find(x > 23.4e3, 1, 'first');
-I2 = find(x > 51.9e3, 1, 'first');
+I1_width_ave = find(x > 23.4e3, 1, 'first');
+I2_width_ave = find(x > 51.9e3, 1, 'first');
 
-% normalize t2 profile from 0 to 1
-Ut2_norm = normalize(Ut2,'range');
+% normalize Ut2 profile from 0 to 1
+Ut2_width_ave_norm = normalize(Ut2_width_ave,'range');
 
-% rescale to t1 range
-Ut1_fill = rescale(Ut2_norm, Ut1(1), Ut1(I2));
+% rescale to Ut1 range
+Ut1_width_ave_fill = rescale(Ut2_width_ave_norm, Ut1_width_ave(1), max(Ut1_width_ave));
 % use pre-collapse observed speed before gap
-Ut1_fill(1:I1) = Ut1(1:I1);
-% % use mean observed speed after gap
-% Ut1_fill(I2:end) = mean([Ut1(I2:end); Ut2(I2:end)],1);
-% % apply median filter from I1:end
-% Ut1_fill(I1:end) = medfilt1(Ut1_fill(I1:end),10);
-% % use mean speeds before intersection
-% Ut1_fill(1:I1) = mean([Ut1(1:I1); Ut2(1:I1)],1);
+Ut1_width_ave_fill(1:I1_width_ave) = Ut1_width_ave(1:I1_width_ave);
 
 % -----plot-----
 figure(3); clf; hold on;
+set(gcf, 'position', [100 150 1100 500]);
+% -----centerline
+ax1 = subplot(1, 2, 1);
+hold on; grid on; 
+legend('location','northwest');
 set(gca,'fontsize',12,'linewidth',1);
-plot(x/10^3, Ut1*3.1536e7, 'linewidth', 2, 'displayname', 't_1');
-plot(x/10^3, Ut2*3.1536e7, 'linewidth', 2, 'displayname', 't_2');
-plot(x/10^3, Ut1_fill*3.1536e7, '--', 'linewidth', 2, 'displayname', 't_1 filled');
 xlabel('distance along centerline [km]');
 ylabel('speed [m/yr]');
-grid on; legend('location','northwest');
+title('centerline');
+plot(ax1, x/10^3, Ut1_centerline*3.1536e7, '-b', 'linewidth', 2, 'displayname', 'pre-collapse');
+plot(ax1, x/10^3, Ut1_centerline_fill*3.1536e7, '--c', 'linewidth', 2, 'displayname', 'pre-collapse filled');
+plot(ax1, x/10^3, Ut2_centerline*3.1536e7, '-m', 'linewidth', 2, 'displayname', 'post-collapse');
+% -----width-averaged
+ax2 = subplot(1, 2, 2); 
+hold on; grid on; 
+set(gca,'fontsize',12,'linewidth',1);
+xlabel('distance along centerline [km]');
+title('width-averaged');
+plot(ax2, x/10^3, Ut1_width_ave*3.1536e7, '-b', 'linewidth', 2, 'displayname', 'pre-collapse');
+plot(ax2, x/10^3, Ut1_width_ave_fill*3.1536e7, '--c', 'linewidth', 2, 'displayname', 'pre-collapse filled');
+plot(ax2, x/10^3, Ut2_width_ave*3.1536e7, '-m', 'linewidth', 2, 'displayname', 'post-collapse');
 
 % -----save-----
 % save info in structure
 k=k+1;
-U(k).U_width_ave = Ut1_fill; 
+U(k).U_centerline = Ut1_centerline_fill;
+U(k).U_width_ave = Ut1_width_ave_fill; 
 U(k).date = 'pre-collapse';
 U(k).units = 'm/s';
 U(k).source = 'ERS, ITS_LIVE';
-U(k).U_centerline = NaN;
 U(k).numPts = NaN;
 U(k).U_err = NaN;
 % save U variable

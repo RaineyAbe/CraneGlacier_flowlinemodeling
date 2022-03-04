@@ -9,7 +9,6 @@
 %   4. Width, W0(x)
 %   5. Surface speed, U0(x)
 %   6. Rate factor, A0(x)
-%   7. Basal roughness factor, beta0(x)
 %   7. Surface mass balance, smb0(x)
 %   8. Maximum submarine melt rate, smr0
 %   9. Tributary ice volume flux, Q0(x)
@@ -23,10 +22,10 @@ homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 cd([homepath,'inputs-outputs/']);
 
 % Modify settings
-save_initial = 1; % = 1 to save initialization file
-regrid = 1;       % = 1 to regrid to dx resolution
-L = 100e3; % length of model domain [m]
-dx = 200; % model grid spacing [m]
+save_initial = 1;   % = 1 to save initialization file
+regrid = 1;         % = 1 to regrid to dx resolution
+L = 100e3;          % length of model domain [m]
+dx = 200;           % model grid spacing [m]
 
 % -------------------------------------------------------------------------
 % 1. Centerline coordinates, x0
@@ -52,6 +51,7 @@ if size(h0)==[186 1]
     h0=h0';
 end
 h0(isnan(h0))=0; % replace NaNs with zeros
+h0 = movmedian(h0, 5);
 
 % -------------------------------------------------------------------------
 % 3. glacier bed elevation, b0(x)
@@ -64,9 +64,9 @@ if size(b0)==[186 1]
     b0=b0';
 end
 % increase elevation near terminus
-b0(136:end) = b0(136:end)+100;
-% smooth the transition
-b0(125:135) = interp1([x0(124);x0(136)],[b0(124);b0(136)],x0(125:135));
+% b0(136:end) = b0(136:end)+100;
+% % smooth the transition
+% b0(125:135) = interp1([x0(124);x0(136)],[b0(124);b0(136)],x0(125:135));
 
 % -------------------------------------------------------------------------
 % 4. glacier width, W0(x)
@@ -79,10 +79,11 @@ end
 % -------------------------------------------------------------------------
 % 5. Surface speed, U0(x)
 % -------------------------------------------------------------------------
-U0 = load('surfaceSpeeds_widthAveraged_1994-2018').U(22).U_width_ave;
+U0 = double(load('surfaceSpeeds_widthAveraged_1994-2018').U(22).U_width_ave);
 if size(U0)==[186 1]
     U0=U0';
 end
+U0 = movmedian(U0, 5);
 
 % -------------------------------------------------------------------------
 % 6. Rate factor, A0(x)
@@ -91,12 +92,6 @@ A0 = load('adjustedRateFactor.mat').A_adj;
 if size(A0)==[186 1]
     A0=A0';
 end
-
-% -------------------------------------------------------------------------
-% 7. basal roughness factor, beta0(x)
-% -------------------------------------------------------------------------
-beta0 = load('betaSolution.mat').beta;
-beta0x = load('betaSolution.mat').xn;
 
 % -------------------------------------------------------------------------
 % 8. surface mass balance, SMB0(x)
@@ -121,7 +116,7 @@ RO0 = load('downscaledClimateVariables_2009-2019.mat').SM.downscaled_average_lin
 %   Adusumilli et al. (2018):
 %       Larsen C basal melt rate (1994-2016) = 0.5+/-1.4 m/a = 1.59e-8 m/s
 %       Larsen C net mass balance (1994-2016)= -0.4+/-1.3 m/a = 1.27e-8 m/s
-SMR0 = -5.29/3.1536e7; % m/s SMR - max found at Crane
+SMR0 = -1.5/3.1536e7; % m/s SMR - max found at Crane
 
 % -------------------------------------------------------------------------
 % 9. Tributary ice volume flux, Q0(x)
@@ -148,7 +143,6 @@ if regrid
     W0 = interp1(x0,W0,xi); W0(find(isnan(W0),1,'first'):end) = W0(find(isnan(W0),1,'first')-1);
     U0 = interp1(x0,U0,xi); U0(find(isnan(U0),1,'first'):end) = U0(find(isnan(U0),1,'first')-1);
     A0 = interp1(x0,A0,xi); A0(find(isnan(A0),1,'first'):end) = A0(find(isnan(A0),1,'first')-1);
-    beta0(find(isnan(beta0),1,'first'):end) = beta0(find(isnan(beta0),1,'first')-1);   
     SMB0 = interp1(x0,SMB0,xi); SMB0(find(isnan(SMB0),1,'first'):end) = SMB0(find(isnan(SMB0),1,'first')-1);
     RO0 = interp1(x0,RO0,xi); RO0(find(isnan(RO0),1,'first'):end) = RO0(find(isnan(RO0),1,'first')-1);
     Q0 = interp1(x0,Q0,xi); Q0(find(isnan(Q0),1,'first'):end) = Q0(find(isnan(Q0),1,'first')-1);
@@ -160,8 +154,8 @@ end
 % Save parameters to file
 % -------------------------------------------------------------------------
 if save_initial
-    save('modelInitialization_steadyState.mat','h0','b0','W0','A0','beta0','U0',...
-        'x0','SMB0','RO0','SMR0','Q0','c0');
+    save('modelInitialization_preCollapse.mat','h0','b0','W0','A0','U0',...
+        'x0','SMB0','RO0','SMR0','Q0','c0','-append');
     disp('model initialization parameters saved to file');
 end
 

@@ -1,5 +1,5 @@
 %% solve the stress balance equations to obtain speed values (U)
-function [U,dUdx] = U_convergence(x,U,U0,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b,i)
+function [U,dUdx] = U_convergence(x,U,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b)
 
 b=1; 
 
@@ -31,19 +31,11 @@ while b
         dUdx(2:c-1) = (U(3:c)-U(1:c-2))./(x(3:c)-x(1:c-2)); % central difference
         dUdx(c) = (U(c)-U(c-1))/(x(c)-x(c-1)); % backward difference at c
         
-                
-%         dUmdx(1:c-1) = (U(2:c)-U(1:c-1))/(x(2:c)-x(1:c-1)); % forward difference
-%         dUmdx(c) = (U(c)-U(c-1))/(x(c)-x(c-1)); % backward difference at c
-        %EE: replaced solving for dUdx on the staggered grid commented-out
-        %above with the calculation below so it is consistent with the
-        %method used to calculate other variables on the staggered grid...
-        %appears to result in much better dUmdx calculations 15/09/21
         dUmdx(1:c-1) = (dUdx(2:c)+dUdx(1:c-1))./2; % forward difference
         dUmdx(c) = (dUdx(c)+dUdx(c-1))./2; % backward difference at c
         
         vm = ((E.*Am).^(-1/n)).*(abs(dUmdx)).^((1-n)/n);
-%         vm(vm>7e+14) = 7e+14; %set a maximum value for very low strain rates
-        vm(vm>8e+16) = 8e+16; %EE: replaced much lower threshold w/ what I used in my flowline modeling 15/09/2021
+        vm(vm>8e+16) = 8e+16; 
         vm(c) = vm(c-1);
         
         if m > 1
@@ -71,15 +63,14 @@ while b
     %[G_minus(k)*U(k-1)+G(k)*U(k)+G_plus(k)*U(k+1)=Td]  
     % coefficients up to calving front
     G_minus(2:c-1) = (2./(dx(2:c-1).^2)).*Hm(1:c-2).*vm(1:c-2); %for U(k-1)
-    G(2:c-1) = (-2./(dx(2:c-1).^2)).*(Hm(1:c-2).*vm(1:c-2)+Hm(2:c-1).*vm(2:c-1))-...
-            (beta(2:c-1).*N(2:c-1).*eta(2:c-1))-...
-            (((gamma(2:c-1).*H(2:c-1))./W(2:c-1)).*((5./(2*E.*A(2:c-1).*W(2:c-1))).^(1/n))); %for U(k)
+    G(2:c-1) = (-2./(dx(2:c-1).^2)).*(Hm(1:c-2).*vm(1:c-2)+Hm(2:c-1).*vm(2:c-1))...
+        -(beta(2:c-1).*N(2:c-1).*eta(2:c-1))...
+        -(((gamma(2:c-1).*H(2:c-1))./W(2:c-1)).*((5./(2*E.*A(2:c-1).*W(2:c-1))).^(1/n))); %for U(k)
     G_plus(2:c-1) = (2./(dx(2:c-1).^2)).*Hm(2:c-1).*vm(2:c-1); %for U(k+1)
     T(2:c-1) = (rho_i.*g.*H(2:c-1).*(h(3:c)-h(1:c-2))./(x(3:c)-x(1:c-2))); %gravitational driving stress     
     % upper boundary condition
-    G(1) = G(2);%(-2./(dx(1)^2))*(H(1)*vm(1)+Hm(1)*vm(1))-(beta(1).*N(1).*eta(1))-...
-            %(((gamma(1).*H(1))./W(1)).*((5/(2*E*A(1).*W(1))).^(1/n))); 
-    T(1) = U0(1)*G(1);%(rho_i.*g.*H(1).*(h(2)-h(1))./(x(2)-x(1)));%U(1)*G(1);
+    G(1) = -(beta(1).*N(1).*eta(1)) - (((gamma(1).*H(1))./W(1)).*((5/(2*E*A(1).*W(1))).^(1/n))); %G(2);
+    T(1) = (rho_i.*g.*H(1).*(h(2)-h(1))./(x(2)-x(1)));
     % calving front condition
     G_minus(c) = -1;
     G(c) = 1;
@@ -114,10 +105,11 @@ while b
     Un(Un<0) = 0;   
     
     % calculate new strain rates (1/s)
+    
     clearvars dUndx 
-    dUndx(1) = (U(1)-U(2))/(x(1)-x(2)); % forward difference
-    dUndx(2:c-1) = (U(1:c-2)-U(3:c))./(x(1:c-2)-x(3:c)); % central difference
-    dUndx(c) = (U(c)-U(c-1))./(x(c)-x(c-1)); % backward difference
+    dUndx(1) = (Un(2)-Un(1))/(x(2)-x(1)); % forward difference
+    dUndx(2:c-1) = (Un(3:c)-Un(1:c-2))'./(x(3:c)-x(1:c-2)); % central difference
+    dUndx(c) = (Un(c)-Un(c-1))./(x(c)-x(c-1)); % backward difference
 
     %make sure Un is a row vector so it can be compared with U
     if size(Un) == [c,1]
@@ -129,28 +121,55 @@ while b
         dUndx=dUndx';
     end
     
-    %check if the difference in speed between iteratons (U vs. Un) meets a set tolerance
-    if i==1
-        U = Un;
-        dUdx = dUndx;
-        return; % break the U iterations
-    elseif abs(sum(U)-sum(Un))<0.1*abs(sum(U)) %determine if U has converged sufficiently
-        %use sufficiently converged values for speeds & strain rates
+    % plot stresses & dUdx
+%     figure(2);
+%     subplot(1,2,1); 
+%     hold on; legend('location','westoutside'); grid on; 
+%     set(gca, 'fontsize', 12, 'linewidth', 2);
+%     plot(x/10^3, G_minus, '--r', 'linewidth', 1, 'displayname', 'G_{-}');
+%     plot(x/10^3, G_plus, '--c', 'linewidth', 1, 'displayname', 'G_{+}');
+%     plot(x/10^3, G, '-m', 'linewidth', 1, 'displayname', 'G');
+%     xlabel('distance along centerline [km]');
+%     subplot(1,2,2); 
+%     hold on; legend('location','westoutside'); grid on; 
+%     set(gca, 'fontsize', 12, 'linewidth', 2);
+%     plot(x/10^3, T, '-b', 'linewidth', 1, 'displayname', 'T');
+%     xlabel('distance along centerline [km]');
+%     figure(3);  
+%     yyaxis left;
+%     hold on; legend('location','westoutside'); grid on; 
+%     set(gca, 'fontsize', 12, 'linewidth', 2);
+%     plot(x/10^3, Un*3.1536e7, '-k', 'linewidth', 1, 'displayname', 'Un');
+%     xlabel('distance along centerline [km]');
+%     ylabel('speed [m/a]');
+%     yyaxis right; hold on;
+%     plot(x/10^3, dUndx*3.1536e7, '--k', 'linewidth', 1, 'displayname', 'dUndx');
+%     % display some results
+%     disp(['sigma_b = ',num2str(sigma_b), ' Pa']);
+%     disp(['     G_minus(c) = ',num2str(G_minus(c)), ' Pa']);
+%     disp(['     G_plus(c) = ',num2str(G_plus(c)), ' Pa']);
+%     disp(['     G(c) = ',num2str(G(c)), ' Pa']);
+%     disp(['     Un(c) = ',num2str(Un(c)*3.1536e7), ' m/a']);
+%     disp(['     dUndx(c) = ',num2str(dUndx(c)*3.1536e7), ' 1/a']);
+
+    % check if the difference in speed between iteratons (U vs. Un) meets a set tolerance
+    if abs(sum(U)-sum(Un))<0.1*abs(sum(U)) %determine if U has converged sufficiently
+        % use sufficiently converged values for speeds & strain rates
         U = Un; 
         dUdx = dUndx;
-        return %break the U iterations
+        return % break the U iterations
     end
     
-    %if not sufficiently converged, set Un to U and solve the stress balance matrix again
+    % if not sufficiently converged, set Un to U and solve the stress balance matrix again
     U = Un;
     dUdx = dUndx;
     
-    %terminate the U iteration loop if convergence takes too long
+    % terminate the U iteration loop if convergence takes too long
     if str2double(num2str(b)) > str2double(num2str(50))
         return
     end
-            
-    %loop through
+    
+    % loop through
     b = b+1;
     
 end
