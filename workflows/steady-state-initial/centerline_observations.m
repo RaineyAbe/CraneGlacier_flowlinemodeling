@@ -482,4 +482,3 @@ disp('b_adj saved to file');
 % figure
 saveas(figure(5), [homepath,'figures/bedElevation_widthAveraged.png'], 'png');
 disp('figure 5 saved');
-

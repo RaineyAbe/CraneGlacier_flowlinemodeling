@@ -985,43 +985,9 @@ t1 = datetime('01-Jan-1950') + days(time(1)); % initial RACMO date
 t2 = datetime('01-Jan-1950') + days(time(end)); % final RACMO date
 dt = days(time(2)) - days(time(1)); % time between each RACMO date
 t = t1:(t2-t1)/(length(time)-1):t2; 
+
+% -----calculate cumulative snowmelt by year
 yrs = year(t1):year(t2);
-
-% -----cumulative annual snowfall
-% loop through years
-SF_annual_centerline = zeros(length(yrs), 12, length(x));
-for i=1:length(yrs)
-    % indices of time points in that MELT year (i.e., October - March)
-    Iyr = find(year(t)==yrs(i)); 
-    % loop through Iyr
-    for j=1:length(Iyr)
-        % loop through centerline points
-        for k=1:length(x)
-            % calculate cumulative sum of SM over each time point
-            % using the mean SM at each centerline point 
-            SF_annual_centerline(i,j,k) = SF.sf(RACMOx(k), RACMOy(k), Iyr(j))./800; % m/y
-        end
-    end 
-end
-% take average SF over all centerline points for each time point
-SF_annual_sum = sum(SF_annual_centerline, 3, 'omitnan');
-% switch to single column vector
-SF_annual_sum_col = SF_annual_sum'; 
-SF_annual_sum_col = SF_annual_sum_col(:);
-% calculate annual cumulative sum starting in OCTOBER (beginning of melt season)
-% first year
-SF_annual_cumsum = zeros(1, length(SF_annual_sum_col));
-SF_annual_cumsum(1:9) = cumsum(SF_annual_sum_col(1:9));
-I=9; % starting index for summing
-for i=1:length(yrs)-1
-%     disp([num2str((i-1)*12+I+1), ' ',num2str((i-1)*12+I+12)]);
-    % sum every 12 indices
-    SF_annual_cumsum((i-1)*12+I+1:(i-1)*12+I+12) = cumsum(SF_annual_sum_col((i-1)*12+I+1:(i-1)*12+I+12));
-end
-% last year
-SF_annual_cumsum(454:456) = cumsum(SF_annual_sum_col(454:456));
-
-% -----cumulative annual snowmelt
 % loop through years
 SM_annual_centerline = zeros(length(yrs), 12, length(x));
 for i=1:length(yrs)
@@ -1055,19 +1021,50 @@ end
 % last year
 SM_annual_cumsum(454:456) = cumsum(SM_annual_sum_col(454:456));
 
-% -----cumulative annual runoff
-
+% -----calculate cumulative snowfall by year
+% loop through years
+SF_annual_centerline = zeros(length(yrs), 12, length(x));
+for i=1:length(yrs)
+    % indices of time points in that MELT year (i.e., October - March)
+    Iyr = find(year(t)==yrs(i)); 
+    % loop through Iyr
+    for j=1:length(Iyr)
+        % loop through centerline points
+        for k=1:length(x)
+            % calculate cumulative sum of SM over each time point
+            % using the mean SM at each centerline point 
+            SM_annual_centerline(i,j,k) = SM.sm(RACMOx(k), RACMOy(k), Iyr(j))./rho_w; % m/y
+        end
+    end 
+end
+% take average SM over all centerline points for each time point
+SM_annual_sum = sum(SM_annual_centerline, 3, 'omitnan');
+% switch to single column vector
+SM_annual_sum_col = SM_annual_sum'; 
+SM_annual_sum_col = SM_annual_sum_col(:);
+% calculate annual cumulative sum starting in OCTOBER (beginning of melt season)
+% first year
+SM_annual_cumsum = zeros(1, length(SM_annual_sum_col));
+SM_annual_cumsum(1:9) = cumsum(SM_annual_sum_col(1:9));
+I=9; % starting index for summing
+for i=1:length(yrs)-1
+%     disp([num2str((i-1)*12+I+1), ' ',num2str((i-1)*12+I+12)]);
+    % sum every 12 indices
+    SM_annual_cumsum((i-1)*12+I+1:(i-1)*12+I+12) = cumsum(SM_annual_sum_col((i-1)*12+I+1:(i-1)*12+I+12));
+end
+% last year
+SM_annual_cumsum(454:456) = cumsum(SM_annual_sum_col(454:456));
 
 % -----plot
 figure(2); clf;
 % downscaled runoff
-axA = subplot(1,2,1);
+axA = subplot(2,2,1);
 hold on; grid on;
 set(gca, 'fontsize', 12, 'linewidth', 1);
 xlabel('distance along centerline [km]');
 ylabel('runoff [m/y]');
 % mean runoff over time
-axB = subplot(1,2,2);
+axB = subplot(2,2,2);
 hold on; grid on;
 set(gca, 'fontsize', 12, 'linewidth', 1);
 xlabel('year');
@@ -1079,13 +1076,12 @@ for i=1:length(RO.linear(:,1))
     plot(axB, years(i), mean(RO.diff(i,:),'omitnan'), '.', 'color', col(i,:),...
         'markersize', 10);%, 'displayname', num2str(years(i)));
 end
-% cumulative annual snowfall, snowmelt, runoff
-figure(3); clf; 
-axAA = subplot(3, 1, 1);
+% cumulative annual runoff
+axC = subplot(2,1,2);
 hold on; grid on;
 set(gca, 'fontsize', 12, 'linewidth', 1);
 xlabel('year');
 ylabel('snowmelt [m/y]');
-plot(t, SF_annual_cumsum, '-k', 'linewidth', 2);
+plot(t, SM_annual_cumsum, '-k', 'linewidth', 2);
 % xlim([datetime('01-Jan-1995'), datetime('01-Jan-2016')]);
 

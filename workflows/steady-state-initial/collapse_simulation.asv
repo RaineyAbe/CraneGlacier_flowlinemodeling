@@ -604,13 +604,8 @@ col = parula(length(t)); % color scheme for plotting
 % -----run flowline model until Rxx = extensive past the grounding line-----
 for i=1:length(t)
     
-    % decrease DFW every 1 year
-    if i>1 && mod(t(i),dt*1000)==0 
-        DFW=DFW-0.6;
-        if DFW<0
-            DFW=0;
-        end
-        disp(['DFW ', num2str(DFW)]);
+    if i>1
+        DFW=DFW*0.999999;
     end
     
     % -----calving front location 
@@ -718,7 +713,8 @@ for i=1:length(t)
 
     % -----plot geometry, speed, & grounding line and calving front positions
     col = parula(length(t)); % color scheme for plots
-    if plotTimeSteps && mod(t(i),dt*500)==0 % display every dt*1000
+    if plotTimeSteps && mod(t(i),dt*1000)==0 % display every dt*1000
+        disp(['DFW ',num2str(DFW]);
         figure(1);
         % glacier geometry
         plot(ax1,x(1:c)/10^3,h(1:c),'-','color',col(i,:),'linewidth',2,'displayname',num2str(round(t(i)./3.1536e7)+2009));
