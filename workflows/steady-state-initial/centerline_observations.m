@@ -419,15 +419,16 @@ term.x = x(dsearchn([cl.X cl.Y],[term.X' term.Y']));
 term.date = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
 
 % -----save-----
-save([homepath,'inputs-outputs/terminusPositions_2002-2019.mat']);
+save([homepath,'inputs-outputs/terminusPositions_2002-2019.mat'], 'term');
+disp('terminus positions saved');
 
 % -----plot-----
 figure(4); clf; 
 grid on; hold on; 
 set(gca,'fontsize',12,'linewidth',2);
-plot(term.date,term.x/10^3,'.-b','markersize',15);
-xlabel('date'); 
-ylabel('distance along centerline [km]');
+plot(term.x/10^3,term.date,'.-b','markersize',15);
+xlabel('distance along centerline [km]'); 
+ylabel('year');
 
 %% 5. Width-averaged bed elevation profile
 

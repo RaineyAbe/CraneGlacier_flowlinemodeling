@@ -77,7 +77,7 @@ if size(W0)==[186 1]
 end
 
 % -------------------------------------------------------------------------
-% 5. Surface speed, U0(x)
+% 5. surface speed, U0(x)
 % -------------------------------------------------------------------------
 U0 = double(load('surfaceSpeeds_widthAveraged_1994-2018').U(22).U_width_ave);
 if size(U0)==[186 1]
@@ -86,7 +86,7 @@ end
 U0 = movmedian(U0, 5);
 
 % -------------------------------------------------------------------------
-% 6. Rate factor, A0(x)
+% 6. rate factor, A0(x)
 % -------------------------------------------------------------------------
 A0 = load('adjustedRateFactor.mat').A_adj;
 if size(A0)==[186 1]
@@ -130,8 +130,13 @@ Q0_err = interp1(x_Q,Q_err,x0)./3.1536e7; % m/s
 % -------------------------------------------------------------------------
 % 10. Calving front location (index of x), c0
 % -------------------------------------------------------------------------
-fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
-c0 = find(cl.x >= -2402990, 1, 'first');
+% use 2002 observed terminus position 
+term = load([homepath,'inputs-outputs/terminusPositions_2002-2019.mat']).term;
+c0 = dsearchn(x0', term.x(1));
+
+% use end of fjord
+% fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
+% c0 = find(cl.x >= -2402990, 1, 'first');
 
 % -------------------------------------------------------------------------
 % Regrid spatial variables and extend to length of model domain

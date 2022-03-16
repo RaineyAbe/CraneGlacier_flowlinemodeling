@@ -31,9 +31,6 @@ addpath([homepath,'inputs-outputs/']);
 
 save_smb = 0; % = 1 to save resulting smb
 
-%% 1. Load centerline, Annual Snowfall (sf), Snowmelt (sm), Runoff (ro),
-%Surface Mass Balance (SMB), Air Temperature (airtemp) along centerline
-    
 % Load centerline
 cl.X = load('Crane_centerline.mat','x').x; 
 cl.Y = load('Crane_centerline.mat','y').y;
@@ -43,6 +40,9 @@ cl.Y = load('Crane_centerline.mat','y').y;
 rho_i = 917;    % kg/m^3
 rho_w = 1000;   % kg/m^3
 
+%% 1. Load annual Snowfall (sf), Snowmelt (sm), Runoff (ro),
+%Surface Mass Balance (SMB), Air Temperature (airtemp) along centerline
+    
 % Plot full gridded RACMO variables for year and Crane centerline
 % Note: RACMO day # = (year - 1950)*365 + (day # in year)
 % Ex: Feb 1, 2000 = (2000-1950)*365 + 1
@@ -530,14 +530,14 @@ if save_smb
     disp('downscaled SMB and air temperature saved for one year.');
 end 
 
-%% 6. Repeat above steps to load smb for 1995-2019
+%% 6. Downscale Snowfall, Snowmelt, SMB, and runoff for 1995-2019
 
 close all; 
 
 figure_save = 0;            % = 1 to save figure
 save_variables = 0;         % = 1 to save final downscaled SMB
 
-years = 1995:2019;          % years
+years = 1996:2016;          % years
 maxDist = 8e3;              % Define distance from centerline over which values will 
                             % be used in the downscaling computation 
 
@@ -624,9 +624,18 @@ while loop==1
     numPts = 0; % Total number of points found    
     
     % Initialize variables
-    SF.extrap = NaN*zeros(length(years),length(x)); SF.downscaled = NaN*zeros(length(years),length(x)); SF.linear = NaN*zeros(length(years),length(x)); SF.fullGrid = NaN*zeros(length(RACMOx),length(RACMOy));
-    SM.extrap = NaN*zeros(length(years),length(x)); SM.downscaled = NaN*zeros(length(years),length(x)); SM.linear = NaN*zeros(length(years),length(x)); SM.fullGrid = NaN*zeros(length(RACMOx),length(RACMOy));
-    SMB.extrap = NaN*zeros(length(years),length(x)); SMB.downscaled = NaN*zeros(length(years),length(x)); SMB.linear = NaN*zeros(length(years),length(x)); SMB.fullGrid = NaN*zeros(length(RACMOx),length(RACMOy));
+    SF.extrap = NaN*zeros(length(years),length(x)); 
+        SF.downscaled = NaN*zeros(length(years),length(x)); 
+        SF.linear = NaN*zeros(length(years),length(x)); 
+        SF.fullGrid = NaN*zeros(length(RACMOx),length(RACMOy));
+    SM.extrap = NaN*zeros(length(years),length(x)); 
+        SM.downscaled = NaN*zeros(length(years),length(x)); 
+        SM.linear = NaN*zeros(length(years),length(x)); 
+        SM.fullGrid = NaN*zeros(length(RACMOx),length(RACMOy));
+    SMB.extrap = NaN*zeros(length(years),length(x)); 
+        SMB.downscaled = NaN*zeros(length(years),length(x)); 
+        SMB.linear = NaN*zeros(length(years),length(x)); 
+        SMB.fullGrid = NaN*zeros(length(RACMOx),length(RACMOy));
 
     loop=loop+1;
 
@@ -675,7 +684,7 @@ for i=1:length(years)
         % Grab mean SF for every month for full RACMO grid
         for j=1:length(SF.sf(:,1,1))
             for k=1:length(SF.sf(1,:,1))
-                SF.fullGrid(j,k) = nanmean(SF.sf(j,k,Iday_start:Iday_end))./rho_i*12; % m a^-1
+                SF.fullGrid(j,k) = nanmean(SF.sf(j,k,Iday_start:Iday_end))./rho_i; % m a^-1
             end  
         end 
         % Extrapolate mean annual SF along Crane centerline
@@ -978,7 +987,7 @@ if save_variables
     disp('Climate variables saved');
 end 
 
-%% plot snowmelt only, not downscaled
+%% plot cumulative snowfall, snowmelt, runoff
 
 % -----convert RACMO time to datetime
 t1 = datetime('01-Jan-1950') + days(time(1)); % initial RACMO date
@@ -1056,8 +1065,58 @@ end
 SM_annual_cumsum(454:456) = cumsum(SM_annual_sum_col(454:456));
 
 % -----cumulative annual runoff
-
-
+% downscale monthly SM
+% RO_centerline_downscale = zeros(length(SM_annual_cumsum), length(x)); 
+% SM_centerline_downscale = zeros(length(SM_annual_cumsum), length(x));
+% % loop through years
+% for i=1:length(yrs)
+%     
+%     % indices of time points in that MELT year (i.e., October - March)
+%     Iyr = find(year(t)==yrs(i)); 
+%     
+%     % loop through months
+%     for j=1:length(Iyr)
+%         
+%         % grab SM for full RACMO grid
+%         for k=1:length(SM.sm(:,1,1))
+%             for l=1:length(SM.sm(1,:,1))
+%                 SM.fullGrid(k,l) = SM.sm(k,l,Iyr(j))./rho_i; % m/month
+%             end   
+%         end     
+%         
+%         % loop through each point along centerline
+%         for k=1:length(x)
+% 
+%             % Grab points within a certain distance from centerline, interpolate
+%             nearbyPts = []; % Hold points within a certain distance
+%             numPts = 0; % Total number of points found
+% 
+%             for l=1:length(h.X(:,1))
+%                 for m=1:length(h.X(1,:))
+%                     dist = sqrt((cl.X(k)-h.X(l,m))^2 + (cl.Y(k)-h.Y(l,m))^2);
+%                     if dist<=maxDist
+%                         numPts = numPts+1;
+%                         nearbyPts(numPts,1:2) = ([h.h(l,m) SM.fullGrid(l,m)]); 
+%                     end 
+%                 end 
+%             end 
+% 
+%             % Grab the mean of nearby points
+%             SM_mean(i*j+j,k) = mean(nearbyPts(:,2), 'omitnan');
+% 
+%             %Calculate a linear trendline for nearby points
+%             P = polyfit(nearbyPts(:,1),nearbyPts(:,2),1);
+%             int = -500:2000; 
+%             yfit = P(1)*int+P(2);
+% 
+%             SM_centerline_downscale(i*(j-1)+j,k) = interp1(int,yfit,h_cl(j));
+% 
+%         end
+% 
+%     end
+%  
+% end
+% 
 % -----plot
 figure(2); clf;
 % downscaled runoff
@@ -1081,7 +1140,7 @@ for i=1:length(RO.linear(:,1))
 end
 % cumulative annual snowfall, snowmelt, runoff
 figure(3); clf; 
-axAA = subplot(3, 1, 1);
+% axAA = subplot(3, 1, 1);
 hold on; grid on;
 set(gca, 'fontsize', 12, 'linewidth', 1);
 xlabel('year');
