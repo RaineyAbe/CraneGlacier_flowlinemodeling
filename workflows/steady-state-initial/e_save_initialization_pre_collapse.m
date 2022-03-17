@@ -113,10 +113,11 @@ RO0 = load('downscaledClimateVariables_2009-2019.mat').SM.downscaled_average_lin
 %       2015-2016: 0.46 cm/d = 4.77e-8 m/s
 %       2016-2017: 0.08 cm/d = 0.823e-8 m/s
 %       Mean melt rate (2013-17) = 4.75e-8 m/s = 1.5 m/yr
+%       Max melt rate (2013-17) = 8.1e-8 m/s = 2.55 m/yr
 %   Adusumilli et al. (2018):
-%       Larsen C basal melt rate (1994-2016) = 0.5+/-1.4 m/a = 1.59e-8 m/s
-%       Larsen C net mass balance (1994-2016)= -0.4+/-1.3 m/a = 1.27e-8 m/s
-SMR0 = -1.5/3.1536e7; % m/s SMR - max found at Crane
+%       Larsen C basal melt rate (1994-2016) = 0.5 +/- 1.4 m/a = 1.59e-8 m/s
+%       Larsen C net mass balance (1994-2016)= -0.4 +/- 1.3 m/a = 1.27e-8 m/s
+SMR0 = -1.5/3.1536e7; % m/s SMR - mean found at Crane
 
 % -------------------------------------------------------------------------
 % 9. Tributary ice volume flux, Q0(x)
