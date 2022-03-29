@@ -653,7 +653,7 @@ for j=1%:length(delta_SMB0)
 
         % decrease DFW every 1 year until ~2019
         if i>1 && t(i)/3.1536e7 < 20 %&& t(i)/3.1536e7 > 2
-            DFW = DFW-0.00075;
+            DFW = DFW-0.0006;
             if DFW<5
                 DFW=5;
             end
@@ -667,10 +667,10 @@ for j=1%:length(delta_SMB0)
         DFW=DFW+delta_DFWi;
         
         % add backstress after year 5 to account for sea ice occurence
-%         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
-%             % increase linearly until reaching 50 kPa in year 7
-%             sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
-%         end
+        if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
+            % increase linearly until reaching 50 kPa in year 7
+            sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
+        end
         
         % -----calving front location 
         if i==1
@@ -776,7 +776,7 @@ for j=1%:length(delta_SMB0)
                 % calving front & grounding line positions
                 plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
                 plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
-                title(['sigma_b = ',num2str(round(sigma_b/1000)),' kPa']);
+                title(['sigma_b = ',sigma_b,'Pa']
             end
         end
 
