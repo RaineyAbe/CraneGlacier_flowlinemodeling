@@ -9,8 +9,8 @@
 %   4. Width, W0(x)
 %   5. Surface speed, U0(x)
 %   6. Rate factor, A0(x)
-%   7. Surface mass balance, smb0(x)
-%   8. Maximum submarine melt rate, smr0
+%   7. Surface mass balance, SMB0(x)
+%   8. Maximum submarine melt rate, SMR0
 %   9. Tributary ice volume flux, Q0(x)
 %   10. Calving front location (index of x), c0
 % -------------------------------------------------------------------------
@@ -63,6 +63,19 @@ b0=movmean(b0,20);
 if size(b0)==[186 1]
     b0=b0';
 end
+% adjust bed elevation to account for grounding line location
+% initial grounding line ~5km inland of fjord_end (Rebesco et al., 2006)
+fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
+Ifjord_end = find(cl.x > polyxpoly(cl.x, cl.y, fjord_end.X, fjord_end.Y), 1, 'first');
+gl0 = find(x0 >= x0(Ifjord_end)-5e3, 1, 'first');
+% calculate required thickness to be perfectly grounded at gl0 using
+% surface h0
+% rho_i*Hi = rho_sw*H_sw --> rho_i*H = rho_sw*(-b) --> H = (rho_sw/rho_i * h) / (rho_sw/rho_i - 1)
+% rho_sw = 1028; % kg/m^3
+% rho_i = 917; % kg/m^3
+% Hf0 = (rho_sw/rho_i * h0(gl0)) / (rho_sw/rho_i - 1);
+% b0_gl0 = h0(gl0) - Hf0;
+
 % increase elevation near terminus
 % b0(136:end) = b0(136:end)+100;
 % % smooth the transition
@@ -105,7 +118,7 @@ RO0 = load('downscaledClimateVariables_2009-2019.mat').SM.downscaled_average_lin
     % respectively (given by areas H to J in Vaughan et al., 1999)
 
 % -------------------------------------------------------------------------
-% 8. submarine melting rate, SMR0(x)
+% 9. submarine melting rate, SMR0(x)
 % -------------------------------------------------------------------------
 %   Dryak and Enderlin (2020), Crane iceberg melt rates:
 %       2013-2014: 0.70 cm/d = 8.1e-8 m/s
@@ -120,7 +133,7 @@ RO0 = load('downscaledClimateVariables_2009-2019.mat').SM.downscaled_average_lin
 SMR0 = -1.5/3.1536e7; % m/s SMR - mean found at Crane
 
 % -------------------------------------------------------------------------
-% 9. Tributary ice volume flux, Q0(x)
+% 10. Tributary ice volume flux, Q0(x)
 % -------------------------------------------------------------------------
 Q = load('tributaryFluxes.mat').tribFlux.Q; % m/a
 Q_err = load('tributaryFluxes.mat').tribFlux.Q_err; % m/a
@@ -136,7 +149,6 @@ term = load([homepath,'inputs-outputs/terminusPositions_2002-2019.mat']).term;
 c0 = dsearchn(x0', term.x(1));
 
 % use end of fjord
-% fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
 % c0 = find(cl.x >= -2402990, 1, 'first');
 
 % -------------------------------------------------------------------------

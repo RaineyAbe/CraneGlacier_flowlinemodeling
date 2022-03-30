@@ -120,7 +120,7 @@ for j=1%:length(delta_SMB0)
     x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; b=b0; H=H0; 
     DFW=DFW0; dx=dx0; SMB=SMB0; SMR=SMR0; c=c0;
     beta0 = interp1([0 x0(end)], [1 2], x0);  
-    sigma_b = 650e3; 
+    sigma_b = 800e3; 
 
     col = parula(50e3); % color scheme for plots
 
@@ -653,9 +653,10 @@ for j=1%:length(delta_SMB0)
 
         % decrease DFW every 1 year until ~2019
         if i>1 && t(i)/3.1536e7 < 20 %&& t(i)/3.1536e7 > 2
-            DFW = DFW-0.00075;
-            if DFW<5
-                DFW=5;
+%             DFW = DFW-0.00075;
+            DFW = DFW-0.0016;
+            if DFW<10
+                DFW=10;
             end
         end
         % increase DFW linearly at each time increment to reach delta_DFW by 2100
@@ -667,10 +668,10 @@ for j=1%:length(delta_SMB0)
         DFW=DFW+delta_DFWi;
         
         % add backstress after year 5 to account for sea ice occurence
-%         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
-%             % increase linearly until reaching 50 kPa in year 7
-%             sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
-%         end
+        if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
+            % increase linearly until reaching 50 kPa in year 7
+            sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
+        end
         
         % -----calving front location 
         if i==1
