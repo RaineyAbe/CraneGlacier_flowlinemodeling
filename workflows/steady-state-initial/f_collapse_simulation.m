@@ -14,8 +14,8 @@
 clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
-plotTimeSteps = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
-plotClimateParams = 1; % = 1 to plot SMB, DFW, TF over time
+plotTimeSteps = 0; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
+plotClimateParams = 0; % = 1 to plot SMB, DFW, TF over time
 saveFinal = 1; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
@@ -84,11 +84,11 @@ term = load([homepath,'inputs-outputs/terminusPositions_2002-2019.mat']).term;
 % Note: mdot and RO must be in units of m/d.
 % initial total runoff = sum(RO0(x) * W(x) * dx(x))
 % terminus area-averaged runoff = initial total runoff / (H(c) * W(c))
-RO0_sum = sum(RO0(1:c0).*W0(1:c0).*dx0) / (H0(c0) * W0(c0)); % m^3/s
+RO0_sum = sum(RO0(1:c0).*W0(1:c0).*dx0) / (H0(c0) * W0(c0)); % m/s
 TF0 = 0.2; % ocean thermal forcing [^oC], estimated from Larsen B icebergs
 mdot0 = -SMR0; % m/s
-% C = (mdot0*86400 - 0.15*nthroot(TF0,1/1.18)) / (-b0(c0) * nthroot(RO0_sum*86400,1/0.39) * nthroot(TF0,1/1.18)); 
-C = (mdot0*86400 - 0.15*nthroot(TF0,1/2.3)) / (-b0(c0) * nthroot(RO0_sum*86400,1/0.39) * nthroot(TF0,1/2.3)); 
+% C = (mdot0*86400 - 0.15*nthroot(TF0,1/1.18)) / (-b0(c0) * nthroot(RO0_sum*86400,1/0.39) * nthroot(TF0,1/1.18)); % <-- results in a negative number
+C = (mdot0*86400 - 0.15*nthroot(TF0,1/2.3)) / (-b0(c0) * nthroot(RO0_sum*86400,1/0.39) * nthroot(TF0,1/2.3)); % <-- adjusted TF exponent until C=positive
 
 % -----define potential changes in SMB, DFW, & TF
 % - decrease maximum SMB by increments of 0.5 m a-1 down to -10 m a-1
@@ -102,12 +102,12 @@ delta_TF0 = 0:0.1:1; % ^oC change in TF
 smb_mean = NaN*zeros(1,length(delta_SMB0));
 dSMR_max = 0; 
 
-for j=1%:length(delta_SMB0)
+for j=1:length(delta_SMB0)
     
     % Switch scenarios on and off
-    delta_SMB = delta_SMB0(j);
+    delta_SMB = 0;% delta_SMB0(j);
     delta_DFW = 0; %delta_DFW0(j);
-    delta_TF = 0; % delta_TF0(j);
+    delta_TF = delta_TF0(j);
     SMB_enhance = 0; % = 1 to increase SMR due to decreased SMB    
 
     % ------------------------------------------
@@ -122,7 +122,7 @@ for j=1%:length(delta_SMB0)
     beta0 = interp1([0 x0(end)], [1 2], x0);  
     sigma_b = 800e3; 
 
-    col = parula(50e3); % color scheme for plots
+    col = parula(10e3); % color scheme for plots
 
     % -----run flowline model-----
     i=1; % counter for iterations
@@ -207,10 +207,10 @@ for j=1%:length(delta_SMB0)
                 set(gcf,'Position',[-1500 100 1300 450]);
                 ax1 = axes('Position',[0.05 0.12 0.27 0.78]); % glacier geometry
                 hold on; grid on;
-                set(gca,'FontSize',16,'linewidth',2);
+                set(gca,'FontSize',14,'linewidth',2);
                 title([num2str(t(i)*3.1536e7), 'yrs']);
                 xlim([0 95]); ylim([min(b)-100 max(h)+200]);
-                xlabel('Distance Along Centerline [km]'); ylabel('Elevation [m]');
+                xlabel('distance along centerline [km]'); ylabel('elevation [m]');
                 % ice surface
                 plot(x(1:c)./10^3,h(1:c),'color',col(i,:),'linewidth',2,'displayname','2009');
                 % calving front
@@ -227,14 +227,14 @@ for j=1%:length(delta_SMB0)
                 set(gca,'FontSize',14,'linewidth',2);
                 xlim([0 95]); 
     %                     ylim([0 800]);
-                xlabel('Distance Along Centerline [km]'); ylabel('Speed [m a^{-1}]');
+                xlabel('distance along centerline [km]'); ylabel('speed [m a^{-1}]');
                 plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','2009');
                 % calving front & grounding line positions
                 ax3 = axes('Position',[0.7 0.1 0.28 0.8]); 
                 hold on; grid on;
                 set(gca,'FontSize',14,'linewidth',2);
                 xlim([30 95]);
-                xlabel('Distance Along Centerline [km]'); 
+                xlabel('distance along centerline [km]'); 
                 ylabel('Year');
                 plot(x(c)/10^3,t(i)./3.1536e7,'.','markersize',15,'color',col(i,:),'displayname','2009');
                 plot(ax3,x(gl)./10^3,t(i)./3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off');
@@ -399,7 +399,7 @@ for j=1%:length(delta_SMB0)
                 set(gca,'FontSize',12,'linewidth',2);
                 title([num2str(t(i)*3.1536e7), 'yrs']);
                 xlim([0 95]); ylim([min(b)-100 max(h)+200]);
-                xlabel('distance along centerline [km]'); ylabel('Elevation [m]');
+                xlabel('distance along centerline [km]'); ylabel('elevation [m]');
                 % ice surface
                 plot(x(1:c)./10^3,h(1:c),'color',col(i,:),'linewidth',2,'displayname','2009');
                 % calving front
@@ -415,7 +415,7 @@ for j=1%:length(delta_SMB0)
                 hold on; grid on;
                 set(gca,'FontSize',12,'linewidth',2);
                 xlim([0 95]); 
-                xlabel('distance along centerline [km]'); ylabel('Speed [m a^{-1}]');
+                xlabel('distance along centerline [km]'); ylabel('speed [m a^{-1}]');
                 plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','2009');
                 % calving front and grounding line position
                 ax3 = axes('Position',[0.7 0.1 0.28 0.8]); 
@@ -429,7 +429,7 @@ for j=1%:length(delta_SMB0)
                 figure(3); clf; 
                 ax4 = gca;
                 hold on; grid on;
-                set(ax4,'FontSize',14,'linewidth',2);
+                set(ax4,'FontSize',12,'linewidth',2);
                 xlabel('distance along centerline [km]'); 
                 ylabel('R_{xx} [kPa]');
                 plot(ax4, x/10^3, Rxx/10^3, 'Color',col(i,:),'markersize',10,'linewidth',2);
@@ -456,22 +456,24 @@ for j=1%:length(delta_SMB0)
         if any(Rxx(gl:c)>=0)
             disp('    extensive conditions reached');
             disp('    continuing...');
-            % plot
-            figure(1);
-            % glacier geometry
-            plot(ax1,x(1:c)/10^3,h(1:c),'-m','linewidth',2,'displayname',num2str(round(t(i)./3.1536e7)+2009));
-            plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'-m','linewidth',2,'HandleVisibility','off');
-            plot(ax1,[x(c);x(c)]/10^3,[h(c);h(c)-H(c)],'-m','linewidth',2,'HandleVisibility','off');
-            title(ax1, [num2str(t(i)/3.1536e7), 'yrs']);
-            plot(ax1,x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'-m','linewidth',2,'HandleVisibility','off'); % calving front
-            plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'-m','linewidth',2,'HandleVisibility','off'); % floating bed (gl:c)
-            % ice speed
-            plot(ax2,x(1:c)/10^3,U(1:c).*3.1536e7,'-m','linewidth',2,'DisplayName',num2str(round(t(i)./3.1536e7)+2009));
-            % calving front & grounding line positions
-            plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.m','markersize',10,'linewidth',2,'HandleVisibility','off'); 
-            plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'xm','markersize',10,'linewidth',2,'HandleVisibility','off'); 
-            % Rxx
-            plot(ax4, x/10^3, Rxx/10^3, '-m','markersize',10,'linewidth',2);
+            if plotTimeSteps
+                % plot
+                figure(1);
+                % glacier geometry
+                plot(ax1,x(1:c)/10^3,h(1:c),'-m','linewidth',2,'displayname',num2str(round(t(i)./3.1536e7)+2009));
+                plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'-m','linewidth',2,'HandleVisibility','off');
+                plot(ax1,[x(c);x(c)]/10^3,[h(c);h(c)-H(c)],'-m','linewidth',2,'HandleVisibility','off');
+                title(ax1, [num2str(t(i)/3.1536e7), 'yrs']);
+                plot(ax1,x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'-m','linewidth',2,'HandleVisibility','off'); % calving front
+                plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'-m','linewidth',2,'HandleVisibility','off'); % floating bed (gl:c)
+                % ice speed
+                plot(ax2,x(1:c)/10^3,U(1:c).*3.1536e7,'-m','linewidth',2,'DisplayName',num2str(round(t(i)./3.1536e7)+2009));
+                % calving front & grounding line positions
+                plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.m','markersize',10,'linewidth',2,'HandleVisibility','off'); 
+                plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'xm','markersize',10,'linewidth',2,'HandleVisibility','off'); 
+                % Rxx
+                plot(ax4, x/10^3, Rxx/10^3, '-m','markersize',10,'linewidth',2);
+            end
             break;
         end
 
@@ -597,33 +599,33 @@ for j=1%:length(delta_SMB0)
     end
 
     % -----plot surface crevasses
-    % resistive stress (Pa)
-    Rxx = 2*nthroot(dUdx./(E.*A),n); 
-    % height above buoyancy (m)
-    Hab = H+rho_sw/rho_i*(b); 
-    % surface crevasse penetration depth (m)
-    crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*(DFW)); 
-    % basal crevasse penetration depth (m)
-    crev_b = rho_i/(rho_sw-rho_i).*(Rxx./(rho_i*g)-Hab);     
-
-    figure(10); clf
-    subplot(1,2,1); hold on; 
-    set(gca,'fontsize',12,'linewidth',1);
-    legend('location','southeast');
-    grid on;
-    plot(x/10^3, h,'-b','linewidth',2,'displayname','h');
-    plot(x/10^3, crev,'-m','linewidth',2,'displayname','crev_s');
-    plot(x/10^3, crev_b,'-c','linewidth',2,'displayname','crev_b');
-    xlabel('distance along centerline [km]');
-    ylabel('elevation [m]');
-    subplot(1,2,2); hold on; 
-    set(gca,'fontsize',12,'linewidth',1);
-    legend('location','southwest');
-    grid on;
-    plot(x/10^3, h-crev_b,'-c','linewidth',2,'displayname','h - crev_b');
-    plot(x/10^3, h-crev,'-m','linewidth',2,'displayname','h - crev_s');
-    xlabel('distance along centerline [km]');
-    ylabel('elevation [m]');
+%     % resistive stress (Pa)
+%     Rxx = 2*nthroot(dUdx./(E.*A),n); 
+%     % height above buoyancy (m)
+%     Hab = H+rho_sw/rho_i*(b); 
+%     % surface crevasse penetration depth (m)
+%     crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*(DFW)); 
+%     % basal crevasse penetration depth (m)
+%     crev_b = rho_i/(rho_sw-rho_i).*(Rxx./(rho_i*g)-Hab);     
+%     % plot
+%     figure(10); clf
+%     subplot(1,2,1); hold on; 
+%     set(gca,'fontsize',12,'linewidth',1);
+%     legend('location','southeast');
+%     grid on;
+%     plot(x/10^3, h,'-b','linewidth',2,'displayname','h');
+%     plot(x/10^3, crev,'-m','linewidth',2,'displayname','crev_s');
+%     plot(x/10^3, crev_b,'-c','linewidth',2,'displayname','crev_b');
+%     xlabel('distance along centerline [km]');
+%     ylabel('elevation [m]');
+%     subplot(1,2,2); hold on; 
+%     set(gca,'fontsize',12,'linewidth',1);
+%     legend('location','southwest');
+%     grid on;
+%     plot(x/10^3, h-crev_b,'-c','linewidth',2,'displayname','h - crev_b');
+%     plot(x/10^3, h-crev,'-m','linewidth',2,'displayname','h - crev_s');
+%     xlabel('distance along centerline [km]');
+%     ylabel('elevation [m]');
 
     % -----solve for calving criteria (DFW)
     % Solve for DFW that satisfies calving criterion at 2002 calving front 
@@ -653,9 +655,9 @@ for j=1%:length(delta_SMB0)
 
         % decrease DFW every 1 year until ~2019
         if i>1 && t(i)/3.1536e7 < 20 %&& t(i)/3.1536e7 > 2
-%             DFW = DFW-0.00075;
-            DFW = DFW-0.0016;
-            if DFW<10
+            if DFW>10
+                DFW = DFW-0.0017;
+            else
                 DFW=10;
             end
         end
@@ -668,10 +670,11 @@ for j=1%:length(delta_SMB0)
         DFW=DFW+delta_DFWi;
         
         % add backstress after year 5 to account for sea ice occurence
-        if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
-            % increase linearly until reaching 50 kPa in year 7
-            sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
-        end
+        if t(i)/3.1536e7 > 5; sigma_b = 20e3; end
+%         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
+%             % increase linearly until reaching 50 kPa in year 7
+%             sigma_b = sigma_b + 20e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
+%         end
         
         % -----calving front location 
         if i==1
@@ -798,7 +801,7 @@ for j=1%:length(delta_SMB0)
         F(isnan(F))=0;
         F(1)=F(2);
 
-        % -----save grounding line oce flux (discharge)
+        % -----save grounding line ice flux (discharge)
         Fgl(i) = F(gl)*917*1e-12*3.1536e7; % Gt/a
 
         % -----implement SMB, SMR, & RO
@@ -933,15 +936,16 @@ for j=1%:length(delta_SMB0)
     end
 
     % plot results
-    for i=1
+    i=1;
+    while i==1
         load([homepath,'inputs-outputs/2100_noChange_steady_state_initial.mat']);
         h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; DFW2=DFW0+delta_DFW; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
         gl1=dsearchn(x2',XGL(end)); 
-        figure(10); clf % sensitivity test changes
+        figure(11); clf % sensitivity test changes
         hold on; grid on;
         set(gcf,'Position',[250 80 886 686]);
         set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
-        xlabel('Distance Along Centerline (km)'); ylabel('Elevation (m)');
+        xlabel('distance Along Centerline (km)'); ylabel('elevation (m)');
         legend('Location','east'); xlim([0 100]); ylim([min(b0)-100 max(h)+100]);
         title(['TF = + ',num2str(round(delta_TF,1)),'^oC, SMB = + ',...
             num2str(round(delta_SMB*3.1536e7,1)),'m/a, DFW = ',num2str(DFW2),'m']);
@@ -980,6 +984,7 @@ for j=1%:length(delta_SMB0)
             plot(x/10^3,b,'k','linewidth',2,'HandleVisibility','off');
             % mean sea level
             plot([x(1),x(end)]/10^3,[0,0],'k--','HandleVisibility','off'); drawnow
+            i=i+1;
     end
 
     disp('Simulation complete');

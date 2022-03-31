@@ -483,3 +483,27 @@ disp('b_adj saved to file');
 % figure
 saveas(figure(5), [homepath,'workflows/steady-state-initial/figures/bedElevation_widthAveraged.png'], 'png');
 disp('figure 5 saved');
+
+%% 6. Estimate pre-collapse glacier ice backstress between 2002 terminus position and the end of the fjord
+% lateral resistance = 2*H/W (5*U/E*A*W)^(1/n)
+
+% calving front position
+c0 = dsearchn(x', term.x(1));
+% end of fjord (glacier-ice shelf boundary)
+f0 = find(cl.X >= -2402990, 1, 'first');
+% speed
+U0 = double(U(22).U_width_ave(c0:f0));
+U0 = movmedian(U0, 5);
+% thickness - calculate using surface elevation and Archimedes principle
+h0 = h(14).h_centerline;
+h0(isnan(h0))=0; % replace NaNs with zeros
+h0 = movmedian(h0, 5);
+% rho_i*H_i = rho_sw*H_sw --> H = -rho_sw/(rho_i - rho_sw) * h
+rho_i = 917; % kg/m^3
+rho_sw = 1000; % kg/m^3
+H0 = -rho_sw/(rho_i-rho_sw) * h0(c0:f0);
+% A
+
+% W
+
+% lateral resistance

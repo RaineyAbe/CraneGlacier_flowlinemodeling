@@ -185,12 +185,13 @@ end
 % rho_i*H_i = rho_sw*H_sw --> H = -rho_sw/(rho_i - rho_sw) * h
 rho_i = 917; % kg/m^3
 rho_sw = 1000; % kg/m^3
+h = load(
 H = -rho_sw/(rho_i-rho_sw) * h0(c0:f0);
 
 % lateral resistance
 n = 3;
 R = 2*H./W0(c0:f0) .* nthroot(5.*U0(c0:f0) ./ (A0(c0:f0).*W0(c0:f0)), n);
-R_sum = sum(R)*dx / (x0(f0) - x0(c0)); % Pa
+R_sum = sum(R); 
 
 % plot
 figure(1); clf;
