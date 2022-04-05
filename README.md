@@ -4,7 +4,7 @@ Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf
 
 Rainey Aberle and Ellyn Enderlin
 
-![](workflows/dynamic-initial/figures/studyArea.png)
+![](workflows/dynamic-initial-UNTESTED/figures/studyArea.png)
 
 ---
 
