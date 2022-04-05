@@ -1,21 +1,23 @@
-# CraneGlacier_flowlinemodeling
+# Crane Glacier flowline modeling 
 
-_WARNING: Currently editing scripts and workflows as of February 2022. Some scripts may not be fully functional. Will be back up and running in the next few weeks._ 
-
-Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf collapse and future changes in climate
+Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf collapse and potential sensitivities to future changes in climate
 
 Rainey Aberle and Ellyn Enderlin
 
-
-![](figures/studyArea.png)
+![](workflows/dynamic-initial/figures/studyArea.png)
 
 ---
 
-### Order of operations (see `workflows/`)
-- `0_synthesize_datasets`
-- `1_steady-state`
-- `2_tune_parameters`
-- `3_sensitivity_tests`
+### Workflows:
+
+- `steady-state-initial`: tune the model by simulating 
+- `dynamic-initial-UNTESTED`: (not recommended) tune the model to produce post-collapse conditions 2009-2018
+
+### Order of operations:
+
+- Synthesize centerline observations: `a_centerline_observations.m`, `b_glacier_width.mlx`, `c_downscale_RACMO.m`, `d_LarsenC_melt.m`
+- Save conditions to initialize model: `e_save_initialization.m`
+- Run model simulations: `f_collapse_simulation.m`
 
 ---
 

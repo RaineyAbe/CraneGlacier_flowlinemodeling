@@ -14,8 +14,8 @@
 clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
-plotTimeSteps = 0; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
-plotClimateParams = 0; % = 1 to plot SMB, DFW, TF over time
+plotTimeSteps = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
+plotClimateParams = 1; % = 1 to plot SMB, DFW, TF over time
 saveFinal = 1; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
@@ -87,8 +87,9 @@ term = load([homepath,'inputs-outputs/terminusPositions_2002-2019.mat']).term;
 RO0_sum = sum(RO0(1:c0).*W0(1:c0).*dx0) / (H0(c0) * W0(c0)); % m/s
 TF0 = 0.2; % ocean thermal forcing [^oC], estimated from Larsen B icebergs
 mdot0 = -SMR0; % m/s
-% C = (mdot0*86400 - 0.15*nthroot(TF0,1/1.18)) / (-b0(c0) * nthroot(RO0_sum*86400,1/0.39) * nthroot(TF0,1/1.18)); % <-- results in a negative number
-C = (mdot0*86400 - 0.15*nthroot(TF0,1/2.3)) / (-b0(c0) * nthroot(RO0_sum*86400,1/0.39) * nthroot(TF0,1/2.3)); % <-- adjusted TF exponent until C=positive
+% C = (mdot0*86400/nthroot(TF0,1/2.3) - 0.15) / ...
+%     (-b0(c0) * nthroot(RO0_sum*86400,1/0.39) * nthroot(TF0,1/2.3)); % unrealistic number!
+C = 3e-4; % use original from Slater et al. (2020)
 
 % -----define potential changes in SMB, DFW, & TF
 % - decrease maximum SMB by increments of 0.5 m a-1 down to -10 m a-1
@@ -102,13 +103,13 @@ delta_TF0 = 0:0.1:1; % ^oC change in TF
 smb_mean = NaN*zeros(1,length(delta_SMB0));
 dSMR_max = 0; 
 
-for j=1:length(delta_SMB0)
+for j=1%1:length(delta_SMB0)
     
     % Switch scenarios on and off
-    delta_SMB = 0;% delta_SMB0(j);
+    delta_SMB = delta_SMB0(j);
     delta_DFW = 0; %delta_DFW0(j);
-    delta_TF = delta_TF0(j);
-    SMB_enhance = 0; % = 1 to increase SMR due to decreased SMB    
+    delta_TF = 0; %delta_TF0(j);
+    SMB_enhance = 1; % = 1 to increase SMR due to decreased SMB    
 
     % ------------------------------------------
     % -----2. Model pre-collapse conditions-----
@@ -122,7 +123,7 @@ for j=1:length(delta_SMB0)
     beta0 = interp1([0 x0(end)], [1 2], x0);  
     sigma_b = 800e3; 
 
-    col = parula(10e3); % color scheme for plots
+    col = parula(50e3); % color scheme for plots
 
     % -----run flowline model-----
     i=1; % counter for iterations
@@ -452,7 +453,7 @@ for j=1:length(delta_SMB0)
             end    
         end
 
-        % -----stop model when resistive stress is extensive near calving front (> 0)
+        % -----stop model when resistive stress is extensive (> 0) near calving front 
         if any(Rxx(gl:c)>=0)
             disp('    extensive conditions reached');
             disp('    continuing...');
@@ -654,9 +655,9 @@ for j=1:length(delta_SMB0)
     for i=1:length(t)
 
         % decrease DFW every 1 year until ~2019
-        if i>1 && t(i)/3.1536e7 < 20 %&& t(i)/3.1536e7 > 2
+        if i > 1 && t(i)/3.1536e7 < 20 %&& t(i)/3.1536e7 > 1
             if DFW>10
-                DFW = DFW-0.0017;
+                DFW = DFW-0.00075;
             else
                 DFW=10;
             end

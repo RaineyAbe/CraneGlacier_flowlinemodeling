@@ -189,14 +189,40 @@ H = -rho_sw/(rho_i-rho_sw) * h0(c0:f0);
 
 % lateral resistance
 n = 3;
-R = 2*H./W0(c0:f0) .* nthroot(5.*U0(c0:f0) ./ (A0(c0:f0).*W0(c0:f0)), n);
-R_sum = sum(R)*dx / (x0(f0) - x0(c0)); % Pa
+Rxy = 2*H./W0(c0:f0) .* nthroot(5.*U0(c0:f0) ./ (A0(c0:f0).*W0(c0:f0)), n);
+Rxy_sum = sum(Rxy*dx) / (x0(f0) - x0(c0)); % Pa
+% longitudinal stress
+dUdx(c0) = (U0(c0+1)-U0(c0))./(x0(c0+1)-x0(c0)); % forward difference
+dUdx(c0+1:f0-1) = (U0(c0+2:f0)-U0(c0:f0-2))./(x0(c0+2:f0)-x0(c0:f0-2)); % central difference
+dUdx(f0) = (U0(f0)-U0(f0-1))/(x0(f0)-x0(f0-1)); % backward difference at c
+vm = (A0(c0:f0).^(-1/n)).*(abs(dUdx(c0:f0))).^((1-n)/n);
+Rxx = (-2/(dx^2)).*(H.*vm);
+Rxx(1)=Rxx(2); % remove infinite value
+Rxx_sum = sum(Rxx*dx) / (x0(f0) - x0(c0)); % Pa
+disp(['Sum Rxy = ',num2str(Rxy_sum/10^3),' kPa']);
+disp(['Sum Rxx = ',num2str(Rxx_sum/10^3),' kPa']);
 
 % plot
 figure(1); clf;
 hold on; set(gca,'fontsize',12,'linewidth',1);
-grid on;
-plot(x0(c0:f0)/10^3, R/10^3, '-k');
+plot(x0(c0:f0)/10^3, Rxy/10^3, '-b', 'linewidth',2, 'displayname', 'R_{xy}');
+plot(x0(c0:f0)/10^3, Rxx/10^3, '-m', 'linewidth', 2, 'displayname', 'R_{xx}');
+grid on; legend;
 xlabel('distance along centerline [km]');
 ylabel('lateral resistance [kPa]');
-title(['Total = ',num2str(R_sum/10^3),' kPa']);
+
+figure(2); clf
+subplot(1,2,1); 
+hold on; set(gca,'fontsize',12,'linewidth',1);
+plot(x0/10^3, U0.*3.1536e7, '-k','linewidth',2);
+xlabel('distance along centerline [km]');
+ylabel('speed [m/y]');
+grid on
+subplot(1,2,2);
+hold on; set(gca,'fontsize',12,'linewidth',1);
+plot(x0/10^3, h0, '-b','linewidth',2);
+plot(x0(c0:f0)/10^3, h0(c0:f0)-H,'-c','linewidth',2);
+plot(x0/10^3, b0,'-k', 'linewidth',2);
+xlabel('distance along centerline [km]');
+ylabel('elevation [m]');
+grid on
