@@ -430,7 +430,44 @@ plot(term.x/10^3,term.date,'.-b','markersize',15);
 xlabel('distance along centerline [km]'); 
 ylabel('year');
 
-%% 5. Width-averaged bed elevation profile
+%% 5. Bed rock estimates from Huss and Farinotti (2014), BedMachine
+
+% load variables from file (note: grid is the same for bedrock and thickness)
+% bedrock
+[SOM.b, SOM.R] = readgeoraster([homepath,'data/bed_elevations/SOM/bedrock/bedrock.tif']);
+SOM.b = double(SOM.b);
+SOM.b(SOM.b==-9999) = NaN;
+% thickness
+SOM.H = readgeoraster([homepath,'data/bed_elevations/SOM/thickness/thickness.tif']);
+SOM.H = double(SOM.H);
+
+% extract grid info
+SOM.X = linspace(SOM.R.XWorldLimits(1), SOM.R.XWorldLimits(2), SOM.R.RasterSize(2));
+SOM.Y = linspace(SOM.R.YWorldLimits(1), SOM.R.YWorldLimits(2), SOM.R.RasterSize(1));
+
+% interpolate along centerline
+[SOM.X_mesh, SOM.Y_mesh] = meshgrid(SOM.X, SOM.Y);
+SOM.b_cl = interp2(SOM.X, SOM.Y, flipud(SOM.b), cl.X, cl.Y);
+SOM.H_cl = interp2(SOM.X, SOM.Y, flipud(SOM.H), cl.X, cl.Y);
+
+% plot
+figure(1); clf; 
+% bedrock
+subplot(1, 2, 1); hold on;
+title('bedrock');
+set(gca, 'YDir', 'normal', 'fontsize', 12, 'linewidth', 2);
+imagesc(SOM.X/10^3, SOM.Y/10^3, flipud(SOM.b));
+c1 = colorbar;
+xlabel('Easting [km]'); ylabel('Northing [km]');
+% thickness
+subplot(1, 2, 2); hold on;
+title('thickness');
+set(gca, 'YDir', 'normal', 'fontsize', 12, 'linewidth', 2);
+imagesc(SOM.X/10^3, SOM.Y/10^3, flipud(SOM.H));
+c2 = colorbar;
+xlabel('Easting [km]'); ylabel('Northing [km]');
+
+%% 6. Width-averaged bed elevation profile
 
 % -------------------------------------------------------------------------
 %   a. Load bed elevation (OIB picks) and bathymetry (Rebesco, 2006)
@@ -475,6 +512,7 @@ set(gca,'linewidth',2,'fontsize',14); grid on;
 plot(x/10^3,b,'--k','linewidth',2,'DisplayName','b_{cl}');
 plot(x/10^3,b_adj,'-k','linewidth',2,'DisplayName','b_{adj}');
 plot(x/10^3,h_pc,'-b','linewidth',2,'DisplayName','h');
+plot(x/10^3,b_som.cl,'-m','linewidth',2,'DisplayName','Huss and Farinotti (2014)');
 
 % -----save-----
 % bed variable

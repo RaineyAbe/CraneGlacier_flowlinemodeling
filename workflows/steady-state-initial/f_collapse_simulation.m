@@ -14,8 +14,8 @@
 clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
-plotTimeSteps = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
-plotClimateParams = 1; % = 1 to plot SMB, DFW, TF over time
+plotTimeSteps = 0; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
+plotClimateParams = 0; % = 1 to plot SMB, DFW, TF over time
 saveFinal = 1; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
@@ -103,12 +103,12 @@ delta_TF0 = 0:0.1:1; % ^oC change in TF
 smb_mean = NaN*zeros(1,length(delta_SMB0));
 dSMR_max = 0; 
 
-for j=1%1:length(delta_SMB0)
+for j=2:length(delta_SMB0)
     
     % Switch scenarios on and off
     delta_SMB = delta_SMB0(j);
     delta_DFW = 0; %delta_DFW0(j);
-    delta_TF = 0; %delta_TF0(j);
+    delta_TF = delta_TF0(j);
     SMB_enhance = 1; % = 1 to increase SMR due to decreased SMB    
 
     % ------------------------------------------
@@ -655,26 +655,26 @@ for j=1%1:length(delta_SMB0)
     for i=1:length(t)
 
         % decrease DFW every 1 year until ~2019
-        if i > 1 && t(i)/3.1536e7 < 20 %&& t(i)/3.1536e7 > 1
-            if DFW>10
-                DFW = DFW-0.00075;
+        if i > 1 && t(i)/3.1536e7 > 0.1
+            if DFW>6
+                DFW = DFW-0.00078;
             else
-                DFW=10;
+                DFW=6;
             end
         end
         % increase DFW linearly at each time increment to reach delta_DFW by 2100
-        if t(i)/3.1536e7 > 20
-            delta_DFWi = delta_DFW/(2100-2022)*t(i)/3.1536e7; % total increase in DFW from 2022
+        if t(i)/3.1536e7 > 16
+            delta_DFWi = delta_DFW/(2100-2018)*t(i)/3.1536e7; % total increase in DFW from 2022
         else
             delta_DFWi = 0;
         end
         DFW=DFW+delta_DFWi;
         
         % add backstress after year 5 to account for sea ice occurence
-        if t(i)/3.1536e7 > 5; sigma_b = 20e3; end
-%         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
+%         if t(i)/3.1536e7 > 5; sigma_b = 20e3; end
+%         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 5
 %             % increase linearly until reaching 50 kPa in year 7
-%             sigma_b = sigma_b + 20e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
+%             sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
 %         end
         
         % -----calving front location 
@@ -809,7 +809,7 @@ for j=1%1:length(delta_SMB0)
         SMB = interp1(x0,SMB0+Q0,x);
         RO = interp1(x0,RO0,x);
         SMR = zeros(1,c);
-        if t(i)/3.1536e7 < 20
+        if t(i)/3.1536e7 < 16
             % SMR change
             TF = TF0;
             delta_mdot = ((C*-b(gl)*nthroot((sum(RO0(1:gl0))*86400),1/0.39) + 0.15)*(TF^1.18))/86400-mdot0; % m/s
@@ -818,12 +818,12 @@ for j=1%1:length(delta_SMB0)
             end
         else
             % SMB change
-            delta_SMBi = delta_SMB/(2100-2022)*(t(i)/3.1536e7-10); % total increase in SMB from 2022 rate 
+            delta_SMBi = delta_SMB/(2100-2018)*(t(i)/3.1536e7-10); % total increase in SMB from 2022 rate 
             for k=1:c
                 SMB(k) = SMB(k)+delta_SMBi*(h0(1)-h(k))/(h0(1)-h0(c0)); 
             end
             % TF change
-            TFi = delta_TF/(2100-2022)*(t(i)/3.1536e7-10); % total increase in TF from 2022
+            TFi = delta_TF/(2100-2018)*(t(i)/3.1536e7-10); % total increase in TF from 2022
             TF = TFi + TF0;
             % increase runoff due to surface melting if running the 'enhanced SMB' scenario        
             if SMB_enhance
@@ -914,7 +914,7 @@ for j=1%1:length(delta_SMB0)
         if delta_DFW==0 && delta_TF==0 && delta_SMB==0 
             save([homepath,'workflows/steady-state-initial/results/1_SMB_DFW_TF/SMB0_DFW0m_TF0_geom.mat'],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
             h1=h; H1=H; b1=b; c1=c; U1=U; x1=x; gl1=dsearchn(x1',XGL(end)); DFW1=DFW0; Fgl1=Fgl; XGL1=XGL; XCF1=XCF; 
-            save([homepath,'workflows/steady-state-initial/results/1_SMB_DFW_TF/2100_noChange_steady_state_initial.mat'],'h1','H1','b1','c1','U1','gl1','x1','DFW1','Fgl1','XGL1','XCF1');
+            save([homepath,'inputs-outputs/2100_noChange_steady_state_initial.mat'],'h1','H1','b1','c1','U1','gl1','x1','DFW1','Fgl1','XGL1','XCF1');
             disp('2100_noChange_steady_state_initial saved');
         % 2) SMB_enhanced
         elseif SMB_enhance==1 && delta_TF==0
