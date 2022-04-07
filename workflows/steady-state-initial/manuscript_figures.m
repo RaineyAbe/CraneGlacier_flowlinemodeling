@@ -1012,7 +1012,7 @@ end
 
 close all;
 
-save_figures = 0;    % = 1 to save figure
+save_figures = 1;    % = 1 to save figure
 fontsize = 16;      % font size
 fontname = 'Arial'; % font name
 linewidth = 2;      % line width
@@ -1020,12 +1020,12 @@ markersize = 10;    % marker size
 
 % load sensitivity test no change variables
 % load observations/parameters
-load([homepath,'inputs-outputs/flowlineModelInitialization.mat'])
+load([homepath,'inputs-outputs/modelInitialization_preCollapse.mat'])
 load([homepath,'inputs-outputs/2100_noChange_steady_state_initial.mat']);
 % modeled 2018 conditions
 H18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).H;
 U18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).U;
-c18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).gl;
+c18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).c;
 h18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).h;
 hb18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).b;
 x18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).x;
@@ -1047,38 +1047,39 @@ clear dt t_start t_end
     % (km^3/a)*(10^9 m^3/km^3)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton) = Gt/a
     F_obs(:,2) = F_obs(:,2).*10^9.*917.*10^-3.*10^-9; % Gt/a
     % load observed speed, width, and modeled thickness
-%     os.years = [2009 2010 2011 2014 2016 2017];
-%     os.gl = 134;%[134 140 130 141 153 151]; % index
-%     os.W = W0(os.gl); % m
-%     os.h = 67;%[h(1).surface(os.gl(1)) h(2).surface(os.gl(2)) h(3).surface(os.gl(3)) h(14).surface(os.gl(4)) h(28).surface(os.gl(5)) h(35).surface(os.gl(6))];
-%     os.H = (1000/(1000-917)).*os.h; % flotation thickness (m)
-%     U = load('centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg;
-%     os.U = [U(5).speed(os.gl) U(8).speed(os.gl) U(11).speed(os.gl) U(16).speed(os.gl) U(18).speed(os.gl) U(19).speed(os.gl)];
-%     % calculate F_obs, convert to Gt/a, and append to vector array
-%     % (m^3/s)*(3.1536e7 s/a)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton)
-%     % use the mean of a rectangular and ellipsoidal bed
-%     F_obs = [F_obs; os.years' (os.W.*os.H.*os.U.*3.1536e7*917.*10^-3.*10^-9*pi*1/4)']; % Gt/a;
+    os.years = [2009 2010 2011 2014 2016 2017];
+    os.gl = 134;%[134 140 130 141 153 151]; % index
+    os.W = W0(os.gl); % m
+    os.h = 67;%[h(1).surface(os.gl(1)) h(2).surface(os.gl(2)) h(3).surface(os.gl(3)) h(14).surface(os.gl(4)) h(28).surface(os.gl(5)) h(35).surface(os.gl(6))];
+    os.H = (1000/(1000-917)).*os.h; % flotation thickness (m)
+    U = load([homepath,'inputs-outputs/centerlineSpeedsWidthAveraged_2007-2018.mat']).U_widthavg;
+    os.U = [U(5).speed(os.gl) U(8).speed(os.gl) U(11).speed(os.gl) U(16).speed(os.gl) U(18).speed(os.gl) U(19).speed(os.gl)];
+    % calculate F_obs, convert to Gt/a, and append to vector array
+    % (m^3/s)*(3.1536e7 s/a)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton)
+    % use the mean of a rectangular and ellipsoidal bed
+    F_obs = [F_obs; os.years' (os.W.*os.H.*os.U.*3.1536e7*917.*10^-3.*10^-9*pi*1/4)']; % Gt/a;
 
     % model thickness in 2018 using surface and bed
     % calculate the thickness required to remain grounded at each grid cell
-%     rho_sw = 1000; % density of sea water (kg/m^3)
-%     rho_i = 917; % density of ice (kg/m^3)
-%     Hf = -(rho_sw./rho_i).*hb0; % flotation thickness (m)
-%     h_2018 = interp1(h(36).x,h(36).surface,x0);
-%     H_2018 = h_2018 - hb0;
-%     % find the location of the grounding line and use a floating
-%     % geometry from the grounding linU_widthavge to the calving front
-%     if length(Hf)>=find(Hf-H_2018>0,1,'first')+1
-%         xgl = interp1(Hf(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1)...
-%             -H_2018(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1),...
-%             x0(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1),0,'linear','extrap'); % (m along centerline)
-%     else
-%         xgl = x0(find(Hf-H_2018>0,1,'first')-1);
-%     end
-%     gl_2018 = dsearchn(x0',xgl);
-%     h_2018(gl_2018+1:c0) = (1-rho_i/rho_sw).*H_2018(gl_2018+1:c0); %adjust the surface elevation of ungrounded ice to account for buoyancy
-%     H_2018(h_2018<0)=0-hb0(h_2018<0); h_2018(h_2018<0)=0; % surface cannot go below sea level
-%     h_2018(h_2018-H_2018<hb0) = hb0(h_2018-H_2018<hb0)+H_2018(h_2018-H_2018<hb0); % thickness cannot go beneath bed elevation
+    rho_sw = 1000; % density of sea water (kg/m^3)
+    rho_i = 917; % density of ice (kg/m^3)
+    Hf = -(rho_sw./rho_i).*b0; % flotation thickness (m)
+    h = load([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat']).h;
+    h_2018 = interp1(cl.xi,h(13).h_centerline,x0);
+    H_2018 = h_2018 - hb0;
+    % find the location of the grounding line and use a floating
+    % geometry from the grounding linU_widthavge to the calving front
+    if length(Hf)>=find(Hf-H_2018>0,1,'first')+1
+        xgl = interp1(Hf(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1)...
+            -H_2018(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1),...
+            x0(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1),0,'linear','extrap'); % (m along centerline)
+    else
+        xgl = x0(find(Hf-H_2018>0,1,'first')-1);
+    end
+    gl_2018 = dsearchn(x0',xgl);
+    h_2018(gl_2018+1:c0) = (1-rho_i/rho_sw).*H_2018(gl_2018+1:c0); %adjust the surface elevation of ungrounded ice to account for buoyancy
+    H_2018(h_2018<0)=0-hb0(h_2018<0); h_2018(h_2018<0)=0; % surface cannot go below sea level
+    h_2018(h_2018-H_2018<hb0) = hb0(h_2018-H_2018<hb0)+H_2018(h_2018-H_2018<hb0); % thickness cannot go beneath bed elevation
     
     % Calving front positions
     termX = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
@@ -1238,7 +1239,7 @@ while loop==1
         set(get(cb6,'label'),'String','\DeltaSMB_{max,enh} [m a^{-1}] & \DeltaF_T [^oC]','fontsize',fontsize-3);        
     axDD=axes('position',[0.58 0.36 0.38 0.25]); hold on; grid on; % speed
         set(gca,'fontsize',fontsize,'YTick',0:500:1600,'XTickLabel',[]);        
-        xlim([25 95]); ylim([200 1600]);
+        xlim([25 95]); ylim([0 1050]);
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
@@ -1257,7 +1258,8 @@ while loop==1
     ax10 = axes('position',[0.08 0.57 0.27 0.39]); hold on; % SMB
         set(gca,'fontsize',fontsize); grid on;
         xlabel('SMB_{mean} [m a^{-1}]'); ylabel('Q_{gl} [Gt a^{-1}]');
-        xlim([smb_mean(end)*3.1536e7-0.5 smb_mean(1)*3.1536e7+0.5]); ylim([0.8 1.8]);
+        xlim([smb_mean(end)*3.1536e7-0.5 smb_mean(1)*3.1536e7+0.5]); 
+        ylim([0.5 1.5]);
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
@@ -1269,7 +1271,8 @@ while loop==1
     ax11 = axes('position',[0.39 0.57 0.27 0.39]); hold on; % F_T
         set(gca,'fontsize',fontsize); grid on; 
         xlabel('F_T [^oC]');  
-        xlim([0.1 1.3]); ylim([0.8 1.8]); 
+        xlim([0.1 1.3]); 
+        ylim([0.5 1.5]); 
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
@@ -1281,7 +1284,8 @@ while loop==1
     ax12 = axes('position',[0.7 0.57 0.27 0.39]); hold on; % d_fw
         set(gca,'fontsize',fontsize); grid on;
         xlabel('d_{fw} [m]'); 
-        xlim([DFW0-0.5 DFW0+10.5]); ylim([0.8 1.8]);
+        xlim([DFW0-0.5 DFW0+10.5]);
+        ylim([0.5 1.5]);
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
@@ -1293,7 +1297,8 @@ while loop==1
     ax13 = axes('position',[0.17 0.1 0.3 0.35]); hold on; 
         set(gca,'fontsize',fontsize); grid on; 
         xlabel('SMB_{mean} [m a^{-1}]'); ylabel('Q_{gl} [Gt a^{-1}]'); 
-        xlim([smb_mean(end)*3.1536e7-0.5 smb_mean(1)*3.1536e7+0.5]); ylim([0.8 1.8]); 
+        xlim([smb_mean(end)*3.1536e7-0.5 smb_mean(1)*3.1536e7+0.5]); 
+        ylim([0.5 1.5]); 
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
@@ -1305,7 +1310,8 @@ while loop==1
     ax14 = axes('position',[0.58 0.1 0.3 0.35]); hold on;
         set(gca,'fontsize',fontsize); grid on;
         xlabel('\DeltaF_T [^oC]');
-        xlim([-0.1 1.1]); ylim([0.8 1.8]);
+        xlim([-0.1 1.1]); 
+        ylim([0.5 1.5]);
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
@@ -1319,7 +1325,8 @@ while loop==1
     set(gcf,'Position',[-1300 200 1000 800]); 
     ax16 = axes('position',[0.06 0.57 0.7 0.4]); hold on;
         set(gca,'fontsize',fontsize); grid on;
-        xlim([1995 2100]); ylim([25 95]);
+        xlim([1995 2100]); 
+        ylim([25 95]);
         ylabel('Calving Front Position [km]');
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
@@ -1716,10 +1723,10 @@ end
 % save figures 
 if save_figures
     cd([homepath,'figures/']);
-    figure(5); exportgraphics(gcf,'sensitivityTests_geom+speed_independent.png','Resolution',600);
-    figure(6); exportgraphics(gcf,'sensitivityTests_geom+speed_enhanced.png','Resolution',600);
-    figure(7); exportgraphics(gcf,'sensitivityTests_discharge.png','Resolution',600);
-    figure(8); exportgraphics(gcf,'sensitivityTests_QglXcf.png','Resolution',600);
+    figure(5); exportgraphics(gcf,[homepath,'figures/sensitivityTests_steady_state_initial_geom+speed_independent.png'],'Resolution',600);
+    figure(6); exportgraphics(gcf,[homepath,'figures/sensitivityTests_steady_state_initial_geom+speed_enhanced.png'],'Resolution',600);
+    figure(7); exportgraphics(gcf,[homepath,'figures/sensitivityTests_steady_state_initial_discharge.png'],'Resolution',600);
+    figure(8); exportgraphics(gcf,[homepath,'figures/sensitivityTests_steady_state_initial_QglXcf.png'],'Resolution',600);
     disp('figures 5-8 saved.');
 end
 
