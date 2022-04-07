@@ -952,60 +952,125 @@ end
 
 %% 2018 Model Misfits
     
-% Note: Must rerun first section before running this section each time
-
-save_figure = 1;       % = 1 to save figure
-save_geometry = 0;     % = 1 to save modeled 2018 geometry
-plotTimeSteps = 1;     % = 1 to plot geometry, speed, cf/gl positions every decade
-plotMisfits = 1;       % = 1 to plot misfit with 2018 conditions
-plotClimateParams = 0; % = 1 to plot climate parameters
-SMB_enhance = 0;       % = 1 to increase SMR due to decreased SMB    
+save_figure = 0;       % = 1 to save figure
+fontsize = 18;         % font size for figure text
 
 % Load observed conditions
-% ice surface
-h_obs = load('surfaceElevationObs.mat').h;
-% terminus position 
-clear term termx_obs termDate_obs term_obs
-term = load('terminusPositions_2002-2019.mat').term;
-for i=1:length(term)
-    termx_obs(i) = term(i).x;
-    termDate_obs(i) = term(i).decidate;
-end
-% fit a quadratic function to the terminus positions to smooth seasonal variations
-termx_obs = feval(fit(termDate_obs',termx_obs','poly2'),termDate_obs');
-term_obs = interp1(termDate_obs',termx_obs,2009:2017);
-clear term 
 % ice speed
-U_obsi = load('centerlineSpeedsWidthAveraged_2007-2018.mat').U_widthavg;
-u = [6 8 9 14 15:20]; % indices of speeds to use annually (2009-2017)
-for i=1:length(u)
-    U_obs(i).U = U_obsi(u(i)).speed;
-    U_obs(i).date = U_obsi(u(i)).date;
+U_obs_2018 = load([homepath,'inputs-outputs/surfaceSpeeds_widthAveraged_1994-2018.mat']).U(21).U_width_ave;
+% estimate observed thickness in 2018 using surface and bed
+% calculate the thickness required to remain grounded at each grid cell
+rho_sw = 1000; % density of sea water (kg/m^3)
+rho_i = 917; % density of ice (kg/m^3)
+Hf = -(rho_sw./rho_i).*b0; % flotation thickness (m)
+h = load([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat']).h;
+h_obs_2018 = interp1(cl.xi,h(13).h_centerline,x0);
+H_obs_2018 = h_obs_2018 - hb0;
+% find the location of the grounding line and use a floating
+% geometry from the grounding linU_widthavge to the calving front
+if length(Hf)>=find(Hf-H_obs_2018>0,1,'first')+1
+    xgl = interp1(Hf(find(Hf-H_obs_2018>0,1,'first')-1:find(Hf-H_obs_2018>0,1,'first')+1)...
+        -H_obs_2018(find(Hf-H_obs_2018>0,1,'first')-1:find(Hf-H_obs_2018>0,1,'first')+1),...
+        x0(find(Hf-H_obs_2018>0,1,'first')-1:find(Hf-H_obs_2018>0,1,'first')+1),0,'linear','extrap'); % (m along centerline)
+else
+    xgl = x0(find(Hf-H_obs_2018>0,1,'first')-1);
 end
-clear U_obsi u 
+gl_obs_2018 = dsearchn(x0',xgl);
+h_obs_2018(gl_obs_2018+1:c0) = (1-rho_i/rho_sw).*H_obs_2018(gl_obs_2018+1:c0); %adjust the surface elevation of ungrounded ice to account for buoyancy
+H_obs_2018(h_obs_2018<0)=0-hb0(h_obs_2018<0); h_obs_2018(h_obs_2018<0)=0; % surface cannot go below sea level
+h_obs_2018(h_obs_2018-H_obs_2018<hb0) = hb0(h_obs_2018-H_obs_2018<hb0)+H_obs_2018(h_obs_2018-H_obs_2018<hb0); % thickness cannot go beneath bed elevation
+% terminus position
+termX = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
+termY = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
+termx = cl.xi(dsearchn([cl.Xi cl.Yi],[termX' termY']));
+termdate = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
+xcf_obs_2018 = termx(39);
+c_obs_2018 = dsearchn(cl.xi',xcf_obs_2018);
+clear termX termY termx termdate
 
-% define time stepping (s)
-dt = 0.01*3.1536e7;
-t_start = 0*3.1536e7;
-t_end = 9*3.1536e7;
+% load modeled 2018 conditions
+H_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).H;
+U_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).U;
+c_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).c;
+h_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).h;
+b_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).b;
+x_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).x;
 
-% run the flowline model
-%beta0 = load('flowlineModelInitialization.mat').beta0;
-load('flowlineModelInitialization.mat', 'x0','beta0','DFW0');
-[x,U,h,hb,H,gl,c,xcf,dUdx,Fgl,XCF,XGL,~] = flowlineModel(homepath,plotTimeSteps,plotMisfits,plotClimateParams,dt,t_start,t_end,beta0,DFW0,0,0,0,SMB_enhance);
+% plot
+figure(2); clf;
+set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0.8 0.1 0.1]]);
+ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
+    set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
+    xlim([0 52]); ylabel('Misfit [m]'); 
+    % surface elevation misfit
+    plot(x_mod_2018/10^3,h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'-','linewidth',2,...
+        'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    % mean surface elevation misfit
+    plot(x_mod_2018/10^3,mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018), 'omitnan')*ones(1,length(x_mod_2018)),...
+        '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    % text for mean misfit
+    text(max(get(gca,'XLim')),mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'omitnan'),...
+        sprintf('%.1f',mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018))),'color',[0.8 0.1 0.1],...
+        'fontsize',fontsize-2);
+    % (a)
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+%                 ' a ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');  
+    ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
+        set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
+        xlim([0 52]); ylabel('Misfit [m a^{-1}]');
+        % surface speed misfit
+        plot(x_mod_2018/10^3,(U_mod_2018-interp1(cl.xi,U_obs_2018,x_mod_2018)).*3.1536e7,'-','linewidth',2,...
+            'color',[0.8 0.1 0.1],'HandleVisibility','off');
+        % mean surface speed misfit
+        plot(x_mod_2018/10^3,mean(U_mod_2018-interp1(cl.xi,U_obs_2018,x_mod_2018),'omitnan')*3.1536e7*ones(1,length(x_mod_2018)),...
+            '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+        % text for mean misfit
+        text(max(get(gca,'XLim')),mean(U_mod_2018-interp1(cl.xi,U_obs_2018,x_mod_2018),'omitnan')*3.1536e7,...
+            sprintf('%.1f',mean(U_mod_2018-interp1(cl.xi,U_obs_2018,x_mod_2018),'omitnan')*3.1536e7),'color',[0.8 0.1 0.1],...
+            'fontsize',fontsize-2);
+        % (b)
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+%                 ' b ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold'); 
+    set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0 0.4 0.8]]);
+    ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; 
+        legend('Location','north'); 
+        set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
+        xlim([0 52]); 
+        xlabel('Distance along centerline [km]'); 
+        ylabel('Elevation [m]'); 
+        plot(x_mod_2018/10^3,h_mod_2018,'-k','linewidth',2,'displayname','h_{mod}');
+        plot(cl.xi(1:150)/10^3,h_obs_2018(1:150),'--k','linewidth',2,'displayname','h_{obs}');
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+%                 ' c ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');     
+        %yyaxis right; set(ax3,'YTick',[],'YTickLabel',[]);
+    ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; 
+        legend('Location','north');
+        set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
+        xlim([0 52]); 
+        xlabel('Distance along centerline [km]'); 
+%         yyaxis left; 
+        ylabel('Speed [m a^{-1}]'); ylim([100 850]);
+        plot(x_mod_2018/10^3,U_mod_2018*3.1536e7,'-k','linewidth',2,'displayname','h_{mod}');
+        plot(cl.xi(1:150)/10^3,U_obs_2018(1:150)*3.1536e7,'--k','linewidth',2,'displayname','h_{obs}');
+%             text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%                     (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
+%                     ' d ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');
+%         yyaxis right; ylabel('Basal Roughness Factor [s^{1/m} m^{-1/m}]'); ylim([min(beta0)-0.2 max(beta)+0.2]);
+%             plot(x/10^3,movmean(beta,5),'-','linewidth',2,'color',[0 0.4 0.8],'displayname','\beta');
+    
+    % display grounding line misfit
+%     disp('Mean misfits at the grounding line:');
+%     disp(['    Speed: ',num2str((U(gl)-interp1(cl.x,U_obs(10).U,x(gl)))*3.1536e7),' m/yr']);
+%     disp(['    Elevation: ',num2str((h(gl)-interp1(cl.x,h_obs(36).surface,x(gl)))),' m']);
 
 % save figure
 if save_figure
     cd([homepath,'figures/']);
-    exportgraphics(gcf,'misfits2018.png','Resolution',600);
+    exportgraphics(gcf,'misfits2018_steady_state_initial.png','Resolution',600);
     disp('figure 2 saved');
-end
-
-% save geometry
-if save_geometry
-    cd([homepath,'inputs-outputs/']);
-    save('2018_modeledConditions.mat','x','U','h','hb','H','gl','c');
-    disp('final geometry saved.');
 end
 
 %% Sensitivity Tests
@@ -1059,7 +1124,7 @@ clear dt t_start t_end
     % use the mean of a rectangular and ellipsoidal bed
     F_obs = [F_obs; os.years' (os.W.*os.H.*os.U.*3.1536e7*917.*10^-3.*10^-9*pi*1/4)']; % Gt/a;
 
-    % model thickness in 2018 using surface and bed
+    % estimate observed thickness in 2018 using surface and bed
     % calculate the thickness required to remain grounded at each grid cell
     rho_sw = 1000; % density of sea water (kg/m^3)
     rho_i = 917; % density of ice (kg/m^3)
@@ -1081,7 +1146,7 @@ clear dt t_start t_end
     H_2018(h_2018<0)=0-hb0(h_2018<0); h_2018(h_2018<0)=0; % surface cannot go below sea level
     h_2018(h_2018-H_2018<hb0) = hb0(h_2018-H_2018<hb0)+H_2018(h_2018-H_2018<hb0); % thickness cannot go beneath bed elevation
     
-    % Calving front positions
+    % observed terminus positions
     termX = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
     termY = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
     termx = cl.xi(dsearchn([cl.Xi cl.Yi],[termX' termY']));

@@ -103,7 +103,7 @@ delta_TF0 = 0:0.1:1; % ^oC change in TF
 smb_mean = NaN*zeros(1,length(delta_SMB0));
 dSMR_max = 0; 
 
-for j=1:length(delta_SMB0)
+for j=1%:length(delta_SMB0)
     
     % Switch scenarios on and off
     delta_SMB = 0; %delta_SMB0(j);
@@ -120,8 +120,9 @@ for j=1:length(delta_SMB0)
     % -----initialize parameters-----
     x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; b=b0; H=H0; 
     DFW=DFW0; dx=dx0; SMB=SMB0; SMR=SMR0; c=c0;
-    beta0 = interp1([0 x0(end)], [1 2], x0);  
-    sigma_b = 800e3; 
+    beta0 = interp1([0 x0(end)], [0.5 3], x0); 
+    A0=A0/2;
+    sigma_b = 1000e3; 
 
     col = parula(50e3); % color scheme for plots
 
@@ -635,7 +636,7 @@ for j=1:length(delta_SMB0)
     %       crev_s = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*(DFW));
     %   - At xcf, crev_s = h(c). Substitute, rearrange to solve for DFW:
     DFW = (rho_i/rho_fw) * (h(c) - (Rxx(c)/(rho_i*g))); % fresh water depth in crevasses [m]
-
+    
     % ----------B. CALVING FRONT EVOLUTION----------
 
     disp('Simulating post-ice shelf collapse conditions');
@@ -654,12 +655,12 @@ for j=1:length(delta_SMB0)
     % -----run flowline model
     for i=1:length(t)
 
-        % decrease DFW every 1 year until ~2019
-        if i > 1 && t(i)/3.1536e7 > 0.1
-            if DFW>6
-                DFW = DFW-0.00078;
+        % decrease DFW 
+        if t(i)/3.1536e7 > 0.01
+            if DFW>12
+                DFW = DFW-0.004;
             else
-                DFW=6;
+                DFW=12;
             end
         end
         % increase DFW linearly at each time increment to reach delta_DFW by 2100
@@ -671,7 +672,7 @@ for j=1:length(delta_SMB0)
         DFW=DFW+delta_DFWi;
         
         % add backstress after year 5 to account for sea ice occurence
-%         if t(i)/3.1536e7 > 5; sigma_b = 20e3; end
+        if t(i)/3.1536e7 > 4; sigma_b = 50e3; end
 %         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 5
 %             % increase linearly until reaching 50 kPa in year 7
 %             sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
@@ -774,6 +775,10 @@ for j=1:length(delta_SMB0)
                 % plot observed terminus positions
                 figure(1); 
                 plot(ax3, term.x/10^3, term.date-term.date(1), '.k', 'markersize', 20, 'displayname','observed');
+                % grounding line discharge
+%                 figure(6); clf; 
+%                 axQ = gca; hold on; 
+%                 plot(t(i)/3.1536e7, Fgl(i), '.', 'markersize', 20, 'color', col(i,:));
             else
                 figure(1);
                 % glacier geometry
@@ -789,6 +794,9 @@ for j=1:length(delta_SMB0)
                 plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
                 plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
                 title(['sigma_b = ',num2str(round(sigma_b/1000)),' kPa']);
+                % grounding line discharge
+%                 figure(6);
+%                 plot(axQ, t(i)/3.1536e7, Fgl(i), '.', 'markersize', 20, 'color', col(i,:));
             end
         end
 
@@ -878,6 +886,7 @@ for j=1:length(delta_SMB0)
                 xlabel('Year'); ylabel('[m]');
                 plot(axD, t(i)./3.1536e7, DFW, '.', 'Color', col(i,:), 'markersize', 20, 'displayname', '2022');
             else
+                figure(2);
                 plot(axA, x./10^3, SMB, 'color', col(i,:), 'linewidth', 2);
                 plot(axB, t(i)/3.1536e7, TF, '.', 'Color', col(i,:), 'markersize', 20); 
                 plot(axC, x/10^3, SMR, 'color', col(i,:), 'linewidth', 2);
