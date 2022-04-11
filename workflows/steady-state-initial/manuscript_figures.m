@@ -21,21 +21,22 @@ addpath([homepath,'functions/']);
 addpath([homepath,'functions/gridLegend_v1.4/']);
 addpath([homepath,'functions/cmocean_v2.0/cmocean/']);
 addpath([homepath,'inputs-outputs/']);
-addpath([homepath,'functions/OIBPicking/functions/']);
+% addpath([homepath,'functions/OIBPicking/functions/']);
 addpath([homepath,'data/bed_elevations/OIB_L1B']);
 
 % Load Crane centerline
 cl.Xi = load('Crane_centerline.mat').x; cl.Yi = load('Crane_centerline.mat').y;
-
 % Define x as distance along centerline
 cl.xi = zeros(1,length(cl.Xi));
 for i=2:(length(cl.Xi))
     cl.xi(i)=sqrt((cl.Xi(i)-cl.Xi(i-1))^2+(cl.Yi(i)-cl.Yi(i-1))^2)+cl.xi(i-1);
 end
-
 % Regrid the centerline to 300m equal spacing between points
 cl.x = 0:300:cl.xi(end);
 cl.X = interp1(cl.xi,cl.Xi,cl.x); cl.Y = interp1(cl.xi,cl.Yi,cl.x);
+
+% load model initialization file
+load([homepath,'inputs-outputs/modelInitialization_preCollapse.mat']);
         
 %% Map of the study area
 
@@ -965,7 +966,8 @@ rho_i = 917; % density of ice (kg/m^3)
 Hf = -(rho_sw./rho_i).*b0; % flotation thickness (m)
 h = load([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat']).h;
 h_obs_2018 = interp1(cl.xi,h(13).h_centerline,x0);
-H_obs_2018 = h_obs_2018 - hb0;
+% thickness
+H_obs_2018 = h_obs_2018 - b0;
 % find the location of the grounding line and use a floating
 % geometry from the grounding linU_widthavge to the calving front
 if length(Hf)>=find(Hf-H_obs_2018>0,1,'first')+1
@@ -977,8 +979,8 @@ else
 end
 gl_obs_2018 = dsearchn(x0',xgl);
 h_obs_2018(gl_obs_2018+1:c0) = (1-rho_i/rho_sw).*H_obs_2018(gl_obs_2018+1:c0); %adjust the surface elevation of ungrounded ice to account for buoyancy
-H_obs_2018(h_obs_2018<0)=0-hb0(h_obs_2018<0); h_obs_2018(h_obs_2018<0)=0; % surface cannot go below sea level
-h_obs_2018(h_obs_2018-H_obs_2018<hb0) = hb0(h_obs_2018-H_obs_2018<hb0)+H_obs_2018(h_obs_2018-H_obs_2018<hb0); % thickness cannot go beneath bed elevation
+H_obs_2018(h_obs_2018<0)=0-b0(h_obs_2018<0); h_obs_2018(h_obs_2018<0)=0; % surface cannot go below sea level
+h_obs_2018(h_obs_2018-H_obs_2018<b0) = b0(h_obs_2018-H_obs_2018<b0)+H_obs_2018(h_obs_2018-H_obs_2018<b0); % thickness cannot go beneath bed elevation
 % terminus position
 termX = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
 termY = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
@@ -1006,11 +1008,11 @@ ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
     plot(x_mod_2018/10^3,h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'-','linewidth',2,...
         'color',[0.8 0.1 0.1],'HandleVisibility','off');
     % mean surface elevation misfit
-    plot(x_mod_2018/10^3,mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018), 'omitnan')*ones(1,length(x_mod_2018)),...
+    plot(x_mod_2018/10^3,mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'omitnan')*ones(1,length(x_mod_2018)),...
         '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
     % text for mean misfit
     text(max(get(gca,'XLim')),mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'omitnan'),...
-        sprintf('%.1f',mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018))),'color',[0.8 0.1 0.1],...
+        sprintf('%.1f',mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'omitnan')),'color',[0.8 0.1 0.1],...
         'fontsize',fontsize-2);
     % (a)
 %         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
@@ -1084,8 +1086,7 @@ linewidth = 2;      % line width
 markersize = 10;    % marker size
 
 % load sensitivity test no change variables
-% load observations/parameters
-load([homepath,'inputs-outputs/modelInitialization_preCollapse.mat'])
+% unpertured scenario
 load([homepath,'inputs-outputs/2100_noChange_steady_state_initial.mat']);
 % modeled 2018 conditions
 H18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).H;

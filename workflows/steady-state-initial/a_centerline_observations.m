@@ -512,12 +512,12 @@ set(gca,'linewidth',2,'fontsize',14); grid on;
 plot(x/10^3,b,'--k','linewidth',2,'DisplayName','b_{cl}');
 plot(x/10^3,b_adj,'-k','linewidth',2,'DisplayName','b_{adj}');
 plot(x/10^3,h_pc,'-b','linewidth',2,'DisplayName','h');
-plot(x/10^3,b_som.cl,'-m','linewidth',2,'DisplayName','Huss and Farinotti (2014)');
+plot(x/10^3,SOM.b_cl,'-m','linewidth',2,'DisplayName','Huss and Farinotti (2014)');
 
 % -----save-----
 % bed variable
-save([homepath,'inputs-outputs/bedElevation_widthAveraged.mat'],'b_adj', 'x');
-disp('b_adj saved to file');
-% figure
-saveas(figure(5), [homepath,'workflows/steady-state-initial/figures/bedElevation_widthAveraged.png'], 'png');
-disp('figure 5 saved');
+% save([homepath,'inputs-outputs/bedElevation_widthAveraged.mat'],'b_adj', 'x');
+% disp('b_adj saved to file');
+% % figure
+% saveas(figure(5), [homepath,'figures/bedElevation_widthAveraged.png'], 'png');
+% disp('figure 5 saved');

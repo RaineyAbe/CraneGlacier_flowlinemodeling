@@ -190,7 +190,7 @@ H = -rho_sw/(rho_i-rho_sw) * h0(c0:f0);
 % lateral resistance
 n = 3;
 Rxy = 2*H./W0(c0:f0) .* nthroot(5.*U0(c0:f0) ./ (A0(c0:f0).*W0(c0:f0)), n);
-Rxy_sum = sum(Rxy*dx) / (x0(f0) - x0(c0)); % Pa
+Rxy_sum = sum(Rxy); % Pa
 % longitudinal stress
 dUdx(c0) = (U0(c0+1)-U0(c0))./(x0(c0+1)-x0(c0)); % forward difference
 dUdx(c0+1:f0-1) = (U0(c0+2:f0)-U0(c0:f0-2))./(x0(c0+2:f0)-x0(c0:f0-2)); % central difference
@@ -198,7 +198,7 @@ dUdx(f0) = (U0(f0)-U0(f0-1))/(x0(f0)-x0(f0-1)); % backward difference at c
 vm = (A0(c0:f0).^(-1/n)).*(abs(dUdx(c0:f0))).^((1-n)/n);
 Rxx = (-2/(dx^2)).*(H.*vm);
 Rxx(1)=Rxx(2); % remove infinite value
-Rxx_sum = sum(Rxx*dx) / (x0(f0) - x0(c0)); % Pa
+Rxx_sum = sum(Rxx); % Pa
 disp(['Sum Rxy = ',num2str(Rxy_sum/10^3),' kPa']);
 disp(['Sum Rxx = ',num2str(Rxx_sum/10^3),' kPa']);
 

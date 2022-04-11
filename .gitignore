@@ -15,3 +15,6 @@ workflows/dynamic-initial-UNTESTED/
 # temporary files
 *.asv
 *.ipynbcheckpoints
+
+# Files for running on R2
+Matlab-R2

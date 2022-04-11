@@ -15,7 +15,7 @@ clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
 plotTimeSteps = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
-plotClimateParams = 1; % = 1 to plot SMB, DFW, TF over time
+plotClimateParams = 0; % = 1 to plot SMB, DFW, TF over time
 saveFinal = 0; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
@@ -30,7 +30,7 @@ load([homepath,'inputs-outputs/modelInitialization_preCollapse.mat']);
 SMR_mean_fit = load('LarsenC_MeanMeltRate.mat').mr_mean_fit;
 
 % -----time stepping [s]-----
-dt = 0.001*3.1536e7;
+dt = 0.0001*3.1536e7;
 
 % -----densities and g-----
 rho_i = 917; % ice density (kg m^-3)
@@ -120,7 +120,7 @@ for j=1%:length(delta_SMB0)
     % -----initialize parameters-----
     x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; b=b0; H=H0; 
     DFW=DFW0; dx=dx0; SMB=SMB0; SMR=SMR0; c=c0;
-    beta0 = interp1([0 x0(end)], [0.5 3], x0); 
+    beta0 = interp1([0 x0(end)], [0.5 2], x0); 
     A0=A0/2;
     sigma_b = 1000e3; 
 
@@ -314,7 +314,7 @@ for j=1%:length(delta_SMB0)
 
         % -----stop model if stead-state conditions reached
         % (change in U at each point is less than set threshold) 
-        if all(abs(H-Hn) < 0.00002*abs(H))
+        if all(abs(H-Hn) < 1e-5*abs(H))
             disp('    steady-state conditions achieved'); 
             disp('    continuing...');             
             break;
@@ -600,35 +600,6 @@ for j=1%:length(delta_SMB0)
         i=i+1; % increase counter
     end
 
-    % -----plot surface crevasses
-%     % resistive stress (Pa)
-%     Rxx = 2*nthroot(dUdx./(E.*A),n); 
-%     % height above buoyancy (m)
-%     Hab = H+rho_sw/rho_i*(b); 
-%     % surface crevasse penetration depth (m)
-%     crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*(DFW)); 
-%     % basal crevasse penetration depth (m)
-%     crev_b = rho_i/(rho_sw-rho_i).*(Rxx./(rho_i*g)-Hab);     
-%     % plot
-%     figure(10); clf
-%     subplot(1,2,1); hold on; 
-%     set(gca,'fontsize',12,'linewidth',1);
-%     legend('location','southeast');
-%     grid on;
-%     plot(x/10^3, h,'-b','linewidth',2,'displayname','h');
-%     plot(x/10^3, crev,'-m','linewidth',2,'displayname','crev_s');
-%     plot(x/10^3, crev_b,'-c','linewidth',2,'displayname','crev_b');
-%     xlabel('distance along centerline [km]');
-%     ylabel('elevation [m]');
-%     subplot(1,2,2); hold on; 
-%     set(gca,'fontsize',12,'linewidth',1);
-%     legend('location','southwest');
-%     grid on;
-%     plot(x/10^3, h-crev_b,'-c','linewidth',2,'displayname','h - crev_b');
-%     plot(x/10^3, h-crev,'-m','linewidth',2,'displayname','h - crev_s');
-%     xlabel('distance along centerline [km]');
-%     ylabel('elevation [m]');
-
     % -----solve for calving criteria (DFW)
     % Solve for DFW that satisfies calving criterion at 2002 calving front 
     % position using current steady-state conditions. 
@@ -655,14 +626,15 @@ for j=1%:length(delta_SMB0)
     % -----run flowline model
     for i=1:length(t)
 
-        % decrease DFW 
-        if t(i)/3.1536e7 > 0.01
-            if DFW>12
-                DFW = DFW-0.004;
-            else
-                DFW=12;
-            end
-        end
+%         % decrease DFW 
+%         if t(i)/3.1536e7 > 0.01
+%             if DFW>12
+%                 DFW = DFW-0.002;
+%             else
+%                 DFW=12;
+%             end
+%         end
+        
         % increase DFW linearly at each time increment to reach delta_DFW by 2100
         if t(i)/3.1536e7 > 16
             delta_DFWi = delta_DFW/(2100-2018)*t(i)/3.1536e7; % total increase in DFW from 2022
@@ -770,7 +742,7 @@ for j=1%:length(delta_SMB0)
 
         % -----plot geometry, speed, & grounding line and calving front positions
         col = parula(length(t)); % color scheme for plots
-        if plotTimeSteps && mod(t(i),dt*1000)==0 % display every dt*1000
+        if plotTimeSteps && mod(t(i), dt*1000)==0 %&& mod(t(i),t(end)/98)==0 % display every 1 year
             if i==1
                 % plot observed terminus positions
                 figure(1); 
@@ -852,7 +824,7 @@ for j=1%:length(delta_SMB0)
                 SMR(gl+1:c) = (SMR0-delta_mdot)/(SMR_mean_fit.a+1)*feval(SMR_mean_fit,x(gl+1:c)-x(gl));
             end
         end 
-        if plotClimateParams && mod(t(i),dt*1000)==0 % display every dt*1000
+        if plotClimateParams && mod(t(i),t(end)/98)==0 % display every 1 year
             if i==1
                 figure(2); clf
                 drawnow
