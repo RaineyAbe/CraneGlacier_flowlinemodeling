@@ -123,8 +123,8 @@ for j=1%:length(delta_SMB0)
     x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; b=b0; H=H0; 
     DFW=DFW0; dx=dx0; SMB=SMB0; SMR=SMR0; c=c0;
     beta0 = interp1([0 x0(end)], [0.5 2], x0); 
-%     A0=A0/2;
-    sigma_b = 900e3; 
+    A0=A0/2;
+    sigma_b = 1000e3; 
 
     col = parula(50e3); % color scheme for plots
 
@@ -254,8 +254,8 @@ for j=1%:length(delta_SMB0)
                 % ice speed
                 plot(ax2,x(1:c)/10^3,U(1:c).*3.1536e7,'-','Color',col(i,:),'linewidth',2,'DisplayName',num2str(round(t(i)./3.1536e7)+2009));
                 % calving front & grounding line positions
-                plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
-                plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
+                plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
+                plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
             end    
         end
 
@@ -427,8 +427,8 @@ for j=1%:length(delta_SMB0)
                 set(gca,'FontSize',12,'linewidth',2);
                 xlabel('distance along centerline [km]'); 
                 ylabel('year');
-                plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
-                plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;            
+                plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
+                plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;            
                 % Rxx
                 figure(3); clf; 
                 ax4 = gca;
@@ -449,8 +449,8 @@ for j=1%:length(delta_SMB0)
                 % ice speed
                 plot(ax2,x(1:c)/10^3,U(1:c).*3.1536e7,'-','Color',col(i,:),'linewidth',2,'DisplayName',num2str(round(t(i)./3.1536e7)+2009));
                 % calving front & grounding line positions
-                plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); 
-                plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); 
+                plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); 
+                plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); 
                 % Rxx
                 plot(ax4, x/10^3, Rxx/10^3, 'Color',col(i,:),'markersize',10,'linewidth',2);
             end    
@@ -473,8 +473,8 @@ for j=1%:length(delta_SMB0)
                 % ice speed
                 plot(ax2,x(1:c)/10^3,U(1:c).*3.1536e7,'-m','linewidth',2,'DisplayName',num2str(round(t(i)./3.1536e7)+2009));
                 % calving front & grounding line positions
-                plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.m','markersize',10,'linewidth',2,'HandleVisibility','off'); 
-                plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'xm','markersize',10,'linewidth',2,'HandleVisibility','off'); 
+                plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.m','markersize',10,'linewidth',2,'HandleVisibility','off'); 
+                plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'xm','markersize',10,'linewidth',2,'HandleVisibility','off'); 
                 % Rxx
                 plot(ax4, x/10^3, Rxx/10^3, '-m','markersize',10,'linewidth',2);
             end
@@ -626,17 +626,19 @@ for j=1%:length(delta_SMB0)
     col = parula(length(t)); % color scheme for plotting
 
     % -----run flowline model
-    for i=1:dsearchn(t', 18*3.1536e7)%length(t)
+    for i=1:dsearchn(t', 16*3.1536e7)%length(t)
 
         % decrease DFW 
-        if t(i)/3.1536e7 > 0.01 %&& t(i)/3.1536e7 < 1.5 
-            DFW = DFW-0.002;
-%         elseif t(i)/3.1536e7 < 18 && t(i)/3.1536e7 > 1.5 
-%             if DFW > 12
-%                 DFW = DFW-0.002;
-%             else 
-%                 DFW = 12;
-%             end
+        if t(i)/3.1536e7 > 0.01 && t(i)/3.1536e7 < 1.5 
+            DFW = DFW-0.0035;
+        elseif t(i)/3.1536e7 >= 3 && t(i)/3.1536e7 < 10
+            DFW = DFW-0.00032;
+        elseif t(i)/3.1536e7 >= 10 && t(i)/3.1536e7 < 18
+            if DFW > 12
+                DFW = DFW-0.001;
+            else 
+                DFW = 12;
+            end
         end
         
         % increase DFW linearly at each time increment to reach delta_DFW by 2100
@@ -648,7 +650,7 @@ for j=1%:length(delta_SMB0)
         DFW=DFW+delta_DFWi;
         
         % add backstress after year 5 to account for sea ice occurence
-        if t(i)/3.1536e7 > 4; sigma_b = 50e3; end
+%         if t(i)/3.1536e7 > 4; sigma_b = 10e3; end
 %         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
 %             % increase linearly until reaching 50 kPa in year 7
 %             sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
@@ -656,7 +658,7 @@ for j=1%:length(delta_SMB0)
 
         % save modeled conditions in 2018 (year 16)
         if saveFinal && t(i)/3.1536e7 == 16
-            save([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat'],...
+            save([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat'],...
                 'H','x','h','b','gl','c','U');
             disp('2018 modeled conditions saved');
         end
@@ -751,7 +753,7 @@ for j=1%:length(delta_SMB0)
             if i==1
                 % plot observed terminus positions
                 figure(1); 
-                plot(ax3, term.x/10^3, term.date-term.date(1), '.k', 'markersize', 20, 'displayname','observed');
+                plot(ax3, term.x/10^3, term.date, '.k', 'markersize', 20, 'displayname','observed');
                 % grounding line discharge
 %                 figure(6); clf; 
 %                 axQ = gca; hold on; 
@@ -768,8 +770,8 @@ for j=1%:length(delta_SMB0)
                 % ice speed
                 plot(ax2,x(1:c)/10^3,U(1:c).*3.1536e7,'-','Color',col(i,:),'linewidth',2,'DisplayName',num2str(round(t(i)./3.1536e7)+2009));
                 % calving front & grounding line positions
-                plot(ax3,x(c)/10^3,t(i)/3.1536e7,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
-                plot(ax3,x(gl)/10^3,t(i)/3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
+                plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
+                plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
                 title(['sigma_b = ',num2str(round(sigma_b/1000)),' kPa']);
                 % grounding line discharge
 %                 figure(6);

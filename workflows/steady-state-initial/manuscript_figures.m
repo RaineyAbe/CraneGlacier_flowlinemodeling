@@ -991,12 +991,12 @@ c_obs_2018 = dsearchn(cl.xi',xcf_obs_2018);
 clear termX termY termx termdate
 
 % load modeled 2018 conditions
-H_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).H;
-U_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).U;
-c_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).c;
-h_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).h;
-b_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).b;
-x_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).x;
+H_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).H;
+U_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).U;
+c_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).c;
+h_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).h;
+b_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).b;
+x_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).x;
 
 % plot
 figure(2); clf;
@@ -1043,7 +1043,7 @@ ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
         xlabel('Distance along centerline [km]'); 
         ylabel('Elevation [m]'); 
         plot(x_mod_2018/10^3,h_mod_2018,'-k','linewidth',2,'displayname','h_{mod}');
-        plot(cl.xi(1:150)/10^3,h_obs_2018(1:150),'--k','linewidth',2,'displayname','h_{obs}');
+        plot(x0/10^3,h_obs_2018,'--k','linewidth',2,'displayname','h_{obs}');
 %         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
 %                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
 %                 ' c ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');     
@@ -1055,8 +1055,8 @@ ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
         xlabel('Distance along centerline [km]'); 
 %         yyaxis left; 
         ylabel('Speed [m a^{-1}]'); ylim([100 850]);
-        plot(x_mod_2018/10^3,U_mod_2018*3.1536e7,'-k','linewidth',2,'displayname','h_{mod}');
-        plot(cl.xi(1:150)/10^3,U_obs_2018(1:150)*3.1536e7,'--k','linewidth',2,'displayname','h_{obs}');
+        plot(ax4, x_mod_2018/10^3,U_mod_2018*3.1536e7,'-k','linewidth',2,'displayname','U_{mod}');
+        plot(ax4, cl.xi/10^3,U_obs_2018*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
 %             text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
 %                     (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
 %                     ' d ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');
