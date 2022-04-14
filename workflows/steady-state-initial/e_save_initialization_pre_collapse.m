@@ -59,7 +59,7 @@ h0 = movmedian(h0, 5);
 b0 = load('bedElevation_widthAveraged.mat').b_adj;
 b0(1:2) = b0(3);
 % smooth slightly
-b0=movmean(b0,20);
+b0=movmean(b0,10);
 if size(b0)==[186 1]
     b0=b0';
 end

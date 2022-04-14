@@ -11,11 +11,13 @@
 % -----0. Load initial model parameters-----  
 % ------------------------------------------
 
+tic; % set timer
+
 clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
 plotTimeSteps = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
-plotClimateParams = 0; % = 1 to plot SMB, DFW, TF over time
+plotClimateParams = 1; % = 1 to plot SMB, DFW, TF over time
 saveFinal = 0; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
@@ -30,7 +32,7 @@ load([homepath,'inputs-outputs/modelInitialization_preCollapse.mat']);
 SMR_mean_fit = load('LarsenC_MeanMeltRate.mat').mr_mean_fit;
 
 % -----time stepping [s]-----
-dt = 0.0001*3.1536e7;
+dt = 0.0005*3.1536e7;
 
 % -----densities and g-----
 rho_i = 917; % ice density (kg m^-3)
@@ -121,8 +123,8 @@ for j=1%:length(delta_SMB0)
     x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; b=b0; H=H0; 
     DFW=DFW0; dx=dx0; SMB=SMB0; SMR=SMR0; c=c0;
     beta0 = interp1([0 x0(end)], [0.5 2], x0); 
-    A0=A0/2;
-    sigma_b = 1000e3; 
+%     A0=A0/2;
+    sigma_b = 900e3; 
 
     col = parula(50e3); % color scheme for plots
 
@@ -314,7 +316,7 @@ for j=1%:length(delta_SMB0)
 
         % -----stop model if stead-state conditions reached
         % (change in U at each point is less than set threshold) 
-        if all(abs(H-Hn) < 1e-5*abs(H))
+        if all(abs(H-Hn) < 2e-5*abs(H))
             disp('    steady-state conditions achieved'); 
             disp('    continuing...');             
             break;
@@ -624,16 +626,18 @@ for j=1%:length(delta_SMB0)
     col = parula(length(t)); % color scheme for plotting
 
     % -----run flowline model
-    for i=1:length(t)
+    for i=1:dsearchn(t', 18*3.1536e7)%length(t)
 
-%         % decrease DFW 
-%         if t(i)/3.1536e7 > 0.01
-%             if DFW>12
+        % decrease DFW 
+        if t(i)/3.1536e7 > 0.01 %&& t(i)/3.1536e7 < 1.5 
+            DFW = DFW-0.002;
+%         elseif t(i)/3.1536e7 < 18 && t(i)/3.1536e7 > 1.5 
+%             if DFW > 12
 %                 DFW = DFW-0.002;
-%             else
-%                 DFW=12;
+%             else 
+%                 DFW = 12;
 %             end
-%         end
+        end
         
         % increase DFW linearly at each time increment to reach delta_DFW by 2100
         if t(i)/3.1536e7 > 16
@@ -645,7 +649,7 @@ for j=1%:length(delta_SMB0)
         
         % add backstress after year 5 to account for sea ice occurence
         if t(i)/3.1536e7 > 4; sigma_b = 50e3; end
-%         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 5
+%         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
 %             % increase linearly until reaching 50 kPa in year 7
 %             sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
 %         end
@@ -743,6 +747,7 @@ for j=1%:length(delta_SMB0)
         % -----plot geometry, speed, & grounding line and calving front positions
         col = parula(length(t)); % color scheme for plots
         if plotTimeSteps && mod(t(i), dt*1000)==0 %&& mod(t(i),t(end)/98)==0 % display every 1 year
+            disp(['    ',num2str(t(i)/3.1536e7),' yrs']);
             if i==1
                 % plot observed terminus positions
                 figure(1); 
@@ -979,5 +984,5 @@ for j=1%:length(delta_SMB0)
     disp('Simulation complete');
 end
     
-    
+toc; % stop timer
     
