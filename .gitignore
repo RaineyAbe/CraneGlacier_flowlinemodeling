@@ -18,3 +18,6 @@ workflows/dynamic-initial-UNTESTED/
 
 # Files for running on R2
 Matlab-R2
+
+# Time series images
+figures/timeseries/

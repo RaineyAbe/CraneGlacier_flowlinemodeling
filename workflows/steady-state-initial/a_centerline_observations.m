@@ -28,6 +28,9 @@ homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 addpath([homepath,'functions/hugheylab-nestedSortStruct'],...
     [homepath,'functions/']);
 
+% determine whether or not to save
+save_files = 0; % = 0 to NOT save, = 1 to save
+
 %% 1. Load centerline coordinates, width, and fjord end
 
 % -----Centerline-----
@@ -43,7 +46,9 @@ end
 h_geoid = geoidheight(cl.lat, cl.lon);
 
 % -----Width-----
-width = load([homepath, 'inputs-outputs/calculatedWidth.mat']).width;
+width = load([homepath, 'inputs-outputs/glacier_width.mat']).width;
+% add points in width segments at 200 m increments
+% width.
 
 % -----Fjord end-----
 fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
@@ -68,13 +73,13 @@ GT.Y = linspace(GT.R.YWorldLimits(1),GT.R.YWorldLimits(2),GT.ny);
 k = k+1; 
 h(k).h_centerline = interp2(GT.X,GT.Y,flipud(double(GT.h)),cl.X,cl.Y);
 h(k).h_width_ave = zeros(1,length(cl.X)); % initialize elevation variables
-h(k).date = '1996'; % observation date
+h(k).date = '19960101'; % observation date
 h(k).units = "m"; % elevation units
 h(k).source = "GTOPO30"; % data source
 % loop through centerline points
 for j=1:length(cl.X)
     % interpolate speed along each width segment
-    h(k).h_width_ave(j) = mean(interp2(GT.X,GT.Y,flipud(double(GT.h)),width.segsx(j,:),width.segsy(j,:)),'omitnan'); % [m]
+    h(k).h_width_ave(j) = mean(interp2(GT.X,GT.Y,flipud(double(GT.h)),width.segsx_clip(j,:),width.segsy_clip(j,:)),'omitnan'); % [m]
 end    
 h(k).numPts = length(h(k).h_centerline(~isnan(h(k).h_centerline))); % number of valid data points in centerline profile
 
@@ -100,7 +105,7 @@ for i=1:length(Afn)
     % loop through centerline points
     for j=1:length(width.W)
         % interpolate speed along each width segment
-        h(k).h_width_ave(j) = mean(interp2(A(i).X, A(i).Y, flipud(A(i).h), width.segsx(j,:), width.segsy(j,:)),'omitnan');
+        h(k).h_width_ave(j) = mean(interp2(A(i).X, A(i).Y, flipud(A(i).h), width.segsx_clip(j,:), width.segsy_clip(j,:)),'omitnan');
     end    
     h(k).numPts = length(h(k).h_width_ave(~isnan(h(k).h_width_ave))); % number of data points
 
@@ -147,7 +152,7 @@ for i=1:length(OIB_files)
 end
 
 % -------------------------------------------------------------------------
-%   b. Create a complete pre-collapse velocity profile
+%   b. Create a complete pre-collapse surface elevation profile
 % -------------------------------------------------------------------------
 
 % -----centerline-----
@@ -182,12 +187,14 @@ hold on; grid on; legend('location', 'northeast');
 set(gca,'fontsize',12,'linewidth',1);
 xlabel('distance along centerline [km]');
 ylabel('elevation [m]');
+xlim([0,60]); ylim([0,1800]);
 title('h_{centerline}');
 % width-averaged 
 ax2 = subplot(1,2,2);
 hold on; grid on; 
 set(gca,'fontsize',12,'linewidth',1);
 xlabel('distance along centerline [km]');
+xlim([0,60]); ylim([0,1800]);
 title('h_{width-averaged}');
 for i=1:length(h)
     if i==length(h)   
@@ -202,10 +209,12 @@ for i=1:length(h)
 end 
 
 % -----save h and figure-----
-save([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat'], 'h');
-disp('h saved to file');
-saveas(figure(1), [homepath,'workflows/steady-state-initial/figures/surfaceElevation.png'], 'png');
-disp('figure saved to file');
+if save_files
+    save([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat'], 'h');
+    disp('h saved to file');
+    saveas(figure(1), [homepath,'figures/surface_elevations_1996-2018.png'], 'png');
+    disp('figure saved to file');
+end
 
 %% 3. Width-averaged surface velocities
 % -------------------------------------------------------------------------
@@ -237,7 +246,7 @@ U(k).U_width_ave = zeros(1,length(cl.X));
 % loop through centerline points
 for j=1:length(cl.X)
     % interpolate speed along each width segment
-    U(k).U_width_ave(j) = mean(interp2(ERS(1).X,ERS(1).Y,flipud(ERS(1).u),width.segsx(j,:),width.segsy(j,:)),'omitnan')./24/60/60; % [m/s]
+    U(k).U_width_ave(j) = mean(interp2(ERS(1).X,ERS(1).Y,flipud(ERS(1).u),width.segsx_clip(j,:),width.segsy_clip(j,:)),'omitnan')/(24*60*60); % [m/s]
 end    
 U(k).numPts = length(U(k).U_width_ave(~isnan(U(1).U_width_ave))); % number of valid data points in centerline profile
 
@@ -264,7 +273,7 @@ U(k).U_width_ave = zeros(1,length(cl.X));
 % loop through centerline points
 for j=1:length(cl.X)
     % interpolate speed along each width segment
-    U(k).U_width_ave(j) = mean(interp2(ERS(2).X,ERS(2).Y,flipud(ERS(2).u),width.segsx(j,:),width.segsy(j,:)),'omitnan')./24/60/60; % [m/s]
+    U(k).U_width_ave(j) = mean(interp2(ERS(2).X,ERS(2).Y,flipud(ERS(2).u),width.segsx_clip(j,:),width.segsy_clip(j,:)),'omitnan')./24/60/60; % [m/s]
 end    
 U(k).numPts = length(U(k).U_width_ave(~isnan(U(2).U_width_ave))); % number of valid data points in width-averaged profile
 
@@ -277,8 +286,8 @@ for i=1:length(ITS_LIVE_files)
     IL(i).X = ncread([homepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'x'); % X [m]
     IL(i).Y = ncread([homepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'y'); % Y [m]
     % determine subset over which to extract velocity data
-    Ix = find(IL(i).X >= min(width.segsx(:)) & IL(i).X <= max(width.segsx(:)));
-    Iy = find(IL(i).Y >= min(width.segsy(:)) & IL(i).Y <= max(width.segsy(:)));
+    Ix = find(IL(i).X >= min(width.segsx_clip(:)) & IL(i).X <= max(width.segsx_clip(:)));
+    Iy = find(IL(i).Y >= min(width.segsy_clip(:)) & IL(i).Y <= max(width.segsy_clip(:)));
     startloc = [Ix(1) Iy(1)]; counts = [range(Ix)+1 range(Iy)+1];
     % crop coordinates to subset
     IL(i).X = IL(i).X(Ix); IL(i).Y = IL(i).Y(Iy);
@@ -301,8 +310,8 @@ for i=1:length(ITS_LIVE_files)
     % loop through centerline points
     for j=1:length(width.W)
         % interpolate speed and average along each width segment
-        U(k).U_width_ave(j) = mean(interp2(IL(i).X, IL(i).Y, IL(i).U, width.segsx(j,:), width.segsy(j,:)),'omitnan');
-        U(k).U_err(j) = mean(interp2(IL(i).X ,IL(i).Y, IL(i).U_err, width.segsx(j,:), width.segsy(j,:)),'omitnan');
+        U(k).U_width_ave(j) = mean(interp2(IL(i).X, IL(i).Y, IL(i).U, width.segsx_clip(j,:), width.segsy_clip(j,:)),'omitnan');
+        U(k).U_err(j) = mean(interp2(IL(i).X ,IL(i).Y, IL(i).U_err, width.segsx_clip(j,:), width.segsy_clip(j,:)),'omitnan');
     end    
     U(k).numPts = length(U(k).U_width_ave(~isnan(U(k).U_width_ave))); % number of data points
 end
@@ -392,23 +401,25 @@ plot(ax2, x/10^3, Ut1_width_ave_fill*3.1536e7, '--c', 'linewidth', 2, 'displayna
 plot(ax2, x/10^3, Ut2_width_ave*3.1536e7, '-m', 'linewidth', 2, 'displayname', 'post-collapse');
 
 % -----save-----
-% save info in structure
-k=k+1;
-U(k).U_centerline = Ut1_centerline_fill;
-U(k).U_width_ave = Ut1_width_ave_fill; 
-U(k).date = 'pre-collapse';
-U(k).units = 'm/s';
-U(k).source = 'ERS, ITS_LIVE';
-U(k).numPts = NaN;
-U(k).U_err = NaN;
-% save U variable
-save([homepath,'inputs-outputs/surfaceSpeeds_widthAveraged_1994-2018.mat'],'U');
-disp('U saved to file');
-% save figures
-saveas(figure(2), [homepath,'workflows/steady-state-initial/figures/surfaceSpeeds_1994-2018.png'], 'png');
-disp('figure 2 saved');
-saveas(figure(3), [homepath,'workflows/steady-state-initial/figures/pre-collapse_speed.png'], 'png');
-disp('figure 3 saved');
+if save_files
+    % save info in structure
+    k=k+1;
+    U(k).U_centerline = Ut1_centerline_fill;
+    U(k).U_width_ave = Ut1_width_ave_fill; 
+    U(k).date = 'pre-collapse';
+    U(k).units = 'm/s';
+    U(k).source = 'ERS, ITS_LIVE';
+    U(k).numPts = NaN;
+    U(k).U_err = NaN;
+    % U variable
+    save([homepath,'inputs-outputs/surfaceSpeeds_widthAveraged_1994-2018.mat'],'U');
+    disp('U saved to file');
+    % figures
+    saveas(figure(2), [homepath,'figures/surfaceSpeeds_1994-2018.png'], 'png');
+    disp('figure 2 saved');
+    saveas(figure(3), [homepath,'figures/pre-collapse_speed.png'], 'png');
+    disp('figure 3 saved');
+end
 
 %% 4. Terminus positions (Landsat-derived; Dryak and Enderlin, 2020)
 
@@ -419,8 +430,10 @@ term.x = x(dsearchn([cl.X cl.Y],[term.X' term.Y']));
 term.date = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
 
 % -----save-----
-save([homepath,'inputs-outputs/terminusPositions_2002-2019.mat'], 'term');
-disp('terminus positions saved');
+if save_files
+    save([homepath,'inputs-outputs/terminusPositions_2002-2019.mat'], 'term');
+    disp('terminus positions saved');
+end
 
 % -----plot-----
 figure(4); clf; 
@@ -515,9 +528,11 @@ plot(x/10^3,h_pc,'-b','linewidth',2,'DisplayName','h');
 plot(x/10^3,SOM.b_cl,'-m','linewidth',2,'DisplayName','Huss and Farinotti (2014)');
 
 % -----save-----
-% bed variable
-% save([homepath,'inputs-outputs/bedElevation_widthAveraged.mat'],'b_adj', 'x');
-% disp('b_adj saved to file');
-% % figure
-% saveas(figure(5), [homepath,'figures/bedElevation_widthAveraged.png'], 'png');
-% disp('figure 5 saved');
+if save_files
+    % bed variable
+    save([homepath,'inputs-outputs/bedElevation_widthAveraged.mat'],'b_adj', 'x');
+    disp('b_adj saved to file');
+    % figure
+    saveas(figure(5), [homepath,'figures/bedElevation_widthAveraged.png'], 'png');
+    disp('figure 5 saved');
+end

@@ -748,8 +748,7 @@ for j=1%:length(delta_SMB0)
 
         % -----plot geometry, speed, & grounding line and calving front positions
         col = parula(length(t)); % color scheme for plots
-        if plotTimeSteps && mod(t(i), dt*1000)==0 %&& mod(t(i),t(end)/98)==0 % display every 1 year
-            disp(['    ',num2str(t(i)/3.1536e7),' yrs']);
+        if plotTimeSteps && mod(t(i),t(end)/98)==0 %&& mod(t(i),t(end)/98)==0 % display every 1 year
             if i==1
                 % plot observed terminus positions
                 figure(1); 
@@ -777,6 +776,9 @@ for j=1%:length(delta_SMB0)
 %                 figure(6);
 %                 plot(axQ, t(i)/3.1536e7, Fgl(i), '.', 'markersize', 20, 'color', col(i,:));
             end
+            saveas(figure(1),[homepath,'figures/timeseries/',num2str(round(t(i)/3.1536e7)),'yrs.png']);
+            disp(['    ',num2str(t(i)/3.1536e7),' yrs']);
+            disp('    figure 1 saved');
         end
 
         % -----calculate the effective pressure 
