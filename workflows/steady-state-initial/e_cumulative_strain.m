@@ -5,14 +5,14 @@
 
 clear all; close all;
 
-save_A_adj = 0; % = 1 to save adjusted rate factor 
+save_A_adj = 1; % = 1 to save adjusted rate factor 
 
 % Define homepath in directory
 homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 cd([homepath,'inputs-outputs']);
 
 % Add path to functions
-addpath([homepath,'functioins/']);
+addpath([homepath,'functions/']);
 addpath([homepath,'functions/hugheylab-nestedSortStruct']);
 
 % Load Crane Centerline
@@ -27,7 +27,7 @@ cl.x = load('Crane_centerline.mat').x; cl.y = load('Crane_centerline.mat').y;
 U = load('surfaceSpeeds_widthAveraged_1994-2018').U; 
 
 % Load calculated rate factor
-A = load('rateFactorA.mat').A;
+A = load('rate_factor.mat').A;
 
 % Set up figure
 figure(1); clf;
@@ -88,7 +88,7 @@ legend('Location','eastoutside');
 % 4. Save adjusted rate factor
 if save_A_adj
     cd([homepath,'inputs-outputs']);
-    save('adjusted_rate_factor_2.mat','A_adj','eta_dot_cum');
+    save('rate_factor.mat','A_adj','eta_dot_cum','-append');
     disp(['Adjusted rate factor saved in: ',pwd]);
 end 
     

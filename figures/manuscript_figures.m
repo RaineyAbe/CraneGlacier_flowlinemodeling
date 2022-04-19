@@ -998,67 +998,80 @@ h_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_
 b_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).b;
 x_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).x;
 
+% use observed calving front as cutoff for plotting
+Ic = dsearchn(x_mod_2018',xcf_obs_2018); % index of observed calving front on modeled spatial grid
+
 % plot
 figure(2); clf;
 set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0.8 0.1 0.1]]);
+% surface speed misfit
 ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
     set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
     xlim([0 52]); ylabel('Misfit [m]'); 
     % surface elevation misfit
-    plot(x_mod_2018/10^3,h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'-','linewidth',2,...
-        'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    plot(ax1, x_mod_2018(1:Ic)/10^3,h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),...
+        '-','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    % 10 km moving mean surface elevation misfit
+    plot(ax1, x_mod_2018(1:Ic)/10^3,movmean(h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),50),...
+        '-','linewidth',1,'color',[0.8 0.1 0.1],'HandleVisibility','off');    
     % mean surface elevation misfit
-    plot(x_mod_2018/10^3,mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'omitnan')*ones(1,length(x_mod_2018)),...
-        '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    plot(ax1, x_mod_2018(1:Ic)/10^3,mean(h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),'omitnan')*ones(1,length(x_mod_2018(1:Ic))),...
+        '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');    
     % text for mean misfit
-    text(max(get(gca,'XLim')),mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'omitnan'),...
-        sprintf('%.1f',mean(h_mod_2018-interp1(x0,h_obs_2018,x_mod_2018),'omitnan')),'color',[0.8 0.1 0.1],...
+    text(max(get(gca,'XLim')),mean(h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),'omitnan'),...
+        sprintf('%.1f',mean(h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),'omitnan')),'color',[0.8 0.1 0.1],...
         'fontsize',fontsize-2);
     % (a)
 %         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
 %                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
 %                 ' a ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');  
-    ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
-        set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
-        xlim([0 52]); 
-        ylabel('Misfit [m a^{-1}]');
-        % surface speed misfit
-        plot(x_mod_2018/10^3,(U_mod_2018-interp1(cl.xi,U_obs_2018,x_mod_2018)).*3.1536e7,'-','linewidth',2,...
-            'color',[0.8 0.1 0.1],'HandleVisibility','off');
-        % mean surface speed misfit
-        plot(x_mod_2018/10^3,mean(U_mod_2018-interp1(cl.xi,U_obs_2018,x_mod_2018),'omitnan')*3.1536e7*ones(1,length(x_mod_2018)),...
-            '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
-        % text for mean misfit
-        text(max(get(gca,'XLim')),mean(U_mod_2018-interp1(cl.xi,U_obs_2018,x_mod_2018),'omitnan')*3.1536e7,...
-            sprintf('%.1f',mean(U_mod_2018-interp1(cl.xi,U_obs_2018,x_mod_2018),'omitnan')*3.1536e7),'color',[0.8 0.1 0.1],...
-            'fontsize',fontsize-2);
-        % (b)
+% surface speed misfit
+ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
+    set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
+    xlim([0 52]); 
+    ylabel('Misfit [m a^{-1}]');
+    % surface speed misfit
+    plot(ax2, x_mod_2018(1:Ic)/10^3,(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic))).*3.1536e7,...
+        '-','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    % 10 km moving mean surface speed misfit
+    plot(ax2, x_mod_2018(1:Ic)/10^3,movmean((U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic))),50).*3.1536e7,...
+        '-','linewidth',1,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    % mean surface speed misfit
+    plot(ax2, x_mod_2018(1:Ic)/10^3,mean(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic)),'omitnan')*3.1536e7*ones(1,length(x_mod_2018(1:Ic))),...
+        '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
+    % text for mean misfit
+    text(max(get(gca,'XLim')),mean(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic)),'omitnan')*3.1536e7,...
+        sprintf('%.1f',mean(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic)),'omitnan')*3.1536e7),'color',[0.8 0.1 0.1],...
+        'fontsize',fontsize-2);
+    % (b)
 %         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
 %                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
 %                 ' b ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold'); 
-    set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0 0.4 0.8]]);
-    ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; 
-        legend('Location','north'); 
-        set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
-        xlim([0 52]); 
-        xlabel('Distance along centerline [km]'); 
-        ylabel('Elevation [m]'); 
-        plot(x_mod_2018/10^3,h_mod_2018,'-k','linewidth',2,'displayname','h_{mod}');
-        plot(x0/10^3,h_obs_2018,'--k','linewidth',2,'displayname','h_{obs}');
+set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0 0.4 0.8]]);
+% modeled and observed surface elevation 
+ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; 
+    legend('Location','north'); 
+    set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
+    xlim([0 52]); 
+    xlabel('Distance along centerline [km]'); 
+    ylabel('Elevation [m]'); 
+    plot(ax3, x_mod_2018(1:Ic)/10^3,h_mod_2018(1:Ic),'-k','linewidth',2,'displayname','h_{mod}');
+    plot(ax3, x0(1:dsearchn(x0',xcf_obs_2018))/10^3,h_obs_2018(1:dsearchn(x0',xcf_obs_2018)),'--k','linewidth',2,'displayname','h_{obs}');
 %         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
 %                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
 %                 ' c ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');     
-        %yyaxis right; set(ax3,'YTick',[],'YTickLabel',[]);
-    ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; 
-        legend('Location','north');
-        set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
-        xlabel('Distance along centerline [km]'); 
+    %yyaxis right; set(ax3,'YTick',[],'YTickLabel',[]);
+% modeled and observed surface speed 
+ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; 
+    legend('Location','north');
+    set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
+    xlabel('Distance along centerline [km]'); 
 %         yyaxis left; 
-        ylabel('Speed [m a^{-1}]'); ylim([100 850]);
-        plot(ax4, x_mod_2018/10^3,U_mod_2018*3.1536e7,'-k','linewidth',2,'displayname','U_{mod}');
-        plot(ax4, cl.xi/10^3,U_obs_2018*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
-        xlim([0 52]); 
-        ylim([0 800]);
+    ylabel('Speed [m a^{-1}]'); ylim([100 850]);
+    plot(ax4, x_mod_2018(1:Ic)/10^3,U_mod_2018(1:Ic)*3.1536e7,'-k','linewidth',2,'displayname','U_{mod}');
+    plot(ax4, cl.xi(1:c_obs_2018)/10^3,U_obs_2018(1:c_obs_2018)*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
+    xlim([0 52]); 
+    ylim([0 1100]);
 %             text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
 %                     (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
 %                     ' d ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');
@@ -1081,7 +1094,7 @@ end
 
 close all;
 
-save_figures = 1;    % = 1 to save figure
+save_figures = 0;    % = 1 to save figure
 fontsize = 16;      % font size
 fontname = 'Arial'; % font name
 linewidth = 2;      % line width
@@ -1101,7 +1114,7 @@ x18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial
 smb_mean = load([homepath,'inputs-outputs/2100_SMB_mean.mat']).smb_mean;
 
 % define time stepping (s)
-dt = 0.001*3.1536e7;
+dt = 0.0005*3.1536e7;
 t_start = 0*3.1536e7;
 t_end = 98*3.1536e7;
 t = (t_start:dt:t_end);

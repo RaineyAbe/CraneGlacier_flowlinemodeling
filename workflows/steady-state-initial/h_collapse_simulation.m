@@ -11,13 +11,13 @@
 % -----0. Load initial model parameters-----  
 % ------------------------------------------
 
-tic; % set timer
+tic; % start timer
 
 clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
-plotTimeSteps = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
-plotClimateParams = 1; % = 1 to plot SMB, DFW, TF over time
+plotTimeSteps = 0; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
+plotClimateParams = 0; % = 1 to plot SMB, DFW, TF over time
 saveFinal = 0; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
@@ -98,17 +98,17 @@ C = 3e-4; % use original from Slater et al. (2020)
 % - increase DFW by increments of 1 m up to 10 m
 % - increase TF by increments of 0.1 ^oC up to 1 ^oC
 delta_SMB0 = (0:-1:-10)./3.1536e7; % m/s change in SMB at the calving front (used to increase gradient)
-delta_DFW0 = 0:10; % m change in DFW 
+delta_DFW0 = -5:5; % m change in minimum DFW 
 delta_TF0 = 0:0.1:1; % ^oC change in TF
 
 % -----store mean final SMB for plotting
 smb_mean = NaN*zeros(1,length(delta_SMB0));
 dSMR_max = 0; 
 
-for j=1%:length(delta_SMB0)
+for j=length(delta_SMB0)%1:length(delta_SMB0)
     
     % Switch scenarios on and off
-    delta_SMB = 0; %delta_SMB0(j);
+    delta_SMB = delta_SMB0(j);
     delta_DFW = 0; %delta_DFW0(j);
     delta_TF = 0; %delta_TF0(j);
     SMB_enhance = 0; % = 1 to increase SMR due to decreased SMB    
@@ -123,8 +123,9 @@ for j=1%:length(delta_SMB0)
     x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; b=b0; H=H0; 
     DFW=DFW0; dx=dx0; SMB=SMB0; SMR=SMR0; c=c0;
     beta0 = interp1([0 x0(end)], [0.5 2], x0); 
-    A0=A0/2;
     sigma_b = 1000e3; 
+    
+    DFW_min = 10; % m
 
     col = parula(50e3); % color scheme for plots
 
@@ -615,9 +616,14 @@ for j=1%:length(delta_SMB0)
     disp('Simulating post-ice shelf collapse conditions');
     
     % -----time stepping [s]
+    % use smaller dt for the first 18 years
     t_start = 0*3.1536e7; % 2002
-    t_end = 98*3.1536e7; % 2022
-    t = [t_start:dt:t_end];
+    t_mid = 18*3.1536e7; % 2020
+    t_end = 98*3.1536e7; 
+    dt1 = 0.0005*3.1536e7; 
+    dt2 = 0.001*3.1536e7; 
+    t = [t_start:dt1:t_mid t_mid+dt2:dt2:t_end]; 
+    clear dt1 dt2
     
     % -----initialize variables to track throughout model run
     Fgl = zeros(1,length(t)); % grounding line discharge [Gt/a]
@@ -626,35 +632,19 @@ for j=1%:length(delta_SMB0)
     col = parula(length(t)); % color scheme for plotting
 
     % -----run flowline model
-    for i=1:dsearchn(t', 16*3.1536e7)%length(t)
+    
+    for i=1:length(t)%dsearchn(t', 16*3.1536e7)%length(t)
 
-        % decrease DFW 
-        if t(i)/3.1536e7 > 0.01 && t(i)/3.1536e7 < 1.5 
-            DFW = DFW-0.0035;
-        elseif t(i)/3.1536e7 >= 3 && t(i)/3.1536e7 < 10
-            DFW = DFW-0.00032;
-        elseif t(i)/3.1536e7 >= 10 && t(i)/3.1536e7 < 18
-            if DFW > 12
-                DFW = DFW-0.001;
-            else 
-                DFW = 12;
+        % decrease DFW if above set minimum
+        if DFW > DFW_min
+            if t(i)/3.1536e7 > 0.01 && t(i)/3.1536e7 < 1 
+                DFW = DFW-0.0078;
+            elseif t(i)/3.1536e7 >= 1 && t(i)/3.1536e7 < 3
+                DFW = DFW-0.0006717;
+            elseif t(i)/3.1536e7 >= 3
+                DFW = DFW-0.0005;
             end
         end
-        
-        % increase DFW linearly at each time increment to reach delta_DFW by 2100
-        if t(i)/3.1536e7 > 16
-            delta_DFWi = delta_DFW/(2100-2018)*t(i)/3.1536e7; % total increase in DFW from 2022
-        else
-            delta_DFWi = 0;
-        end
-        DFW=DFW+delta_DFWi;
-        
-        % add backstress after year 5 to account for sea ice occurence
-%         if t(i)/3.1536e7 > 4; sigma_b = 10e3; end
-%         if t(i)/3.1536e7 > 4 && t(i)/3.1536e7 < 7
-%             % increase linearly until reaching 50 kPa in year 7
-%             sigma_b = sigma_b + 50e3/(find(t/3.1536e7 < 7, 1, 'last') - find(t/3.1536e7 > 4, 1, 'first')); % Pa
-%         end
 
         % save modeled conditions in 2018 (year 16)
         if saveFinal && t(i)/3.1536e7 == 16
@@ -763,7 +753,7 @@ for j=1%:length(delta_SMB0)
                 plot(ax1,x(1:c)/10^3,h(1:c),'-','color',col(i,:),'linewidth',2,'displayname',num2str(round(t(i)./3.1536e7)+2009));
                 plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');
                 plot(ax1,[x(c);x(c)]/10^3,[h(c);h(c)-H(c)],'-','color',col(i,:),'linewidth',2,'HandleVisibility','off');
-                title(ax1, [num2str(t(i)/3.1536e7), 'yrs, DFW = ',num2str(DFW), 'm']);
+                title(ax1, [num2str(t(i)/3.1536e7), 'yrs']);
                 plot(ax1,x(c)*[1,1]/10^3,[h(c)-H(c),h(c)],'.-','color',col(i,:),'linewidth',2,'HandleVisibility','off'); % calving front
                 plot(ax1,x(gl:c)/10^3,h(gl:c)-H(gl:c),'color',col(i,:),'linewidth',2,'HandleVisibility','off'); % floating bed (gl:c)
                 % ice speed
@@ -771,14 +761,13 @@ for j=1%:length(delta_SMB0)
                 % calving front & grounding line positions
                 plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
                 plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
-                title(['sigma_b = ',num2str(round(sigma_b/1000)),' kPa']);
                 % grounding line discharge
 %                 figure(6);
 %                 plot(axQ, t(i)/3.1536e7, Fgl(i), '.', 'markersize', 20, 'color', col(i,:));
             end
-            saveas(figure(1),[homepath,'figures/timeseries/',num2str(round(t(i)/3.1536e7)),'yrs.png']);
-            disp(['    ',num2str(t(i)/3.1536e7),' yrs']);
-            disp('    figure 1 saved');
+%             saveas(figure(1),[homepath,'figures/timeseries/',num2str(round(t(i)/3.1536e7)),'yrs.png']);
+%             disp(['    ',num2str(t(i)/3.1536e7),' yrs']);
+%             disp('    figure 1 saved');
         end
 
         % -----calculate the effective pressure 
@@ -844,7 +833,7 @@ for j=1%:length(delta_SMB0)
                 set(gca,'FontSize',12,'linewidth',2);
                 title('SMB');
                 ylabel('[m/y]');
-                plot(axA, x./10^3, SMB, 'color', col(i,:), 'linewidth', 2, 'displayname', '2022');
+                plot(axA, x./10^3, SMB*3.1536e7, 'color', col(i,:), 'linewidth', 2, 'displayname', '2022');
                 % TF
                 axB = subplot(2, 2, 2); 
                 hold on; grid on;
@@ -858,7 +847,7 @@ for j=1%:length(delta_SMB0)
                 set(gca,'FontSize',12,'linewidth',2);
                 title('SMR');
                 xlabel('distance along centerline [km]'); ylabel('[m/y]');
-                plot(axC, x/10^3, SMR, 'color', col(i,:), 'linewidth', 2, 'displayname', '2022');
+                plot(axC, x/10^3, SMR*3.1536e7, 'color', col(i,:), 'linewidth', 2, 'displayname', '2022');
                 % DFW
                 axD = subplot(2, 2, 4); 
                 hold on; grid on;
@@ -943,10 +932,10 @@ for j=1%:length(delta_SMB0)
         hold on; grid on;
         set(gcf,'Position',[250 80 886 686]);
         set(gca,'FontSize',14,'linewidth',2,'fontweight','bold');
-        xlabel('distance Along Centerline (km)'); ylabel('elevation (m)');
+        xlabel('distance along centerline (km)'); ylabel('elevation (m)');
         legend('Location','east'); xlim([0 100]); ylim([min(b0)-100 max(h)+100]);
         title(['TF = + ',num2str(round(delta_TF,1)),'^oC, SMB = + ',...
-            num2str(round(delta_SMB*3.1536e7,1)),'m/a, DFW = ',num2str(DFW2),'m']);
+            num2str(round(delta_SMB*3.1536e7,1)),'m/a, DFW = +',num2str(DFW2),'m']);
         ax1=get(gca);
             % ice surface
             plot(x1(1:c1)/10^3,h1(1:c1),'-k','linewidth',2,'displayname','no change');
