@@ -22,7 +22,7 @@ homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 cd([homepath,'inputs-outputs/']);
 
 % Modify settings
-save_initial = 1;   % = 1 to save initialization file
+save_initial = 0;   % = 1 to save initialization file
 regrid = 1;         % = 1 to regrid to dx resolution
 L = 100e3;          % length of model domain [m]
 dx = 200;           % model grid spacing [m]
@@ -46,7 +46,7 @@ end
 % -------------------------------------------------------------------------
 % 2. Surface elevation, h0(x)
 % -------------------------------------------------------------------------
-h0 = load('surfaceElevationObs_1996-2018.mat').h(14).h_centerline;
+h0 = load('observed_surface_elevations.mat').h(14).h_centerline;
 if size(h0)==[186 1]
     h0=h0';
 end
@@ -56,7 +56,7 @@ h0 = movmedian(h0, 5);
 % -------------------------------------------------------------------------
 % 3. glacier bed elevation, b0(x)
 % -------------------------------------------------------------------------
-b0 = load('bedElevation_widthAveraged.mat').b_adj;
+b0 = load('observed_bed_elevations.mat').b_adj;
 b0(1:2) = b0(3);
 % smooth slightly
 b0=movmean(b0,20);
@@ -84,7 +84,7 @@ gl0 = find(x0 >= x0(Ifjord_end)-5e3, 1, 'first');
 % -------------------------------------------------------------------------
 % 4. glacier width, W0(x)
 % -------------------------------------------------------------------------
-W0 = load('glacier_width.mat').width.W;
+W0 = load('observed_glacier_width.mat').width.W;
 if size(W0)==[186 1]
     W0=W0';
 end
@@ -92,7 +92,7 @@ end
 % -------------------------------------------------------------------------
 % 5. surface speed, U0(x)
 % -------------------------------------------------------------------------
-U0 = double(load('surfaceSpeeds_widthAveraged_1994-2018').U(22).U_width_ave);
+U0 = double(load('observed_surface_speeds.mat').U(22).U_width_ave);
 if size(U0)==[186 1]
     U0=U0';
 end
@@ -101,7 +101,7 @@ U0 = movmedian(U0, 5);
 % -------------------------------------------------------------------------
 % 6. rate factor, A0(x)
 % -------------------------------------------------------------------------
-A0 = load('rate_factor.mat').A_adj;
+A0 = load('modeled_rate_factor.mat').A_adj;
 if size(A0)==[186 1]
     A0=A0';
 end
@@ -110,9 +110,9 @@ end
 % 8. surface mass balance, SMB0(x)
 % -------------------------------------------------------------------------
 % Use the mean value at each point along the centerline for 2009-2019 
-SMB0 = load('downscaledClimateVariables_2009-2019.mat').SMB.downscaled_average_linear./3.1536e7; % m/s
+SMB0 = load('modeled_climate_variables_2009-2019.mat').SMB.downscaled_average_linear./3.1536e7; % m/s
 %RO0 = load('downscaledClimateVariables_2009-2019.mat').RO.downscaled_average_linear./3.1536e7; % m/s
-RO0 = load('downscaledClimateVariables_2009-2019.mat').SM.downscaled_average_linear.*0.05./3.1536e7; % m/s
+RO0 = load('modeled_climate_variables_2009-2019.mat').SM.downscaled_average_linear.*0.05./3.1536e7; % m/s
     % From Vaughan (2006): ﻿the upper estimates for runoff in 2000 and 2050 are equivalent 
     % to only 11% and 27% of the yearly total snow accumulation for the Antarctic Peninsula, 
     % respectively (given by areas H to J in Vaughan et al., 1999)
@@ -135,9 +135,9 @@ SMR0 = -1.5/3.1536e7; % m/s SMR - mean found at Crane
 % -------------------------------------------------------------------------
 % 10. Tributary ice volume flux, Q0(x)
 % -------------------------------------------------------------------------
-Q = load('tributaryFluxes.mat').tribFlux.Q; % m/a
-Q_err = load('tributaryFluxes.mat').tribFlux.Q_err; % m/a
-x_Q = load('tributaryFluxes.mat').tribFlux.x; % m along centerline
+Q = load('modeled_tributary_fluxes.mat').tribFlux.Q; % m/a
+Q_err = load('modeled_tributary_fluxes.mat').tribFlux.Q_err; % m/a
+x_Q = load('modeled_tributary_fluxes.mat').tribFlux.x; % m along centerline
 Q0 = interp1(x_Q,Q,x0)./3.1536e7; % m/s
 Q0_err = interp1(x_Q,Q_err,x0)./3.1536e7; % m/s
 
@@ -145,7 +145,7 @@ Q0_err = interp1(x_Q,Q_err,x0)./3.1536e7; % m/s
 % 10. Calving front location (index of x), c0
 % -------------------------------------------------------------------------
 % use 2002 observed terminus position 
-term = load([homepath,'inputs-outputs/terminusPositions_2002-2019.mat']).term;
+term = load([homepath,'inputs-outputs/observed_terminus_positions.mat']).term;
 c0 = dsearchn(x0', term.x(1));
 
 % end of fjord location
@@ -173,7 +173,7 @@ end
 % Save parameters to file
 % -------------------------------------------------------------------------
 if save_initial
-    save('modelInitialization_preCollapse.mat','h0','b0','W0','A0','U0',...
+    save('model_initialization_pre-collapse.mat','h0','b0','W0','A0','U0',...
         'x0','SMB0','RO0','SMR0','Q0','c0','-append');
     disp('model initialization parameters saved to file');
 end

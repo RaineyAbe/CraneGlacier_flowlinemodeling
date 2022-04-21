@@ -18,7 +18,7 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
     
 plotTimeSteps = 0; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
 plotClimateParams = 0; % = 1 to plot SMB, DFW, TF over time
-saveFinal = 0; % = 1 to save pre-collapse and final (2100) conditions
+saveFinal = 1; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
 homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
@@ -28,7 +28,7 @@ addpath([homepath,'workflows/'],...
     [homepath,'inputs-outputs/']);
 
 % -----load initialization file
-load([homepath,'inputs-outputs/modelInitialization_preCollapse.mat']);
+load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']);
 SMR_mean_fit = load('LarsenC_MeanMeltRate.mat').mr_mean_fit;
 
 % -----time stepping [s]-----
@@ -71,7 +71,7 @@ else
 end
 
 % -----observed calving front positions for comparison
-term = load([homepath,'inputs-outputs/terminusPositions_2002-2019.mat']).term;
+term = load([homepath,'inputs-outputs/observed_terminus_positions.mat']).term;
 
 % --------------------------------------------
 % -----1. Set up future climate scenarios-----
@@ -98,18 +98,17 @@ C = 3e-4; % use original from Slater et al. (2020)
 % - increase DFW by increments of 1 m up to 10 m
 % - increase TF by increments of 0.1 ^oC up to 1 ^oC
 delta_SMB0 = (0:-1:-10)./3.1536e7; % m/s change in SMB at the calving front (used to increase gradient)
-delta_DFW0 = -5:5; % m change in minimum DFW 
+delta_DFW0 = -5:5; % m change in minimum DFW for the unperturbed scenario
 delta_TF0 = 0:0.1:1; % ^oC change in TF
 
 % -----store mean final SMB for plotting
 smb_mean = NaN*zeros(1,length(delta_SMB0));
-dSMR_max = 0; 
 
-for j=length(delta_SMB0)%1:length(delta_SMB0)
+for j=1:length(delta_SMB0)
     
-    % Switch scenarios on and off
-    delta_SMB = delta_SMB0(j);
-    delta_DFW = 0; %delta_DFW0(j);
+    % -----switch scenarios on and off
+    delta_SMB = 0; %delta_SMB0(j);
+    delta_DFW = delta_DFW0(j);
     delta_TF = 0; %delta_TF0(j);
     SMB_enhance = 0; % = 1 to increase SMR due to decreased SMB    
 
@@ -125,7 +124,7 @@ for j=length(delta_SMB0)%1:length(delta_SMB0)
     beta0 = interp1([0 x0(end)], [0.5 2], x0); 
     sigma_b = 1000e3; 
     
-    DFW_min = 10; % m
+    DFW_min = 10 + delta_DFW; % m
 
     col = parula(50e3); % color scheme for plots
 
@@ -348,25 +347,24 @@ for j=length(delta_SMB0)%1:length(delta_SMB0)
     crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*(DFW)); 
     % basal crevasse penetration depth (m)
     crev_b = rho_i/(rho_sw-rho_i).*(Rxx./(rho_i*g)-Hab);     
-
-    figure(10); clf
-    subplot(1,2,1); hold on; 
-    set(gca,'fontsize',12,'linewidth',1);
-    legend('location','southeast');
-    grid on;
-    plot(x/10^3, h,'-b','linewidth',2,'displayname','h');
-    plot(x/10^3, crev,'-m','linewidth',2,'displayname','crev_s');
-    plot(x/10^3, crev_b,'-c','linewidth',2,'displayname','crev_b');
-    xlabel('distance along centerline [km]');
-    ylabel('elevation [m]');
-    subplot(1,2,2); hold on; 
-    set(gca,'fontsize',12,'linewidth',1);
-    legend('location','southwest');
-    grid on;
-    plot(x/10^3, h-crev_b,'-c','linewidth',2,'displayname','h - crev_b');
-    plot(x/10^3, h-crev,'-m','linewidth',2,'displayname','h - crev_s');
-    xlabel('distance along centerline [km]');
-    ylabel('elevation [m]');
+%     figure(10); clf
+%     subplot(1,2,1); hold on; 
+%     set(gca,'fontsize',12,'linewidth',1);
+%     legend('location','southeast');
+%     grid on;
+%     plot(x/10^3, h,'-b','linewidth',2,'displayname','h');
+%     plot(x/10^3, crev,'-m','linewidth',2,'displayname','crev_s');
+%     plot(x/10^3, crev_b,'-c','linewidth',2,'displayname','crev_b');
+%     xlabel('distance along centerline [km]');
+%     ylabel('elevation [m]');
+%     subplot(1,2,2); hold on; 
+%     set(gca,'fontsize',12,'linewidth',1);
+%     legend('location','southwest');
+%     grid on;
+%     plot(x/10^3, h-crev_b,'-c','linewidth',2,'displayname','h - crev_b');
+%     plot(x/10^3, h-crev,'-m','linewidth',2,'displayname','h - crev_s');
+%     xlabel('distance along centerline [km]');
+%     ylabel('elevation [m]');
     
     % -------------------------------------
     % -----3. Model ice shelf collapse-----
@@ -648,7 +646,7 @@ for j=length(delta_SMB0)%1:length(delta_SMB0)
 
         % save modeled conditions in 2018 (year 16)
         if saveFinal && t(i)/3.1536e7 == 16
-            save([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat'],...
+            save([homepath,'inputs-outputs/2018_modeledConditions.mat'],...
                 'H','x','h','b','gl','c','U');
             disp('2018 modeled conditions saved');
         end
@@ -895,13 +893,13 @@ for j=length(delta_SMB0)%1:length(delta_SMB0)
     % save geometry & speed
     if saveFinal
         % store final geometry & speed
-        h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; DFW2 = DFW0+delta_DFW;
+        h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; DFW2 = 10+delta_DFW;
         % no change
         if delta_DFW==0 && delta_TF==0 && delta_SMB==0 
             save([homepath,'workflows/steady-state-initial/results/1_SMB_DFW_TF/SMB0_DFW0m_TF0_geom.mat'],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
             h1=h; H1=H; b1=b; c1=c; U1=U; x1=x; gl1=dsearchn(x1',XGL(end)); DFW1=DFW0; Fgl1=Fgl; XGL1=XGL; XCF1=XCF; 
-            save([homepath,'inputs-outputs/2100_noChange_steady_state_initial.mat'],'h1','H1','b1','c1','U1','gl1','x1','DFW1','Fgl1','XGL1','XCF1');
-            disp('2100_noChange_steady_state_initial saved');
+            save([homepath,'inputs-outputs/modeled_conditions_2100_unperturbed.mat'],'h1','H1','b1','c1','U1','gl1','x1','DFW1','Fgl1','XGL1','XCF1');
+            disp('modeled_conditions_2100_unperturbed saved');
         % 2) SMB_enhanced
         elseif SMB_enhance==1 && delta_TF==0
             fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_enh_geom.mat'];
@@ -925,8 +923,8 @@ for j=length(delta_SMB0)%1:length(delta_SMB0)
     % plot results
     i=1;
     while i==1
-        load([homepath,'inputs-outputs/2100_noChange_steady_state_initial.mat']);
-        h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; DFW2=DFW0+delta_DFW; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
+        load([homepath,'inputs-outputs/modeled_conditions_2100_unperturbed.mat']);
+        h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; DFW2=delta_DFW; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; % store final geometry & speed
         gl1=dsearchn(x2',XGL(end)); 
         figure(11); clf % sensitivity test changes
         hold on; grid on;

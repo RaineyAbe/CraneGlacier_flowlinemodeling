@@ -36,7 +36,7 @@ cl.x = 0:300:cl.xi(end);
 cl.X = interp1(cl.xi,cl.Xi,cl.x); cl.Y = interp1(cl.xi,cl.Yi,cl.x);
 
 % load model initialization file
-load([homepath,'inputs-outputs/modelInitialization_preCollapse.mat']);
+load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']);
         
 %% Map of the study area
 
@@ -1102,23 +1102,35 @@ markersize = 10;    % marker size
 
 % load sensitivity test no change variables
 % unpertured scenario
-load([homepath,'inputs-outputs/2100_noChange_steady_state_initial.mat']);
+load([homepath,'inputs-outputs/modeled_conditions_2100_unperturbed.mat']);
 % modeled 2018 conditions
-H18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).H;
-U18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).U;
-c18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).c;
-h18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).h;
-hb18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).b;
-x18 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial.mat']).x;
+H18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).H;
+U18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).U;
+c18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).c;
+h18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).h;
+hb18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).b;
+x18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).x;
+
+% load model initialization parameters
+W0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).W0;
+b0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).b0;
+h0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).h0;
+x0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).x0;
+c0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).c0;
+RO0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).RO0;
+DFW0 = 10;
+
 % mean SMB over time (unperturbed)
 smb_mean = load([homepath,'inputs-outputs/2100_SMB_mean.mat']).smb_mean;
 
 % define time stepping (s)
-dt = 0.0005*3.1536e7;
-t_start = 0*3.1536e7;
-t_end = 98*3.1536e7;
-t = (t_start:dt:t_end);
-clear dt t_start t_end
+t_start = 0*3.1536e7; % 2002
+t_mid = 18*3.1536e7; % 2020
+t_end = 98*3.1536e7; 
+dt1 = 0.0005*3.1536e7; 
+dt2 = 0.001*3.1536e7; 
+t = [t_start:dt1:t_mid t_mid+dt2:dt2:t_end]; 
+clear dt1 dt2
 
 % Observed discharge & calving front positions
     % Rignot et al. (2004) discharge observations 
@@ -1128,26 +1140,28 @@ clear dt t_start t_end
     % (km^3/a)*(10^9 m^3/km^3)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton) = Gt/a
     F_obs(:,2) = F_obs(:,2).*10^9.*917.*10^-3.*10^-9; % Gt/a
     % load observed speed, width, and modeled thickness
-    os.years = [2009 2010 2011 2014 2016 2017];
-    os.gl = 134;%[134 140 130 141 153 151]; % index
+    os.years = [2008 2010:2017];
+    os.gl = c0;%[134 140 130 141 153 151]; % index
     os.W = W0(os.gl); % m
-    os.h = 67;%[h(1).surface(os.gl(1)) h(2).surface(os.gl(2)) h(3).surface(os.gl(3)) h(14).surface(os.gl(4)) h(28).surface(os.gl(5)) h(35).surface(os.gl(6))];
+    os.h = h0(c0);%[h(1).surface(os.gl(1)) h(2).surface(os.gl(2)) h(3).surface(os.gl(3)) h(14).surface(os.gl(4)) h(28).surface(os.gl(5)) h(35).surface(os.gl(6))];
     os.H = (1000/(1000-917)).*os.h; % flotation thickness (m)
-    U = load([homepath,'inputs-outputs/centerlineSpeedsWidthAveraged_2007-2018.mat']).U_widthavg;
-    os.U = [U(5).speed(os.gl) U(8).speed(os.gl) U(11).speed(os.gl) U(16).speed(os.gl) U(18).speed(os.gl) U(19).speed(os.gl)];
+    U = load([homepath,'inputs-outputs/observed_surface_speeds.mat']).U;
+    os.U = [U(13).U_width_ave(153) U(14).U_width_ave(152)... % 2008 2010
+        U(15).U_width_ave(156) U(16).U_width_ave(152) U(17).U_width_ave(dsearchn(cl.xi',x0(os.gl)))... % 2011:2013
+        U(18).U_width_ave(dsearchn(cl.xi',x0(os.gl))) U(19).U_width_ave(dsearchn(cl.xi',x0(os.gl)))... % 2014:2015
+        U(20).U_width_ave(dsearchn(cl.xi',x0(os.gl))) U(21).U_width_ave(dsearchn(cl.xi',x0(os.gl)))]; % 2016:2017
     % calculate F_obs, convert to Gt/a, and append to vector array
     % (m^3/s)*(3.1536e7 s/a)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton)
     % use the mean of a rectangular and ellipsoidal bed
     F_obs = [F_obs; os.years' (os.W.*os.H.*os.U.*3.1536e7*917.*10^-3.*10^-9*pi*1/4)']; % Gt/a;
-
     % estimate observed thickness in 2018 using surface and bed
     % calculate the thickness required to remain grounded at each grid cell
     rho_sw = 1000; % density of sea water (kg/m^3)
     rho_i = 917; % density of ice (kg/m^3)
     Hf = -(rho_sw./rho_i).*b0; % flotation thickness (m)
-    h = load([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat']).h;
+    h = load([homepath,'inputs-outputs/observed_surface_elevations.mat']).h;
     h_2018 = interp1(cl.xi,h(13).h_centerline,x0);
-    H_2018 = h_2018 - hb0;
+    H_2018 = h_2018 - b0;
     % find the location of the grounding line and use a floating
     % geometry from the grounding linU_widthavge to the calving front
     if length(Hf)>=find(Hf-H_2018>0,1,'first')+1
@@ -1159,8 +1173,8 @@ clear dt t_start t_end
     end
     gl_2018 = dsearchn(x0',xgl);
     h_2018(gl_2018+1:c0) = (1-rho_i/rho_sw).*H_2018(gl_2018+1:c0); %adjust the surface elevation of ungrounded ice to account for buoyancy
-    H_2018(h_2018<0)=0-hb0(h_2018<0); h_2018(h_2018<0)=0; % surface cannot go below sea level
-    h_2018(h_2018-H_2018<hb0) = hb0(h_2018-H_2018<hb0)+H_2018(h_2018-H_2018<hb0); % thickness cannot go beneath bed elevation
+    H_2018(h_2018<0)=0-b0(h_2018<0); h_2018(h_2018<0)=0; % surface cannot go below sea level
+    h_2018(h_2018-H_2018<b0) = b0(h_2018-H_2018<b0)+H_2018(h_2018-H_2018<b0); % thickness cannot go beneath bed elevation
     
     % observed terminus positions
     termX = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
@@ -1662,7 +1676,7 @@ for i=1:length(files)
     % use the mean of a rectangular and an ellipsoidal bed
     F(i) = (H2(gl2)*U2(gl2)*W(gl2))*917*1e-12*3.1536e7; % Gt/a
     % estimate initial melt rate using Eqn from Slater et al. (2020):
-    mdot0 = (3*10^-4*-hb0(gl1)*((sum(RO0(1:gl1)))*86400)^0.39 + 0.15)*TF0^1.18/86400; % m/s
+    mdot0 = (3*10^-4*-b0(gl1)*((sum(RO0(1:gl1)))*86400)^0.39 + 0.15)*TF0^1.18/86400; % m/s
     figure(6); hold on;
         % ice surface
         plot(axAA,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);

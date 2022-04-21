@@ -58,10 +58,10 @@ if outlineExists==0
     
     % Save picks
     cd([homepath,'inputs-outputs/']);
-    save('glacier_outline_2.mat','ol');
+    save('observed_glacier_outline.mat','ol');
 else
     cd([homepath,'inputs-outputs/']);
-    ol = load('glacier_outline_2.mat').ol; 
+    ol = load('observed_glacier_outline.mat').ol; 
     % Create polygon from picks, plot
     ol.polygon = polyshape(ol.x,ol.y);
     plot(ol.polygon,'displayname','glacier outline','facecolor',col(3,:));
@@ -197,7 +197,7 @@ ax2 = subplot(1,3,3); hold on;
 
 % Save figures
 cd([homepath,'figures/']);
-saveas(fig1,'glacier_width.png','png');
+saveas(fig1,'observed_glacier_width.png','png');
 disp('figure saved');
 % Save calculated width values
 if save_width
@@ -207,7 +207,7 @@ if save_width
         width.segsx = segs.xn; width.segsy = segs.yn;
         width.segsx_clip = segs.xn_clip; width.segsy_clip = segs.yn_clip;
     cd([homepath,'inputs-outputs/']);
-    save('glacier_width.mat','width');
+    save('observed_glacier_width.mat','width');
     disp(['saved width variables in: ',pwd]);
 end
 

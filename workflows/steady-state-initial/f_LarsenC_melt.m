@@ -13,10 +13,10 @@ clear all; close all;
 save_figure = 0; % = 1 to save resulting figure
 save_mr = 0; % = 1 to save resulting melt rates
 
-homepath = '/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/';
-addpath([homepath,'matlabFunctions/cmocean_v2.0/cmocean/']);
-addpath('/Users/raineyaberle/Desktop/Research/matlabFunctions');
-addpath('/Users/raineyaberle/Desktop/Research/CraneModeling/CraneGlacier_flowlinemodeling/inputs-outputs/');
+homepath = '/Users/raineyaberle/Desktop/Research/MS/CraneGlacier_flowlinemodeling/';
+addpath([homepath,'functions/cmocean_v2.0/cmocean/']);
+addpath([homepath,'functions/']);
+addpath([homepath,'inputs-outputs/']);
 cd([homepath,'../ice_shelf_change/']);
 
 % load grid, basal melt rate (w_b), interpolated basal melt rate

@@ -37,7 +37,7 @@ end
 % along Crane centerline (RACMO 1996-2016)
 
 % load 2011 OIB Crane surface elevation
-h_cl_11 = load('surfaceElevationObs_1996-2018.mat').h(10).h_centerline;
+h_cl_11 = load('observed_surface_elevations.mat').h(10).h_centerline;
 
 %Load RACMO air temperature and height
 cd([homepath,'data/RACMO2.3/']);
@@ -162,6 +162,6 @@ title('Rate factor');
 % save rate factor A
 if save_A
     cd([homepath,'inputs-outputs/']);
-    save('rate_factor.mat','A','-append');
+    save('modeled_rate_factor.mat','A','-append');
     disp('rate factor saved.');
 end

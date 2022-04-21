@@ -269,7 +269,7 @@ close all;
 [smb.X,smb.Y] = wgs2ps(smb.Lon,smb.Lat,'StandardParallel',-71,'StandardMeridian',0);
 
 %Load Crane ice surface
-h_cl = load("surfaceElevationObs.mat").h(28).surface';
+h_cl = load("observed_surface_elevations.mat").h(28).surface';
 
 maxDist = 10e3; 
    
@@ -398,7 +398,7 @@ figure(2); clf; hold on; set(gcf,'Units','centimeters','Position',[28 8 21 18]);
 
 close all;
 
-%Linear trend in adjusted climate variables
+% linear trend in adjusted climate variables
 sf.linear = fit(h_cl(~isnan(h_cl)),sf.interp(~isnan(h_cl)),'poly1'); 
     sf.linear = feval(sf.linear,h_cl);
 sm.linear = fit(h_cl(~isnan(h_cl)),sm.interp(~isnan(h_cl)),'poly1');
@@ -408,7 +408,7 @@ smb.linear = fit(h_cl(~isnan(h_cl)),smb.interp(~isnan(h_cl)),'poly1');
     smb.linear = feval(smb.linear,h_cl);
 smb.linear2 = sf.linear-sm.linear;
 
-%Plot Results
+% plot results
 figure(1); clf; hold on; 
     grid on; set(gcf,'Units','centimeters','Position',[3 8 21 18]);
     set(gca,'FontName','Arial','FontSize',14,'linewidth',2); 
@@ -553,8 +553,8 @@ while loop==1
     cl.Y = load('Crane_centerline.mat','y').y;
         
     % Load most advanced terminus position (2019)
-    term = dsearchn([cl.X cl.Y],[load('terminusPositions_2002-2019.mat').term(61).X ...
-    load('terminusPositions_2002-2019.mat').term(61).Y]); 
+    term = dsearchn([cl.X cl.Y],[load('observed_terminus_positions.mat').term(61).X ...
+    load('observed_terminus_positions.mat').term(61).Y]); 
     % clip centerline at this point
     %cl.X = cl.X(1:term); cl.Y = cl.Y(1:term);
     
@@ -617,7 +617,7 @@ while loop==1
     
     % Load 2016 Crane ice surface
     cd([homepath,'inputs-outputs/']);
-    h_cl = load("surfaceElevationObs.mat").h(28).surface';   
+    h_cl = load("observed_surface_elevations.mat").h(28).surface';   
         
     % Grab points within a certain distance from centerline, interpolate
     nearbyPts = []; % Hold points within a certain distance
@@ -976,15 +976,21 @@ end
 % save figure
 if figure_save
     cd([homepath,'figures/']);
-    saveas(gcf,'adjustedRACMOVariables_2009-2019.png','png');
+    saveas(gcf,'modeled_climate_variables_2009-2019.png','png');
     disp('Figure 1 saved');
 end 
 
 % save downscaled SMB and Runoff
 if save_variables
-    cd([homepath,'inputs-outputs/']);
-    save('downscaledClimateVariables_2009-2019.mat','RO','SMB','T');
-    disp('Climate variables saved');
+    % only save centerline info (full grid is too large for Git)
+    ro.linear = RO.linear; ro.downscaled_averaged = RO.downscaled_average; ro.downscaled_average_linear = RO.downscaled_average_linear;
+    sf.linear = SF.linear; sf.downscaled_averaged = SF.downscaled_average; sf.downscaled_average_linear = SF.downscaled_average_linear;
+    sm.linear = SM.linear; sm.downscaled_averaged = SM.downscaled_average; sm.downscaled_average_linear = SM.downscaled_average_linear;
+    smb.linear = SMB.linear; smb.downscaled_averaged = SMB.downscaled_average; smb.downscaled_average_linear = SMB.downscaled_average_linear;
+    t.adjusted = T.adjusted; t.adjusted_average = T.adjusted_average; t.adjusted_average_linear = T.adjusted_average_linear;
+    
+    save([homepath,'inputs-outputs/downscaled_RACMO_variables_2009-2019.mat'],'ro','sf','sm','smb','t');
+    disp('downscaled climate variables saved');
 end 
 
 %% plot cumulative snowfall, snowmelt, runoff

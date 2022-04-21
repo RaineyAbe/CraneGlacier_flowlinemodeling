@@ -46,7 +46,7 @@ end
 h_geoid = geoidheight(cl.lat, cl.lon);
 
 % -----Width-----
-width = load([homepath, 'inputs-outputs/glacier_width.mat']).width;
+width = load([homepath, 'inputs-outputs/observed_glacier_width.mat']).width;
 % add points in width segments at 200 m increments
 % width.
 
@@ -210,9 +210,9 @@ end
 
 % -----save h and figure-----
 if save_files
-    save([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat'], 'h');
+    save([homepath,'inputs-outputs/observed_surface_elevations.mat'], 'h');
     disp('h saved to file');
-    saveas(figure(1), [homepath,'figures/surface_elevations_1996-2018.png'], 'png');
+    saveas(figure(1), [homepath,'figures/observed_surface_elevations.png'], 'png');
     disp('figure saved to file');
 end
 
@@ -412,12 +412,12 @@ if save_files
     U(k).numPts = NaN;
     U(k).U_err = NaN;
     % U variable
-    save([homepath,'inputs-outputs/surfaceSpeeds_widthAveraged_1994-2018.mat'],'U');
+    save([homepath,'inputs-outputs/observed_surface_speeds.mat'],'U');
     disp('U saved to file');
     % figures
-    saveas(figure(2), [homepath,'figures/surfaceSpeeds_1994-2018.png'], 'png');
+    saveas(figure(2), [homepath,'figures/observed_surface_speeds.png'], 'png');
     disp('figure 2 saved');
-    saveas(figure(3), [homepath,'figures/pre-collapse_speed.png'], 'png');
+    saveas(figure(3), [homepath,'figures/observed_pre-collapse_speed.png'], 'png');
     disp('figure 3 saved');
 end
 
@@ -429,12 +429,6 @@ term.Y = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.ter
 term.x = x(dsearchn([cl.X cl.Y],[term.X' term.Y']));
 term.date = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
 
-% -----save-----
-if save_files
-    save([homepath,'inputs-outputs/terminusPositions_2002-2019.mat'], 'term');
-    disp('terminus positions saved');
-end
-
 % -----plot-----
 figure(4); clf; 
 grid on; hold on; 
@@ -443,9 +437,17 @@ plot(term.x/10^3,term.date,'.-b','markersize',15);
 xlabel('distance along centerline [km]'); 
 ylabel('year');
 
+% -----save-----
+if save_files
+    save([homepath,'inputs-outputs/observed_terminus_positions.mat'], 'term');
+    disp('terminus positions saved');
+    saveas(figure(4), [homepath,'figures/observed_terminus_positions.png'], 'png');
+    disp('figure 4 saved');
+end
+
 %% 5. Bed rock estimates from Huss and Farinotti (2014), BedMachine
 
-% load variables from file (note: grid is the same for bedrock and thickness)
+% -----load variables from file (note: grid is the same for bedrock and thickness)
 % bedrock
 [SOM.b, SOM.R] = readgeoraster([homepath,'data/bed_elevations/SOM/bedrock/bedrock.tif']);
 SOM.b = double(SOM.b);
@@ -454,17 +456,18 @@ SOM.b(SOM.b==-9999) = NaN;
 SOM.H = readgeoraster([homepath,'data/bed_elevations/SOM/thickness/thickness.tif']);
 SOM.H = double(SOM.H);
 
-% extract grid info
+% -----extract grid info
 SOM.X = linspace(SOM.R.XWorldLimits(1), SOM.R.XWorldLimits(2), SOM.R.RasterSize(2));
 SOM.Y = linspace(SOM.R.YWorldLimits(1), SOM.R.YWorldLimits(2), SOM.R.RasterSize(1));
 
-% interpolate along centerline
+% -----interpolate along centerline
 [SOM.X_mesh, SOM.Y_mesh] = meshgrid(SOM.X, SOM.Y);
 SOM.b_cl = interp2(SOM.X, SOM.Y, flipud(SOM.b), cl.X, cl.Y);
 SOM.H_cl = interp2(SOM.X, SOM.Y, flipud(SOM.H), cl.X, cl.Y);
 
-% plot
-figure(1); clf; 
+% -----plot
+figure(5); clf; 
+set(gcf,'position',[200 200 950 450]);
 % bedrock
 subplot(1, 2, 1); hold on;
 title('bedrock');
@@ -480,14 +483,25 @@ imagesc(SOM.X/10^3, SOM.Y/10^3, flipud(SOM.H));
 c2 = colorbar;
 xlabel('Easting [km]'); ylabel('Northing [km]');
 
+% -----save
+if save_files
+    % bed variable
+    b_cl_SOM = SOM.b_cl;
+    save([homepath,'inputs-outputs/observed_bed_elevations.mat'],'b_cl_SOM','-append');
+    disp('b_cl_SOM saved to file');
+    % figure
+    saveas(figure(5), [homepath,'figures/observed_bed_elevation_thickness_SOM.png'], 'png');
+    disp('figure 5 saved');
+end
+
 %% 6. Width-averaged bed elevation profile
 
 % -------------------------------------------------------------------------
 %   a. Load bed elevation (OIB picks) and bathymetry (Rebesco, 2006)
 % -------------------------------------------------------------------------
 
-b = load([homepath,'inputs-outputs/observedBed.mat']).HB.hb0;
-bathym = load([homepath,'inputs-outputs/observedBed.mat']).bathym;
+b = load([homepath,'inputs-outputs/observed_bed_elevations.mat']).HB.hb0;
+bathym = load([homepath,'inputs-outputs/observed_bed_elevations.mat']).bathym;
 
 % -------------------------------------------------------------------------
 %   b. Average thickness over width to adjust bed profile assuming a
@@ -495,7 +509,7 @@ bathym = load([homepath,'inputs-outputs/observedBed.mat']).bathym;
 % -------------------------------------------------------------------------
 
 % load pre-collapse surface elevation profile
-h_pc = load([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat']).h(14).h_width_ave;
+h_pc = load([homepath,'inputs-outputs/observed_surface_elevations.mat']).h(14).h_width_ave;
 h_pc(find(isnan(h_pc),1,'first'):end) = 0;
 
 % calculate thickness
@@ -517,22 +531,23 @@ H_adj = mean(Hn, 2, 'omitnan')';
 b_adj = h_pc-H_adj;
 
 % -----plot-----
-figure(5); clf; hold on; legend;
+figure(6); clf; hold on; legend;
 % set(gcf,'position',[200 200 750 450]);
 xlabel('distance along centerline [km]'); 
 ylabel('elevation [m]');
 set(gca,'linewidth',2,'fontsize',14); grid on;
 plot(x/10^3,b,'--k','linewidth',2,'DisplayName','b_{cl}');
-plot(x/10^3,b_adj,'-k','linewidth',2,'DisplayName','b_{adj}');
+plot(x/10^3,b_adj,'-k','linewidth',2,'DisplayName','b_{width-averaged}');
 plot(x/10^3,h_pc,'-b','linewidth',2,'DisplayName','h');
 plot(x/10^3,SOM.b_cl,'-m','linewidth',2,'DisplayName','Huss and Farinotti (2014)');
 
 % -----save-----
 if save_files
     % bed variable
-    save([homepath,'inputs-outputs/bedElevation_widthAveraged.mat'],'b_adj', 'x');
+    save([homepath,'inputs-outputs/observed_bed_elevations_width_averaged.mat'],'b_adj', 'x');
     disp('b_adj saved to file');
     % figure
-    saveas(figure(5), [homepath,'figures/bedElevation_widthAveraged.png'], 'png');
+    saveas(figure(5), [homepath,'figures/observed_bed_elevations.png'], 'png');
     disp('figure 5 saved');
 end
+

@@ -5,7 +5,7 @@
 
 clear all; close all;
 
-save_A_adj = 1; % = 1 to save adjusted rate factor 
+save_A_adj = 0; % = 1 to save adjusted rate factor 
 
 % Define homepath in directory
 homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
@@ -24,10 +24,10 @@ cl.x = load('Crane_centerline.mat').x; cl.y = load('Crane_centerline.mat').y;
     end
 
 % Load observations of speed 2007-2018
-U = load('surfaceSpeeds_widthAveraged_1994-2018').U; 
+U = load('observed_surface_speeds.mat').U; 
 
 % Load calculated rate factor
-A = load('rate_factor.mat').A;
+A = load('modeled_rate_factor.mat').A;
 
 % Set up figure
 figure(1); clf;
@@ -80,16 +80,17 @@ legend('Location','eastoutside');
     A_adj(135:end) = A_adj(134); % use the last point for the rest of the centerline
     % Plot
     subplot(2,1,2); hold on; 
-    xlabel('Distance Along Centerline (km)'); ylabel('Pa^{-3} a^{-1}');
+    xlabel('Distance along centerline (km)'); ylabel('Rate factor [Pa^{-3} a^{-1}]');
     grid on; legend('Location','eastoutside'); set(gca,'fontsize',14,'linewidth',2);
     plot(x(1:135)/10^3,A_adj(1:135)*3.1536e7,'-k','linewidth',2,'DisplayName','A_{adj}');
     plot(x(1:135)/10^3,A(1:135)*3.1536e7,'--k','linewidth',2,'DisplayName','A');
     
-% 4. Save adjusted rate factor
+% 4. Save adjusted rate factor and figure
 if save_A_adj
-    cd([homepath,'inputs-outputs']);
-    save('rate_factor.mat','A_adj','eta_dot_cum','-append');
-    disp(['Adjusted rate factor saved in: ',pwd]);
+    save([homepath,'inputs-outputs/modeled_rate_factor.mat'],'A_adj','eta_dot_cum','-append');
+    disp('Adjusted rate factor saved');
+    saveas(figure(1),[homepath,'figures/modeled_rate_factor.png'],'png');
+    disp('figure 1 saved');
 end 
     
     
