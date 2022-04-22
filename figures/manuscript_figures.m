@@ -953,18 +953,18 @@ end
 
 %% 2018 Model Misfits
     
-save_figure = 0;       % = 1 to save figure
+save_figure = 1;       % = 1 to save figure
 fontsize = 18;         % font size for figure text
 
 % Load observed conditions
 % ice speed
-U_obs_2018 = load([homepath,'inputs-outputs/surfaceSpeeds_widthAveraged_1994-2018.mat']).U(21).U_width_ave;
+U_obs_2018 = load([homepath,'inputs-outputs/observed_surface_speeds.mat']).U(21).U_width_ave;
 % estimate observed thickness in 2018 using surface and bed
 % calculate the thickness required to remain grounded at each grid cell
 rho_sw = 1000; % density of sea water (kg/m^3)
 rho_i = 917; % density of ice (kg/m^3)
 Hf = -(rho_sw./rho_i).*b0; % flotation thickness (m)
-h = load([homepath,'inputs-outputs/surfaceElevationObs_1996-2018.mat']).h;
+h = load([homepath,'inputs-outputs/observed_surface_elevations.mat']).h;
 h_obs_2018 = interp1(cl.xi,h(13).h_centerline,x0);
 % thickness
 H_obs_2018 = h_obs_2018 - b0;
@@ -991,12 +991,12 @@ c_obs_2018 = dsearchn(cl.xi',xcf_obs_2018);
 clear termX termY termx termdate
 
 % load modeled 2018 conditions
-H_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).H;
-U_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).U;
-c_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).c;
-h_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).h;
-b_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).b;
-x_mod_2018 = load([homepath,'inputs-outputs/2018_modeledConditions_steady_state_initial_higher_sigma_b0.mat']).x;
+H_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).H;
+U_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).U;
+c_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).c;
+h_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).h;
+b_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).b;
+x_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).x;
 
 % use observed calving front as cutoff for plotting
 Ic = dsearchn(x_mod_2018',xcf_obs_2018); % index of observed calving front on modeled spatial grid
@@ -1022,9 +1022,9 @@ ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
         sprintf('%.1f',mean(h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),'omitnan')),'color',[0.8 0.1 0.1],...
         'fontsize',fontsize-2);
     % (a)
-%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-%                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-%                 ' a ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');  
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.08+min(get(gca,'YLim')),...
+            ' a ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');  
 % surface speed misfit
 ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
     set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
@@ -1044,9 +1044,9 @@ ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
         sprintf('%.1f',mean(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic)),'omitnan')*3.1536e7),'color',[0.8 0.1 0.1],...
         'fontsize',fontsize-2);
     % (b)
-%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-%                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-%                 ' b ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold'); 
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.08+min(get(gca,'YLim')),...
+            ' b ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold'); 
 set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0 0.4 0.8]]);
 % modeled and observed surface elevation 
 ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; 
@@ -1055,11 +1055,12 @@ ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on;
     xlim([0 52]); 
     xlabel('Distance along centerline [km]'); 
     ylabel('Elevation [m]'); 
-    plot(ax3, x_mod_2018(1:Ic)/10^3,h_mod_2018(1:Ic),'-k','linewidth',2,'displayname','h_{mod}');
-    plot(ax3, x0(1:dsearchn(x0',xcf_obs_2018))/10^3,h_obs_2018(1:dsearchn(x0',xcf_obs_2018)),'--k','linewidth',2,'displayname','h_{obs}');
-%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-%                 (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-%                 ' c ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');     
+    plot(ax3, x_mod_2018(1:Ic)/10^3,h_mod_2018(1:Ic),'-k','linewidth',2,'displayname','h_{modeled}');
+    plot(ax3, x0(1:dsearchn(x0',xcf_obs_2018))/10^3,h_obs_2018(1:dsearchn(x0',xcf_obs_2018)),'--k','linewidth',2,'displayname','h_{observed}');
+    % (c)
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
+            ' c ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');     
     %yyaxis right; set(ax3,'YTick',[],'YTickLabel',[]);
 % modeled and observed surface speed 
 ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; 
@@ -1068,13 +1069,13 @@ ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on;
     xlabel('Distance along centerline [km]'); 
 %         yyaxis left; 
     ylabel('Speed [m/yr]'); ylim([100 850]);
-    plot(ax4, x_mod_2018(1:Ic)/10^3,U_mod_2018(1:Ic)*3.1536e7,'-k','linewidth',2,'displayname','U_{mod}');
-    plot(ax4, cl.xi(1:c_obs_2018)/10^3,U_obs_2018(1:c_obs_2018)*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
+    plot(ax4, x_mod_2018(1:Ic)/10^3,U_mod_2018(1:Ic)*3.1536e7,'-k','linewidth',2,'displayname','U_{modeled}');
+    plot(ax4, cl.xi(1:c_obs_2018)/10^3,U_obs_2018(1:c_obs_2018)*3.1536e7,'--k','linewidth',2,'displayname','U_{observed}');
     xlim([0 52]); 
     ylim([0 1100]);
-%             text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-%                     (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.93+min(get(gca,'YLim')),...
-%                     ' d ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');
+    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
+            ' d ','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');
 %         yyaxis right; ylabel('Basal Roughness Factor [s^{1/m} m^{-1/m}]'); ylim([min(beta0)-0.2 max(beta)+0.2]);
 %             plot(x/10^3,movmean(beta,5),'-','linewidth',2,'color',[0 0.4 0.8],'displayname','\beta');
     
@@ -1086,7 +1087,7 @@ ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on;
 % save figure
 if save_figure
     cd([homepath,'figures/']);
-    exportgraphics(gcf,'misfits2018_steady_state_initial.png','Resolution',600);
+    exportgraphics(gcf,'model_misfits_2018.png','Resolution',600);
     disp('figure 2 saved');
 end
 
@@ -1121,6 +1122,9 @@ RO0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).RO
 DFW_min = 10; % m
 % mean SMB over time: unperturbed scenario
 smb_mean = load([homepath,'inputs-outputs/2100_SMB_mean.mat']).smb_mean;
+% pre-collapse ice mass discharge
+Fgl_preCollapse = load([homepath,'inputs-outputs/modeled_discharge_pre-collapse.mat']).Fgl_preCollapse;
+Fgl_preCollapse(end-10:end) = Fgl_preCollapse(end-10);
 
 % load observed discharge and calving front positions
 % Rignot et al. (2004) discharge observations 
@@ -1183,8 +1187,7 @@ t_mid = 18*3.1536e7; % 2020
 t_end = 98*3.1536e7; 
 dt1 = 0.0005*3.1536e7; 
 dt2 = 0.001*3.1536e7; 
-t = [t_start:dt1:t_mid t_mid+dt2:dt2:t_end]; 
-clear dt1 dt2
+t = [t_start:dt1:t_mid t_mid+dt2:dt2:t_end];
 
 % define color schemes
 % figures 5 & 6
@@ -1272,7 +1275,7 @@ while loop==1
         colormap(col1);
         cb2=colorbar('horiz'); set(cb2,'fontname',fontname,'fontsize',fontsize-3,...
             'Ticks',0:0.5:1,'TickLabels',string([5,10,15]),'position',[0.05 0.9 0.19 0.02]);
-        set(get(cb2,'label'),'String','\Delta d_{fw,min} [m]','fontsize',fontsize-3);   
+        set(get(cb2,'label'),'String','\DeltaSMB [m/y]','fontsize',fontsize-3);   
     ax7E=axes('position',[0.05 0.1 0.19 0.35]); hold on; grid on; % speed
         set(gca,'fontsize',fontsize,'YTick',0:500:1000,'XTickLabel',[]); 
         xlabel('Distance along centerline [km]');
@@ -1321,7 +1324,7 @@ while loop==1
         colormap(col1);
         cb4=colorbar('horiz'); set(cb4,'fontname',fontname,'fontsize',fontsize-3,...
             'Ticks',0:0.5:1,'TickLabels',string([5,10,15]),'position',[0.53 0.9 0.19 0.02]);
-        set(get(cb4,'label'),'String','\Delta SMB_{max,enh} [m/yr]','fontsize',fontsize-3);   
+        set(get(cb4,'label'),'String','\Delta SMB_{enh} [m/yr]','fontsize',fontsize-3);   
     ax7G=axes('position',[0.53 0.1 0.19 0.35]); hold on; grid on; % speed
         set(gca,'fontsize',fontsize,'YTick',0:500:1000,'XTickLabel',[]);        
         xlim([25 60]); 
@@ -1345,7 +1348,7 @@ while loop==1
         colormap(col1);
         cb5=colorbar('horiz'); set(cb5,'fontname',fontname,'fontsize',fontsize-3,'Ticks',0:1/2:1,...
             'TickLabels',[{'0 & 0'},{'-5 & +0.5'},{'-10 & +1.0'}],'position',[0.77 0.9 0.19 0.02]);
-        set(get(cb5,'label'),'String','\DeltaSMB_{max,enh} [m/yr] & \DeltaF_T [^oC]','fontsize',fontsize-3);        
+        set(get(cb5,'label'),'String','\DeltaSMB_{enh} [m/yr] & \DeltaF_T [^oC]','fontsize',fontsize-3);        
     ax7H=axes('position',[0.77 0.1 0.19 0.35]); hold on; grid on; % speed
         set(gca,'fontsize',fontsize,'YTick',0:500:1000,'XTickLabel',[]);        
         xlim([25 60]); 
@@ -1460,12 +1463,7 @@ for i=1:length(IDFW)
         % ice surface speed
         plot(ax5B,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5);
         % dH
-        dHgl(i) = H2(gl2)-H1(gl1); % m
-        % cf and gl positions
-%         plot(ax5C,x2(gl2)/10^3,files(IDFW(i)).change+DFW_min,'x',...
-%             'markersize',10,'linewidth',linewidth,'color',col1(i,:));
-%         plot(ax5C,x2(c2)/10^3,files(IDFW(i)).change+DFW_min,'o',...
-%             'markersize',10,'linewidth',linewidth,'color',col1(i,:));        
+        dHgl(i) = H2(gl2)-H1(gl1); % m      
     % calving front position and grounding line discharge over time
     if i==1
         XCF2_DFWmin = XCF2;
@@ -1487,13 +1485,16 @@ end
 % plot Fgl and Xcf
 figure(6);
 fill(ax6A, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
-    [movmean(XCF2_DFWmin/10^3,100) movmean(fliplr(XCF2_DFWmax)/10^3,100)],...
+    [XCF2_DFWmin/10^3 fliplr(XCF2_DFWmax)/10^3],...
     [150,150,150]./255,'LineStyle','none');
-plot(ax6A,t/3.1536e7+2002,movmean(XCF2_DFWmid/10^3,100),'-k','linewidth',linewidth+0.5,'displayName','\Deltad_{fw,max}');        
+plot(ax6A,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
+    [x0(c0)*ones(1,length(Fgl_preCollapse))/10^3 XCF2_DFWmid/10^3],...
+    '-k','linewidth',linewidth,'displayName','\Deltad_{fw,max}');        
 fill(ax6B, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
-    [movmean(Fgl2_DFWmin,100) movmean(fliplr(Fgl2_DFWmax),100)],...
+    [Fgl2_DFWmin fliplr(Fgl2_DFWmax)],...
     [150,150,150]./255,'LineStyle','none');
-plot(ax6B,t/3.1536e7+2002,movmean(Fgl2_DFWmid,100),'-k','linewidth',linewidth+0.5,'displayName','\Deltad_{fw,max}'); 
+plot(ax6B,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
+    [Fgl_preCollapse Fgl2_DFWmid],'-k','linewidth',linewidth,'displayName','\Deltad_{fw,max}'); 
 % create table to store result quantities
 varNames = {'dfwd','dL','dxgl','dHgl','dUgl','Qfwd'};
 T_DFW = table(dDFW,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),Fdfw,'VariableNames',varNames);
@@ -1738,14 +1739,7 @@ end
 varNames = {'dSMB_enh','dTF','dL','dgl','dHgl','dUgl','Qgl'};
 T_smb_enh_TF = table(dsmb_enh,dTF,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
 
-% -----plot Fgl and Xcf
-% observations
-figure(6);
-plot(ax6A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
-plot(ax6B,F_obs(:,1),F_obs(:,2),'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
-figure(8);
-plot(ax8A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
-plot(ax8B,F_obs(:,1),F_obs(:,2),'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
+% -----plot Fgl and Xcf     
 % min/max ranges
 % fill(ax8A, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
 %     [movmean(XCF2_SMBmin/10^3,100) movmean(fliplr(XCF2_SMBmax)/10^3,100)],...
@@ -1775,14 +1769,23 @@ plot(ax8B,F_obs(:,1),F_obs(:,2),'xk','markersize',markersize-1,'linewidth',linew
 %     [movmean(Fgl2_SMBenhTF_min,100) movmean(fliplr(Fgl2_SMBenhTF_max),100)],...
 %     [254,224,182]./255,'LineStyle','none','facealpha',0.5);
 % mid
-plot(ax8A,t/3.1536e7+2002,movmean(XCF2_SMBmid/10^3,100),'color',[191,129,45]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max}');  
-plot(ax8B,t/3.1536e7+2002,movmean(Fgl2_SMBmid,100),'color',[191,129,45]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max}');        
-plot(ax8A,t/3.1536e7+2002,movmean(XCF2_TFmid/10^3,100),'color',[128,205,193]./255,'linewidth',linewidth+0.5,'displayName','\DeltaF_{T,max}');        
-plot(ax8B,t/3.1536e7+2002,movmean(Fgl2_TFmid,100),'color',[128,205,193]./255,'linewidth',linewidth+0.5,'displayName','\DeltaF_{T,max}');        
-plot(ax8A,t/3.1536e7+2002,movmean(XCF2_SMBenh_mid/10^3,100),'color',[140,81,10]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh}');        
-plot(ax8B,t/3.1536e7+2002,movmean(Fgl2_SMBenh_mid,100),'color',[140,81,10]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh}');        
-plot(ax8A,t/3.1536e7+2002,movmean(XCF2_SMBenhTF_mid/10^3,100),'color',[1,102,94]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh} & \DeltaF_{T,max}');        
-plot(ax8B,t/3.1536e7+2002,movmean(Fgl2_SMBenhTF_mid,100),'color',[1,102,94]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh} & \DeltaF_{T,max}');        
+plot(ax8A,t/3.1536e7+2002,XCF2_SMBmid/10^3,'color',[191,129,45]./255,'linewidth',linewidth,'displayName','\DeltaSMB_{max}');  
+plot(ax8B,t/3.1536e7+2002,Fgl2_SMBmid,'color',[191,129,45]./255,'linewidth',linewidth,'displayName','\DeltaSMB_{max}');        
+plot(ax8A,t/3.1536e7+2002,XCF2_TFmid/10^3,'color',[128,205,193]./255,'linewidth',linewidth,'displayName','\DeltaF_{T,max}');        
+plot(ax8B,t/3.1536e7+2002,Fgl2_TFmid,'color',[128,205,193]./255,'linewidth',linewidth,'displayName','\DeltaF_{T,max}');        
+plot(ax8A,t/3.1536e7+2002,XCF2_SMBenh_mid/10^3,'color',[140,81,10]./255,'linewidth',linewidth,'displayName','\DeltaSMB_{max,enh}');        
+plot(ax8B,t/3.1536e7+2002,Fgl2_SMBenh_mid,'color',[140,81,10]./255,'linewidth',linewidth,'displayName','\DeltaSMB_{max,enh}');        
+plot(ax8A,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
+    [x0(c0)*ones(1,length(Fgl_preCollapse))/10^3 XCF2_SMBenhTF_mid/10^3],'color',[1,102,94]./255,'linewidth',linewidth,'displayName','\DeltaSMB_{max,enh} & \DeltaF_{T,max}');        
+plot(ax8B,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
+    [Fgl_preCollapse Fgl2_SMBenhTF_mid],'color',[1,102,94]./255,'linewidth',linewidth,'displayName','\DeltaSMB_{max,enh} & \DeltaF_{T,max}');        
+% observations
+figure(6);
+plot(ax6A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
+plot(ax6B,F_obs(:,1),F_obs(:,2),'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
+figure(8);
+plot(ax8A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
+plot(ax8B,F_obs(:,1),F_obs(:,2),'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');   
 
 % Add observed 2018 conditions to figures 5 and 7
 b=1; % create a loop to make section collapsible

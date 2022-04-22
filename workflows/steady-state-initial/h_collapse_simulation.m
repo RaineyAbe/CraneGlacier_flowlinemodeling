@@ -16,9 +16,9 @@ tic; % start timer
 clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
-plotTimeSteps = 0; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
+plotTimeSteps = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
 plotClimateParams = 0; % = 1 to plot SMB, DFW, TF over time
-saveFinal = 1; % = 1 to save pre-collapse and final (2100) conditions
+saveFinal = 0; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
 homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
@@ -129,8 +129,9 @@ for j=1:length(delta_SMB0)
     col = parula(50e3); % color scheme for plots
 
     % -----run flowline model-----
+    Fgl_preCollapse = zeros(1,5*3.1536e7/dt);
     i=1; % counter for iterations
-    while i
+    while i < 5*3.1536e7/dt
 
         % -----establish time
         t(i) = (i-1)*dt; % [s]
@@ -276,8 +277,8 @@ for j=1:length(delta_SMB0)
         F(isnan(F))=0;
         F(1)=F(2);
 
-        % -----save grounding line oce flux (discharge)
-        Fgl(i) = F(gl)*917*1e-12*3.1536e7; % Gt/a
+        % -----save grounding line ice flux (discharge)
+        Fgl_preCollapse(i) = F(dsearchn(x',43e3))*917*1e-12*3.1536e7; % Gt/a
 
         % -----implement SMB, SMR, & RO
         SMB = interp1(x0,SMB0+Q0,x);
@@ -317,9 +318,9 @@ for j=1:length(delta_SMB0)
         % -----stop model if stead-state conditions reached
         % (change in U at each point is less than set threshold) 
         if all(abs(H-Hn) < 2e-5*abs(H))
-            disp('    steady-state conditions achieved'); 
-            disp('    continuing...');             
-            break;
+%             disp('    steady-state conditions achieved'); 
+%             disp('    continuing...');             
+%             break;
         else
             H = Hn; 
         end
@@ -328,6 +329,12 @@ for j=1:length(delta_SMB0)
         i=i+1;
     end
 
+    % -----save pre-collapse ice mass discharge
+    if saveFinal
+        save([homepath,'inputs-outputs/modeled_discharge_pre-collapse.mat'],'Fgl_preCollapse');
+        disp('pre-collapse discharge saved');
+    end
+    
     % -----save
     % reassign variable names
     xi=x; hi=h; bi=b; Hi=H; Ui=U; dUdxi=dUdx; Wi=W; Ai=A; betai=beta; gli=gl; ci=c; 
