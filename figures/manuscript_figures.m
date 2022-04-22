@@ -154,7 +154,7 @@ linewidth = 1.5;      % line width
 % add colorbar
     c = colorbar('Position',[0.29 0.58 0.02 0.15],'fontsize',fontsize,'fontweight',...
         'bold','color','w','fontname',fontname);
-    set(get(c,'Title'),'String','Speed [m a^{-1}]','color','w','fontname',...
+    set(get(c,'Title'),'String','Speed [m/yr]','color','w','fontname',...
         fontname,'Position',[5 100 0]);
 
 % insert text labels
@@ -346,7 +346,7 @@ ax(1)=axes('Position',[0.12 0.7 0.75 0.27],'linewidth',2,'fontsize',fontsize,'fo
     text(51,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         'a','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',font,'fontweight','bold');    
 ax(2)=axes('Position',[0.12 0.38 0.75 0.27],'linewidth',2,'fontsize',fontsize,'fontname',font); % speed
-    hold on; grid on; ylabel('Speed [m a^{-1}]');
+    hold on; grid on; ylabel('Speed [m/yr]');
     xlim([0 55]); ylim([0 1600]);
     for i=3:length(Iu)
         plot(ax(2),cl.xi(1:dsearchn(cl.xi',termx(dsearchn(termdate',2006+i))))./10^3,movmean(U(Iu(i)).speed(1:dsearchn(cl.xi',termx(dsearchn(termdate',2006+i)))),2).*3.1536e7,'linewidth',linewidth,'color',col1(i-2,:));
@@ -355,7 +355,7 @@ ax(2)=axes('Position',[0.12 0.38 0.75 0.27],'linewidth',2,'fontsize',fontsize,'f
     text(51,(max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.925+min(get(gca,'YLim')),...
         'b','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',font,'fontweight','bold');      
 ax(3)= axes('Position',[0.12 0.07 0.75 0.27],'linewidth',2,'fontsize',fontsize,'fontname',font); % SMB
-    hold on; grid on; xlabel('Distance Along Centerline [km]'); ylabel('Average Annual SMB [m a^{-1}]');
+    hold on; grid on; xlabel('Distance Along Centerline [km]'); ylabel('Average Annual SMB [m/yr]');
     xlim([0 55]); ylim([0.3 0.7]);set(gca,'clim',[2009 2019]); legend('Location','northwest');
     % Add colorbar
     colormap(col1); 
@@ -894,7 +894,7 @@ yyaxis left; set(gca,'linewidth',2,'fontsize',fontsize,'fontname',fontname);
         plot(cl.xi(1:135)/10^3,movmean(eta_dot_cum(i,1:135),2),'-','color',col1(i,:),'linewidth',linewidth,'HandleVisibility','off');drawnow %,'displayname',num2str(years(i)));
     end
     %plot(cl.xi(1:135)/10^3,nanmean(eta_dot_cum(:,1:135),1),'-k','linewidth',linewidth+1,'displayname','mean');
-yyaxis right; ylabel('Rate Factor [Pa^{-3} a^{-1}]'); ylim([1.03e-17 1.75e-17]);
+yyaxis right; ylabel('Rate Factor [Pa^{-3}/yr]'); ylim([1.03e-17 1.75e-17]);
     colormap(parula(9));
     cb = colorbar('position',[0.2 0.4 0.02 0.3],'fontname',fontname,...
         'fontsize',fontsize-2,'Ticks',[0.0556 0.5 0.9444],'TickLabels',[{'2009'},{'2013'},{'2017'}]);
@@ -940,7 +940,7 @@ legend('position',[0.78 0.15 0.09 0.14]);
 xlim([0 45]); xlabel('Distance Along Centerline [km]'); 
 yyaxis left; ylabel('\beta [s^{1/m} m^{-1/m}]'); 
 plot(x0(1:c0)./10^3,beta(1:c0),'-b','linewidth',2,'displayname','\beta');     
-yyaxis right; ylabel('U [m a^{-1}]'); ylim([0 650]);
+yyaxis right; ylabel('U [m/yr]'); ylim([0 650]);
 plot(cl.xi(1:135)./10^3,U_2018(1:135).*3.1536e7,'k','displayname','U_{obs}','linewidth',linewidth);
 plot(betax(1:dsearchn(betax',x0(c0)))./10^3,U(1:dsearchn(betax',x0(c0))).*3.1536e7,'--k','displayname','U_{mod}','linewidth',2);    
 
@@ -1029,7 +1029,7 @@ ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
 ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
     set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
     xlim([0 52]); 
-    ylabel('Misfit [m a^{-1}]');
+    ylabel('Misfit [m/yr]');
     % surface speed misfit
     plot(ax2, x_mod_2018(1:Ic)/10^3,(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic))).*3.1536e7,...
         '-','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
@@ -1067,7 +1067,7 @@ ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on;
     set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
     xlabel('Distance along centerline [km]'); 
 %         yyaxis left; 
-    ylabel('Speed [m a^{-1}]'); ylim([100 850]);
+    ylabel('Speed [m/yr]'); ylim([100 850]);
     plot(ax4, x_mod_2018(1:Ic)/10^3,U_mod_2018(1:Ic)*3.1536e7,'-k','linewidth',2,'displayname','U_{mod}');
     plot(ax4, cl.xi(1:c_obs_2018)/10^3,U_obs_2018(1:c_obs_2018)*3.1536e7,'--k','linewidth',2,'displayname','U_{obs}');
     xlim([0 52]); 
@@ -1094,34 +1094,88 @@ end
 
 close all;
 
-save_figures = 0;    % = 1 to save figure
+save_figures = 1;    % = 1 to save figure
 fontsize = 16;      % font size
 fontname = 'Arial'; % font name
 linewidth = 2;      % line width
 markersize = 10;    % marker size
 
-% load sensitivity test no change variables
-% unpertured scenario
+% load modeled conditions
+% 2100: unperturbed scenario
 load([homepath,'inputs-outputs/modeled_conditions_2100_unperturbed.mat']);
-% modeled 2018 conditions
+% 2018
 H18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).H;
 U18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).U;
 c18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).c;
 h18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).h;
 hb18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).b;
 x18 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).x;
-
-% load model initialization parameters
+% model initialization parameters
 W0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).W0;
 b0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).b0;
 h0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).h0;
 x0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).x0;
 c0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).c0;
 RO0 = load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']).RO0;
-DFW0 = 10;
-
-% mean SMB over time (unperturbed)
+% median DFW_min
+DFW_min = 10; % m
+% mean SMB over time: unperturbed scenario
 smb_mean = load([homepath,'inputs-outputs/2100_SMB_mean.mat']).smb_mean;
+
+% load observed discharge and calving front positions
+% Rignot et al. (2004) discharge observations 
+% [deciyear discharge (km^3/a)]
+F_obs = [1996 2.6; 2003+2.75/12 5.6; 2003+3.2/12 6.8; 2003+3.5/12 7.6];
+% convert to Gt/a
+% (km^3/a)*(10^9 m^3/km^3)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton) = Gt/a
+F_obs(:,2) = F_obs(:,2).*10^9.*917.*10^-3.*10^-9; % Gt/a
+% load observed terminus positions
+termX = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
+termY = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
+termx = cl.xi(dsearchn([cl.Xi cl.Yi],[termX' termY']));
+termdate = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
+% load observed speed, width, and modeled thickness
+U = load([homepath,'inputs-outputs/observed_surface_speeds.mat']).U;
+h = load([homepath,'inputs-outputs/observed_surface_elevations.mat']).h;
+os.years = 2016:2017;
+os.xcf = interp1(termdate, termx, os.years); % calving front position (m along centerline)
+os.c = dsearchn(cl.xi',os.xcf'); % calving front indices
+os.W = W0(os.c); % (m along centerline)
+os.h = 30*ones(1,length(os.years));
+% for i=1:length(os.years)
+%     os.h(i) = h(i+7).h_centerline(os.c(i)); % surface elevation (m) 
+%     if os.h(i) < 0
+%         os.h(i) = h(i+7).h_centerline(find(h(i+7).h_centerline > 0,1, 'last'));
+%     end
+% end
+os.Hf = (1000/(1000-917)).*os.h; % flotation thickness (m)
+os.U = [U(20).U_width_ave(os.c(1)) U(21).U_width_ave(os.c(2))]; % 2016:2017
+%[U(13).U_width_ave(os.c(1)) U(14).U_width_ave(os.c(2)) U(15).U_width_ave(os.c(3))... % 2009:2011
+% calculate F_obs, convert to Gt/a, and append to vector array
+% (m^3/s)*(3.1536e7 s/a)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton)
+% use the mean of a rectangular and ellipsoidal bed
+F_obs = [F_obs; os.years' (os.W.*os.Hf.*os.U.*3.1536e7*917.*10^-3.*10^-9*pi*1/4)']; % Gt/a;
+
+% estimate observed thickness in 2018 using surface and bed
+% calculate the thickness required to remain grounded at each grid cell
+rho_sw = 1000; % density of sea water (kg/m^3)
+rho_i = 917; % density of ice (kg/m^3)
+Hf = -(rho_sw./rho_i).*b0; % flotation thickness (m)
+h_2018 = interp1(cl.xi,h(13).h_centerline,x0);
+H_2018 = h_2018 - b0;
+% find the location of the grounding line and use a floating
+% geometry from the grounding linU_widthavge to the calving front
+if length(Hf)>=find(Hf-H_2018>0,1,'first')+1
+    xgl = interp1(Hf(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1)...
+        -H_2018(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1),...
+        x0(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1),0,'linear','extrap'); % (m along centerline)
+else
+    xgl = x0(find(Hf-H_2018>0,1,'first')-1);
+end
+gl_2018 = dsearchn(x0',xgl);
+h_2018(gl_2018+1:c0) = (1-rho_i/rho_sw).*H_2018(gl_2018+1:c0); %adjust the surface elevation of ungrounded ice to account for buoyancy
+H_2018(h_2018<0)=0-b0(h_2018<0); h_2018(h_2018<0)=0; % surface cannot go below sea level
+h_2018(h_2018-H_2018<b0) = b0(h_2018-H_2018<b0)+H_2018(h_2018-H_2018<b0); % thickness cannot go beneath bed elevation
 
 % define time stepping (s)
 t_start = 0*3.1536e7; % 2002
@@ -1131,56 +1185,6 @@ dt1 = 0.0005*3.1536e7;
 dt2 = 0.001*3.1536e7; 
 t = [t_start:dt1:t_mid t_mid+dt2:dt2:t_end]; 
 clear dt1 dt2
-
-% Observed discharge & calving front positions
-    % Rignot et al. (2004) discharge observations 
-    % [deciyear discharge (km^3/a)]
-    F_obs = [1996 2.6; 2003+2.75/12 5.6; 2003+3.2/12 6.8; 2003+3.5/12 7.6];
-    % convert to Gt/a
-    % (km^3/a)*(10^9 m^3/km^3)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton) = Gt/a
-    F_obs(:,2) = F_obs(:,2).*10^9.*917.*10^-3.*10^-9; % Gt/a
-    % load observed speed, width, and modeled thickness
-    os.years = [2008 2010:2017];
-    os.gl = c0;%[134 140 130 141 153 151]; % index
-    os.W = W0(os.gl); % m
-    os.h = h0(c0);%[h(1).surface(os.gl(1)) h(2).surface(os.gl(2)) h(3).surface(os.gl(3)) h(14).surface(os.gl(4)) h(28).surface(os.gl(5)) h(35).surface(os.gl(6))];
-    os.H = (1000/(1000-917)).*os.h; % flotation thickness (m)
-    U = load([homepath,'inputs-outputs/observed_surface_speeds.mat']).U;
-    os.U = [U(13).U_width_ave(153) U(14).U_width_ave(152)... % 2008 2010
-        U(15).U_width_ave(156) U(16).U_width_ave(152) U(17).U_width_ave(dsearchn(cl.xi',x0(os.gl)))... % 2011:2013
-        U(18).U_width_ave(dsearchn(cl.xi',x0(os.gl))) U(19).U_width_ave(dsearchn(cl.xi',x0(os.gl)))... % 2014:2015
-        U(20).U_width_ave(dsearchn(cl.xi',x0(os.gl))) U(21).U_width_ave(dsearchn(cl.xi',x0(os.gl)))]; % 2016:2017
-    % calculate F_obs, convert to Gt/a, and append to vector array
-    % (m^3/s)*(3.1536e7 s/a)*(917 kg/m^3)*(10^-3 ton/kg)*(10^-9 Gt/ton)
-    % use the mean of a rectangular and ellipsoidal bed
-    F_obs = [F_obs; os.years' (os.W.*os.H.*os.U.*3.1536e7*917.*10^-3.*10^-9*pi*1/4)']; % Gt/a;
-    % estimate observed thickness in 2018 using surface and bed
-    % calculate the thickness required to remain grounded at each grid cell
-    rho_sw = 1000; % density of sea water (kg/m^3)
-    rho_i = 917; % density of ice (kg/m^3)
-    Hf = -(rho_sw./rho_i).*b0; % flotation thickness (m)
-    h = load([homepath,'inputs-outputs/observed_surface_elevations.mat']).h;
-    h_2018 = interp1(cl.xi,h(13).h_centerline,x0);
-    H_2018 = h_2018 - b0;
-    % find the location of the grounding line and use a floating
-    % geometry from the grounding linU_widthavge to the calving front
-    if length(Hf)>=find(Hf-H_2018>0,1,'first')+1
-        xgl = interp1(Hf(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1)...
-            -H_2018(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1),...
-            x0(find(Hf-H_2018>0,1,'first')-1:find(Hf-H_2018>0,1,'first')+1),0,'linear','extrap'); % (m along centerline)
-    else
-        xgl = x0(find(Hf-H_2018>0,1,'first')-1);
-    end
-    gl_2018 = dsearchn(x0',xgl);
-    h_2018(gl_2018+1:c0) = (1-rho_i/rho_sw).*H_2018(gl_2018+1:c0); %adjust the surface elevation of ungrounded ice to account for buoyancy
-    H_2018(h_2018<0)=0-b0(h_2018<0); h_2018(h_2018<0)=0; % surface cannot go below sea level
-    h_2018(h_2018-H_2018<b0) = b0(h_2018-H_2018<b0)+H_2018(h_2018-H_2018<b0); % thickness cannot go beneath bed elevation
-    
-    % observed terminus positions
-    termX = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
-    termY = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
-    termx = cl.xi(dsearchn([cl.Xi cl.Yi],[termX' termY']));
-    termdate = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
 
 % define color schemes
 % figures 5 & 6
@@ -1192,237 +1196,43 @@ colF = [197,27,125;222,119,174;241,182,218; 127,188,65;77,146,33]./255;
 % set up axes
 loop=1; % loop to minimize plotting commands
 while loop==1
-    figure(5); clf 
-    set(gcf,'Position',[-1700 100 1000 750]);
-    % (1) 
-    %   (a) SMB
-    axA=axes('position',[0.07 0.64 0.25 0.25]); hold on; grid on; % geometry
+    % -----unperturbed & varying DFW_min scenarios-----
+    % geometry, speed, calving front & grounding line positions
+    figure(5); clf; 
+    set(gcf,'Position',[0 75 375 550]);
+    ax5A=axes('position',[0.15 0.5 0.8 0.35]); hold on; grid on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[]);
         ylabel('Elevation [m]');         
-        xlim([25 95]); ylim([-800 500]);
+        xlim([25 80]); 
+        ylim([-800 500]);
         plot(x1./10^3,b1,'-k','linewidth',2);
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
             'a','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
         % add colorbar
         colormap(col1);
-        cb2=colorbar('horiz'); set(cb2,'fontname',fontname,'fontsize',fontsize-3,...
-            'Ticks',0:0.5:1,'TickLabels',string(0:-5:-10),'position',[0.07 0.9 0.25 0.02]);
-        set(get(cb2,'label'),'String','\DeltaSMB_{max} [m a^{-1}]','fontsize',fontsize-3);   
-    axD=axes('position',[0.07 0.36 0.25 0.25]); hold on; grid on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:300:1200,'XTickLabel',[]);        
-        ylabel('Speed [m a^{-1}]');  
-        xlim([25 95]); ylim([0 1050]);
+        cb1=colorbar('horiz'); set(cb1,'fontname',fontname,'fontsize',fontsize-3,...
+            'Ticks',0:0.5:1,'TickLabels',string([5,10,15]),'position',[0.15 0.9 0.8 0.02]);
+        set(get(cb1,'label'),'String','d_{fw} [m]','fontsize',fontsize-3);   
+    ax5B=axes('position',[0.15 0.1 0.8 0.35]); hold on; grid on; % speed
+        set(gca,'fontsize',fontsize,'YTick',0:300:1200);        
+        xlabel('Distance along centerline [km]');
+        ylabel('Speed [m/yr]');  
+        xlim([25 80]); 
+        ylim([0 1050]);
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'd','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-    axG=axes('position',[0.07 0.08 0.25 0.25]); hold on; grid on; % xgl/xcf
-        set(gca,'fontsize',fontsize,'YTick',-9:3:9);
-        ylabel('SMB_{mean} [m a^{-1}]'); xlabel('Distance Along Centerline [km]');
-        xlim([25 95]); ylim([smb_mean(end)*3.1536e7-1 smb_mean(1)*3.1536e7+2]);              
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'g','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');     
-    %   (b) F_T   
-    axB=axes('position',[0.4 0.64 0.25 0.25]); hold on; grid on; % geometry
-        set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[]);
-        xlim([25 95]); ylim([-800 500]);
-        plot(x1./10^3,b1,'-k','linewidth',2);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
             'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-        % add colorbar
-        colormap(col1);
-        cb3=colorbar('horiz'); set(cb3,'fontname',fontname,'fontsize',fontsize-3,...
-            'Ticks',0:0.5:1,'TickLabels',string(0:0.5:1),'position',[0.4 0.9 0.25 0.02]);
-        set(get(cb3,'label'),'String','\DeltaF_T [^oC]','fontsize',fontsize-3);
-    axE=axes('position',[0.4 0.36 0.25 0.25]); hold on; grid on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:300:1200,'XTickLabel',[]);        
-        xlim([25 90]); ylim([0 1050]);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'e','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-    axH=axes('position',[0.4 0.08 0.25 0.25]); hold on; grid on; % gl/cf
-         set(gca,'fontsize',fontsize,'YTick',0.25:0.25:1.5);
-        ylabel('F_T [^oC]'); xlabel('Distance Along Centerline [km]');
-        xlim([25 95]); ylim([0.1 1.3]);               
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'h','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');         
-    %   (c) DFW
-    axC=axes('position',[0.72 0.64 0.25 0.25]); hold on; grid on; % geometry
-        set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[]);
-        xlim([25 95]); ylim([-800 500]);
-        plot(x1./10^3,b1,'-k','linewidth',2);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'c','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-         % add colorbar
-        colormap(col1);
-        cb4=colorbar('horiz'); set(cb4,'fontname',fontname,'fontsize',fontsize-3,...
-            'Ticks',0:0.5:1,'TickLabels',string(0:5:10),'position',[0.72 0.9 0.25 0.02]);
-        set(get(cb4,'label'),'String','\Deltad_{fw} [m]','fontsize',fontsize-3);
-    axF=axes('position',[0.72 0.36 0.25 0.25]); hold on; grid on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:300:1200,'XTickLabel',[]);        
-        xlim([25 95]); ylim([0 1050]);
-        % add text label             
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'f','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-    axI=axes('position',[0.72 0.08 0.25 0.25]); hold on; grid on; % xgl/xcf
-        set(gca,'fontsize',fontsize);
-        ylabel('d_{fw} [m]'); xlabel('Distance Along Centerline [km]');
-        xlim([25 95]); ylim([DFW0-1 DFW0+11]);              
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'i','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-    % axes for other perturbations
-    figure(6); clf 
-    set(gcf,'Position',[-1600 200 800 750]);
-    % (2) SMB_enhanced  
-    axAA=axes('position',[0.1 0.64 0.38 0.25]); hold on; grid on; % geometry
-        set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[]);
-        ylabel('Elevation [m]'); 
-        xlim([25 95]); ylim([-800 500]);
-        plot(x1./10^3,b1,'-k','linewidth',2);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'a','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-        % add colorbar
-        colormap(col1);
-        cb5=colorbar('horiz'); set(cb5,'fontname',fontname,'fontsize',fontsize-3,...
-            'Ticks',0:0.5:1,'TickLabels',string(0:5:10),'position',[0.1 0.9 0.38 0.02]);
-        set(get(cb5,'label'),'String','\DeltaSMB_{max,enh} [m a^{-1}]','fontsize',fontsize-3);      
-    axCC=axes('position',[0.1 0.36 0.38 0.25]); hold on; grid on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:300:1200,'XTickLabel',[]);        
-        ylabel('Speed [m a^{-1}]');  
-        xlim([25 95]); ylim([0 1050]);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'c','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-    axEE=axes('position',[0.1 0.08 0.38 0.25]); hold on; grid on; % gl/cf
-         set(gca,'fontsize',fontsize);
-        ylabel('SMB_{mean} [m a^{-1}]'); xlabel('Distance Along Centerline [km]');
-        xlim([25 95]); ylim([smb_mean(end)*3.1536e7-1 smb_mean(1)*3.1536e7+1]);               
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'e','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');         
-    % (3) SMB_enh + F_T
-    axBB=axes('position',[0.58 0.64 0.38 0.25]); hold on; grid on; % geometry
-        set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[]);
-        xlim([25 95]); ylim([-800 500]);
-        plot(x1./10^3,b1,'-k','linewidth',2);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-        % add colorbar
-        colormap(col1);
-        cb6=colorbar('horiz'); set(cb6,'fontname',fontname,'fontsize',fontsize-3,'Ticks',0:1/2:1,...
-            'TickLabels',[{'0 & 0'},{'-5 & +0.5'},{'-10 & +1.0'}],'position',[0.58 0.9 0.38 0.02]);
-        set(get(cb6,'label'),'String','\DeltaSMB_{max,enh} [m a^{-1}] & \DeltaF_T [^oC]','fontsize',fontsize-3);        
-    axDD=axes('position',[0.58 0.36 0.38 0.25]); hold on; grid on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:500:1600,'XTickLabel',[]);        
-        xlim([25 95]); ylim([0 1050]);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'd','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1); 
-    axFF=axes('position',[0.58 0.08 0.38 0.25]); hold on; grid on; % xgl/xcf
-        set(gca,'fontsize',fontsize);
-        xlabel('Distance Along Centerline [km]'); ylabel('F_T');
-        xlim([25 95]); ylim([-0.1 1.1]);              
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-            'f','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-    % ice mass discharge across grounding line
-    figure(7); clf;
-    set(gcf,'position',[-1550 300 1000 700]); 
-    ax10 = axes('position',[0.08 0.57 0.27 0.39]); hold on; % SMB
-        set(gca,'fontsize',fontsize); grid on;
-        xlabel('SMB_{mean} [m a^{-1}]'); ylabel('Q_{gl} [Gt a^{-1}]');
-        xlim([smb_mean(end)*3.1536e7-0.5 smb_mean(1)*3.1536e7+0.5]); 
-        ylim([0.5 1.5]);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
-            'a','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-        % add colorbar
-        colormap(col1);
-        cb5=colorbar('northoutside','fontname',fontname,'fontsize',fontsize-2,'Ticks',0:0.5:1,'TickLabels',string(0:-5:-10));
-        set(get(cb5,'label'),'String','\DeltaSMB_{max} [m a^{-1}]','fontsize',fontsize-2);
-    ax11 = axes('position',[0.39 0.57 0.27 0.39]); hold on; % F_T
-        set(gca,'fontsize',fontsize); grid on; 
-        xlabel('F_T [^oC]');  
-        xlim([0.1 1.3]); 
-        ylim([0.5 1.5]); 
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
-            'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-        % add colorbar
-        colormap(col1); 
-        cb4=colorbar('northoutside','fontname',fontname,'fontsize',fontsize-2,'Ticks',0:0.5:1,'TickLabels',string(0:0.5:1));
-        set(get(cb4,'label'),'String','\DeltaF_T [^oC]','fontsize',fontsize-2);
-    ax12 = axes('position',[0.7 0.57 0.27 0.39]); hold on; % d_fw
-        set(gca,'fontsize',fontsize); grid on;
-        xlabel('d_{fw} [m]'); 
-        xlim([DFW0-0.5 DFW0+10.5]);
-        ylim([0.5 1.5]);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
-            'c','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-         % add colorbar
-        colormap(col1);
-        cb6=colorbar('northoutside','fontname',fontname,'fontsize',fontsize-2,'Ticks',0:0.5:1,'TickLabels',string(0:5:10)); 
-        set(get(cb6,'label'),'String','\Deltad_{fw} [m]','fontsize',fontsize-2);
-    ax13 = axes('position',[0.17 0.1 0.3 0.35]); hold on; 
-        set(gca,'fontsize',fontsize); grid on; 
-        xlabel('SMB_{mean} [m a^{-1}]'); ylabel('Q_{gl} [Gt a^{-1}]'); 
-        xlim([smb_mean(end)*3.1536e7-0.5 smb_mean(1)*3.1536e7+0.5]); 
-        ylim([0.5 1.5]); 
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
-            'd','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-        % add colorbar
-        colormap(col1); 
-        cb4=colorbar('eastoutside','fontname',fontname,'fontsize',fontsize-2,'Ticks',0:0.5:1,'TickLabels',string(0:-5:-10));
-        set(get(cb4,'label'),'String','\DeltaSMB_{max,enh} [m a^{-1}]','fontsize',fontsize-2);
-    ax14 = axes('position',[0.58 0.1 0.3 0.35]); hold on;
-        set(gca,'fontsize',fontsize); grid on;
-        xlabel('\DeltaF_T [^oC]');
-        xlim([-0.1 1.1]); 
-        ylim([0.5 1.5]);
-        % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.91+min(get(gca,'YLim')),...
-            'e','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-        % add colorbar
-        colormap(col1);
-        cb5=colorbar('eastoutside','fontname',fontname,'fontsize',fontsize-2,'Ticks',0:0.5:1,'TickLabels',string(0:-5:-10));
-        set(get(cb5,'label'),'String','\DeltaSMB_{max,enh} [m a^{-1}]','fontsize',fontsize-2);
-    % calving front position and discharge over time
-    figure(8); clf;  
-    set(gcf,'Position',[-1300 200 1000 800]); 
-    ax16 = axes('position',[0.06 0.57 0.7 0.4]); hold on;
+    % Fgl, calving front & grounding line positions
+    figure(6); clf;
+    set(gcf,'Position',[0 450 625 650]); 
+    ax6A = axes('position',[0.08 0.57 0.85 0.4]); hold on;
         set(gca,'fontsize',fontsize); grid on;
         xlim([1995 2100]); 
-        ylim([25 95]);
-        ylabel('Calving Front Position [km]');
+        ylim([40 80]);
+        ylabel('Calving front position [km]');
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
@@ -1430,19 +1240,152 @@ while loop==1
         % add grey rectangle for Larsen B ice shelf collapse
         clps_st = 2002.0849; % Jan 31, 2002
         clps_end = 2002.2822; % April 13, 2002
-        rectangle(ax16,'Position',[clps_st 25 clps_end-clps_st 90],'FaceColor',[189,189,189]./255,'EdgeColor',[189,189,189]./255);
-    ax17 = axes('position',[0.06 0.09 0.7 0.4]); hold on; 
+        rectangle(ax6A,'Position',[clps_st 25 clps_end-clps_st 90],'FaceColor',[189,189,189]./255,'EdgeColor',[189,189,189]./255);
+    ax6B = axes('position',[0.08 0.09 0.85 0.4]); hold on; 
         set(gca,'fontsize',fontsize); grid on; 
-        leg = legend('position',[0.8 0.4 0.17 0.24]);
-        xlim([1995 2100]); ylim([0 7.5]);        
-        xlabel('Year'); ylabel('Grounding Line Discharge [Gt a^{-1}]'); ylim([0 7]);
+        xlim([1995 2100]); 
+        ylim([0 7.5]);        
+        xlabel('Year'); ylabel('Grounding line discharge [Gt/y]'); ylim([0 7]);
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
         % add grey rectangle for Larsen B ice shelf collapse
-        rectangle(ax17,'Position',[clps_st 0 clps_end-clps_st 7],'FaceColor',[189,189,189]./255,'EdgeColor',[189,189,189]./255);
-    loop=loop+1; % exit loop        
+        rectangle(ax6B,'Position',[clps_st 0 clps_end-clps_st 7],'FaceColor',[189,189,189]./255,'EdgeColor',[189,189,189]./255);    
+    
+    % -----future SMB, TF, SMB_enh, SMB_enh+TF scenarios-----
+    % geometry, speed, calving front & grounding line positions
+    figure(7); clf; 
+    set(gcf,'Position',[0 75 1250 550]);
+    % SMB
+    ax7A=axes('position',[0.05 0.5 0.19 0.35]); hold on; grid on; % geometry
+        set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[]);
+        ylabel('Elevation [m]');         
+        xlim([25 60]); 
+        ylim([-800 500]);
+        plot(x1./10^3,b1,'-k','linewidth',2);
+        % add text label            
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+            'a','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+        % add colorbar
+        colormap(col1);
+        cb2=colorbar('horiz'); set(cb2,'fontname',fontname,'fontsize',fontsize-3,...
+            'Ticks',0:0.5:1,'TickLabels',string([5,10,15]),'position',[0.05 0.9 0.19 0.02]);
+        set(get(cb2,'label'),'String','\Delta d_{fw,min} [m]','fontsize',fontsize-3);   
+    ax7E=axes('position',[0.05 0.1 0.19 0.35]); hold on; grid on; % speed
+        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'XTickLabel',[]); 
+        xlabel('Distance along centerline [km]');
+        ylabel('Speed [m/yr]');  
+        xlim([25 60]); 
+        ylim([0 1200]);
+        % add text label            
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+            'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+    % TF
+    ax7B=axes('position',[0.29 0.5 0.19 0.35]); hold on; grid on; % geometry
+        set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[]);
+        xlim([25 60]); 
+        ylim([-800 500]);
+        plot(x1./10^3,b1,'-k','linewidth',2);
+        % add text label            
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
+%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
+%             'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+        % add colorbar
+        colormap(col1);
+        cb3=colorbar('horiz'); set(cb3,'fontname',fontname,'fontsize',fontsize-3,...
+            'Ticks',0:0.5:1,'TickLabels',string([5,10,15]),'position',[0.29 0.9 0.19 0.02]);
+        set(get(cb3,'label'),'String','\Delta F_T [^oC]','fontsize',fontsize-3);   
+    ax7F=axes('position',[0.29 0.1 0.19 0.35]); hold on; grid on; % speed
+        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'XTickLabel',[]);        
+        xlim([25 60]); 
+        ylim([0 1200]);
+        xlabel('Distance along centerline [km]');
+        % add text label            
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
+%             'f','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+    % SMB_enh
+    ax7C=axes('position',[0.53 0.5 0.19 0.35]); hold on; grid on; % geometry
+        set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[]);
+        xlim([25 60]); 
+        ylim([-800 500]);
+        plot(x1./10^3,b1,'-k','linewidth',2);
+        % add text label            
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
+%             'c','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+        % add colorbar
+        colormap(col1);
+        cb4=colorbar('horiz'); set(cb4,'fontname',fontname,'fontsize',fontsize-3,...
+            'Ticks',0:0.5:1,'TickLabels',string([5,10,15]),'position',[0.53 0.9 0.19 0.02]);
+        set(get(cb4,'label'),'String','\Delta SMB_{max,enh} [m/yr]','fontsize',fontsize-3);   
+    ax7G=axes('position',[0.53 0.1 0.19 0.35]); hold on; grid on; % speed
+        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'XTickLabel',[]);        
+        xlim([25 60]); 
+        ylim([0 1200]);
+        xlabel('Distance along centerline [km]');        
+        % add text label            
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
+%             'g','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+    % SMB_enh & TF
+    ax7D=axes('position',[0.77 0.5 0.19 0.35]); hold on; grid on; % geometry
+        set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[]);
+        xlim([25 60]); 
+        ylim([-800 500]);
+        plot(x1./10^3,b1,'-k','linewidth',2);
+        % add text label            
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
+%             'd','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+        % add colorbar
+        colormap(col1);
+        cb5=colorbar('horiz'); set(cb5,'fontname',fontname,'fontsize',fontsize-3,'Ticks',0:1/2:1,...
+            'TickLabels',[{'0 & 0'},{'-5 & +0.5'},{'-10 & +1.0'}],'position',[0.77 0.9 0.19 0.02]);
+        set(get(cb5,'label'),'String','\DeltaSMB_{max,enh} [m/yr] & \DeltaF_T [^oC]','fontsize',fontsize-3);        
+    ax7H=axes('position',[0.77 0.1 0.19 0.35]); hold on; grid on; % speed
+        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'XTickLabel',[]);        
+        xlim([25 60]); 
+        ylim([0 1200]);
+        xlabel('Distance along centerline [km]');        
+        % add text label            
+%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
+%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
+%             'h','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+    % Fgl, calving front & grounding line positions
+    figure(8); clf;
+    set(gcf,'Position',[0 450 800 650]); 
+    ax8A = axes('position',[0.06 0.57 0.65 0.4]); hold on;
+        set(gca,'fontsize',fontsize); grid on;
+        xlim([1995 2100]); 
+        ylim([40 60]);
+        ylabel('Calving front position [km]');
+        % add text label            
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
+            'a','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
+        % add grey rectangle for Larsen B ice shelf collapse
+        clps_st = 2002.0849; % Jan 31, 2002
+        clps_end = 2002.2822; % April 13, 2002
+        rectangle(ax8A,'Position',[clps_st 25 clps_end-clps_st 90],'FaceColor',[189,189,189]./255,'EdgeColor',[189,189,189]./255);
+    ax8B = axes('position',[0.06 0.09 0.65 0.4]); hold on; 
+        set(gca,'fontsize',fontsize); grid on; 
+        xlim([1995 2100]); 
+        ylim([0 7.5]);        
+        xlabel('Year'); ylabel('Grounding line discharge [Gt/y]'); ylim([0 7]);
+        % add text label            
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
+            'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
+        % add grey rectangle for Larsen B ice shelf collapse
+        rectangle(ax8B,'Position',[clps_st 0 clps_end-clps_st 7],'FaceColor',[189,189,189]./255,'EdgeColor',[189,189,189]./255);    
+        % add legend
+        l = legend('position',[0.78 0.4 0.17 0.24]);
+    loop=loop+1; % exit loop 
+    
 end
 
 % loop through results, split into each scenario
@@ -1468,7 +1411,7 @@ for i=1:length(files)
     % (b) DFW
     elseif contains(files(i).name,'SMB0') && contains (files(i).name,'TF0_')
         files(i).change = str2double(files(i).name(regexp(files(i).name,'W')+1:...
-            regexp(files(i).name,'m_')-1))-DFW0; % m 
+            regexp(files(i).name,'m_')-1))-DFW_min; % m 
         files(i).changeIn = 'DFW';  
         files(i).name = files(i).name;
     % (c) F_T
@@ -1489,6 +1432,72 @@ IDFW = find(strcmp('DFW',table2array(files(:,8))));
 ITF = find(strcmp('TF',table2array(files(:,8))));
 files = table2struct(files);
 
+% (1) unperturbed with varying DFW_min scenarios
+dDFW = zeros(length(IDFW),1); % change in DFW
+dHgl = zeros(length(IDFW),1); % change in mean thickness
+dUgl = zeros(length(IDFW),1); % change in mean ice speed
+dL = zeros(length(IDFW),1); % change in length
+dgl = zeros(length(IDFW),1); % change in grounding line position
+Ugl = zeros(length(IDFW),1); % speed at grounding line 
+Fdfw = zeros(length(IDFW),1); % grounding line discharge
+col1 = cmocean('thermal',length(IDFW)+3); col1(1,:)=[];col1(end-1:end,:)=[];
+for i=1:length(IDFW)
+    % load file
+    load(files(IDFW(i)).name);
+    % calculate grounding line discharge
+    W = interp1(x0,W0,x2); % interpolate width on spatial grid
+    % F (Gt/a) = (U m/s)*(H m)*(W m)*(917 kg/m^3)*(3.1536e7 s/a)*(1e-12 Gt/kg)
+    % use the mean of a rectangular and an ellipsoidal bed
+    Fdfw(i) = (H2(gl2)*U2(gl2)*W(gl2))*917*1e-12*3.1536e7; % Gt/a    
+    % plot
+    figure(5); hold on;
+        % ice surface
+        plot(ax5A,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        % calving front
+        plot(ax5A,[x2(c2) x2(c2)]./10^3,[h2(c2)-H2(c2) h2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
+        % floating bed
+        plot(ax5A,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        % ice surface speed
+        plot(ax5B,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5);
+        % dH
+        dHgl(i) = H2(gl2)-H1(gl1); % m
+        % cf and gl positions
+%         plot(ax5C,x2(gl2)/10^3,files(IDFW(i)).change+DFW_min,'x',...
+%             'markersize',10,'linewidth',linewidth,'color',col1(i,:));
+%         plot(ax5C,x2(c2)/10^3,files(IDFW(i)).change+DFW_min,'o',...
+%             'markersize',10,'linewidth',linewidth,'color',col1(i,:));        
+    % calving front position and grounding line discharge over time
+    if i==1
+        XCF2_DFWmin = XCF2;
+        Fgl2_DFWmin = Fgl2; 
+    elseif i==6
+        XCF2_DFWmid = XCF2;
+        Fgl2_DFWmid = Fgl2; 
+    elseif i==length(IDFW)
+        XCF2_DFWmax = XCF2;
+        Fgl2_DFWmax = Fgl2; 
+    end
+    % save results 
+    dDFW(i) = files(IDFW(i)).change; % m/a
+    dUgl(i) = (U2(gl2)-U1(gl1)).*3.1536e7; % m/a     
+    dL(i) = x2(c2)-x1(c1); % m   
+    dgl(i) = x2(gl2)-x1(gl1); % m
+    Ugl(i) = U2(gl2)*3.1536e7; % m/a
+end
+% plot Fgl and Xcf
+figure(6);
+fill(ax6A, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+    [movmean(XCF2_DFWmin/10^3,100) movmean(fliplr(XCF2_DFWmax)/10^3,100)],...
+    [150,150,150]./255,'LineStyle','none');
+plot(ax6A,t/3.1536e7+2002,movmean(XCF2_DFWmid/10^3,100),'-k','linewidth',linewidth+0.5,'displayName','\Deltad_{fw,max}');        
+fill(ax6B, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+    [movmean(Fgl2_DFWmin,100) movmean(fliplr(Fgl2_DFWmax),100)],...
+    [150,150,150]./255,'LineStyle','none');
+plot(ax6B,t/3.1536e7+2002,movmean(Fgl2_DFWmid,100),'-k','linewidth',linewidth+0.5,'displayName','\Deltad_{fw,max}'); 
+% create table to store result quantities
+varNames = {'dfwd','dL','dxgl','dHgl','dUgl','Qfwd'};
+T_DFW = table(dDFW,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),Fdfw,'VariableNames',varNames);
+
 % (1) SMB
 dSMB = zeros(length(ISMB),1); % change in SMB
 dHgl = zeros(length(ISMB),1); % change in thickness at the grounding line
@@ -1504,32 +1513,30 @@ for i=1:length(ISMB)
     % F (Gt/a) = (U m/s)*(A m^2)*(917 kg/m^3)*(3.1536e7 s/a)*(1e-12 Gt/kg)
     % use the mean of a rectangular and an ellipsoidal bed
     Fsmb(i) = (H2(gl2)*U2(gl2)*W(gl2))*917*1e-12*3.1536e7; % Gt/a
-    figure(5); hold on;
+    figure(7); hold on;
         % ice surface
-        plot(axA,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7A,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
         % calving front
-        plot(axA,[x2(c2) x2(c2)]./10^3,[h2(c2) h2(c2)-H2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7A,[x2(c2) x2(c2)]./10^3,[h2(c2) h2(c2)-H2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
         % floating bed
-        plot(axA,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7A,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
         % ice surface speed
-        plot(axD,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7E,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5);
         % dH
         dHgl(i) = H2(gl2)-H1(gl1); 
         % cf and gl positions
-        plot(axG,x2(gl2)/1e3,smb_mean(i)*3.1536e7,'x','markersize',10,'linewidth',linewidth,'color',col1(i,:));
-        plot(axG,x2(c2)/1e3,smb_mean(i)*3.1536e7,'o','markersize',10,'linewidth',linewidth,'color',col1(i,:));        
-    % ice mass discharge
-    plot(ax10,smb_mean(i)*3.1536e7,Fsmb(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
+%         plot(ax7I,x2(gl2)/1e3,smb_mean(i)*3.1536e7,'x','markersize',10,'linewidth',linewidth,'color',col1(i,:));
+%         plot(ax7I,x2(c2)/1e3,smb_mean(i)*3.1536e7,'o','markersize',10,'linewidth',linewidth,'color',col1(i,:));        
+    % calving front position and grounding line discharge over time
     if i==1
-        figure(8);
-        plot(ax16,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
-        plot(ax16,t/3.1536e7+2002,movmean(XCF2/10^3,100),'-k','linewidth',linewidth+0.5,'displayName','unperturbed');
-        plot(ax17,F_obs(:,1),F_obs(:,2),'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');                
-        plot(ax17,t/3.1536e7+2002,movmean(Fgl2,100),'-k','linewidth',linewidth+0.5,'displayName','unperturbed');         
+        XCF2_SMBmin = XCF2;
+        Fgl2_SMBmin = Fgl2; 
+    elseif i==6
+        XCF2_SMBmid = XCF2;
+        Fgl2_SMBmid = Fgl2; 
     elseif i==length(ISMB)
-        figure(8);
-        plot(ax16,t/3.1536e7+2002,movmean(XCF2/10^3,100),'-','color',colF(1,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max}');        
-        plot(ax17,t/3.1536e7+2002,movmean(Fgl2,100),'-','color',colF(1,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max}'); 
+        XCF2_SMBmax = XCF2;
+        Fgl2_SMBmax = Fgl2; 
     end
     % save results 
     dSMB(i) = files(ISMB(i)).change; % m/a
@@ -1561,29 +1568,32 @@ for i=1:length(ITF)
     F(i) = (H2(gl2)*U2(gl2)*W(gl2))*917*1e-12*3.1536e7; % Gt/a
     % extract change in F_T
     dTF(i) = files(ITF(i)).change; % m/a
-    figure(5); hold on;
+    figure(7); hold on;
         % ice surface
-        plot(axB,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7B,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
         % calving front
-        plot(axB,[x2(c2) x2(c2)]./10^3,[h2(c2) h2(c2)-H2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7B,[x2(c2) x2(c2)]./10^3,[h2(c2) h2(c2)-H2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
         % floating bed
-        plot(axB,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7B,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
         % ice surface speed
-        plot(axE,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7F,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5);
         % dH
         dHgl(i) = H2(gl2)-H1(gl1); 
         % cf and gl positions
-        plot(axH,x2(gl2)/1e3,TF0+dTF(i),'x','markersize',markersize,...
-            'linewidth',linewidth,'color',col1(i,:));
-        plot(axH,x2(c2)/1e3,TF0+dTF(i),'o','markersize',markersize,...
-            'linewidth',linewidth,'color',col1(i,:));   
-    % calving front position and ice mass discharge
-    figure(7);
-    plot(ax11,TF0+dTF(i),F(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
-    if i==length(ITF)
-        figure(8);
-        plot(ax16,t/3.1536e7+2002,movmean(XCF2/10^3,100),'-','color',colF(2,:),'linewidth',linewidth+0.5,'displayName','\DeltaF_{T,max}');        
-        plot(ax17,t/3.1536e7+2002,movmean(Fgl2,100),'-','color',colF(2,:),'linewidth',linewidth+0.5,'displayName','\DeltaF_{T,max}');
+%         plot(ax7J,x2(gl2)/1e3,TF0+dTF(i),'x','markersize',markersize,...
+%             'linewidth',linewidth,'color',col1(i,:));
+%         plot(ax7J,x2(c2)/1e3,TF0+dTF(i),'o','markersize',markersize,...
+%             'linewidth',linewidth,'color',col1(i,:));   
+    % calving front position and grounding line discharge over time
+    if i==1
+        XCF2_TFmin = XCF2;
+        Fgl2_TFmin = Fgl2; 
+    elseif i==6
+        XCF2_TFmid = XCF2;
+        Fgl2_TFmid = Fgl2; 
+    elseif i==length(ITF)
+        XCF2_TFmax = XCF2;
+        Fgl2_TFmax = Fgl2; 
     end
     % save results for data table
     %dSMR(i) = dSMR_max*3.1536e7;
@@ -1594,60 +1604,6 @@ for i=1:length(ITF)
 end
 varNames = {'dTF','dL','dgl','dHgl','dUgl','Qgl'};
 T_TF = table(dTF,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
-
-% (3) DFW
-dDFW = zeros(length(IDFW),1); % change in DFW
-dHgl = zeros(length(IDFW),1); % change in mean thickness
-dUgl = zeros(length(IDFW),1); % change in mean ice speed
-dL = zeros(length(IDFW),1); % change in length
-dgl = zeros(length(IDFW),1); % change in grounding line position
-Ugl = zeros(length(IDFW),1); % speed at grounding line 
-Fdfw = zeros(length(IDFW),1); % grounding line discharge
-col1 = cmocean('thermal',length(IDFW)+3); col1(1,:)=[];col1(end-1:end,:)=[];
-for i=1:length(IDFW)
-    % load file
-    load(files(IDFW(i)).name);
-    % calculate grounding line discharge
-    W = interp1(x0,W0,x2); % interpolate width on spatial grid
-    % F (Gt/a) = (U m/s)*(H m)*(W m)*(917 kg/m^3)*(3.1536e7 s/a)*(1e-12 Gt/kg)
-    % use the mean of a rectangular and an ellipsoidal bed
-    Fdfw(i) = (H2(gl2)*U2(gl2)*W(gl2))*917*1e-12*3.1536e7; % Gt/a    
-    % plot
-    figure(5); hold on;
-        % ice surface
-        plot(axC,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
-        % calving front
-        plot(axC,[x2(c2) x2(c2)]./10^3,[h2(c2)-H2(c2) h2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
-        % floating bed
-        plot(axC,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
-        % ice surface speed
-        plot(axF,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5);
-        % dH
-        dHgl(i) = H2(gl2)-H1(gl1); % m
-        % cf and gl positions
-        plot(axI,x2(gl2)/10^3,files(IDFW(i)).change+DFW0,'x',...
-            'markersize',10,'linewidth',linewidth,'color',col1(i,:));
-        plot(axI,x2(c2)/10^3,files(IDFW(i)).change+DFW0,'o',...
-            'markersize',10,'linewidth',linewidth,'color',col1(i,:));        
-    % ice mass discharge
-    figure(7); 
-    plot(ax12,files(IDFW(i)).change+DFW0,Fdfw(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));    
-    % calving front position and grounding line discharge over time
-    if i==length(IDFW)
-        figure(8);
-        plot(ax16,t/3.1536e7+2002,movmean(XCF2/10^3,100),'-','color',colF(3,:),'linewidth',linewidth+0.5,'displayName','\Deltad_{fw,max}');        
-        plot(ax17,t/3.1536e7+2002,movmean(Fgl2,100),'-','color',colF(3,:),'linewidth',linewidth+0.5,'displayName','\Deltad_{fw,max}'); 
-    end
-    % save results 
-    dDFW(i) = files(IDFW(i)).change; % m/a
-    dUgl(i) = (U2(gl2)-U1(gl1)).*3.1536e7; % m/a     
-    dL(i) = x2(c2)-x1(c1); % m   
-    dgl(i) = x2(gl2)-x1(gl1); % m
-    Ugl(i) = U2(gl2)*3.1536e7; % m/a
-end
-% create table to store result quantities
-varNames = {'dfwd','dL','dxgl','dHgl','dUgl','Qfwd'};
-T_DFW = table(dDFW,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),Fdfw,'VariableNames',varNames);
 
 % (4) SMB_enh
 cd([homepath,'workflows/steady-state-initial/results/2_SMB_enh/']);
@@ -1677,30 +1633,34 @@ for i=1:length(files)
     F(i) = (H2(gl2)*U2(gl2)*W(gl2))*917*1e-12*3.1536e7; % Gt/a
     % estimate initial melt rate using Eqn from Slater et al. (2020):
     mdot0 = (3*10^-4*-b0(gl1)*((sum(RO0(1:gl1)))*86400)^0.39 + 0.15)*TF0^1.18/86400; % m/s
-    figure(6); hold on;
+    figure(7); hold on;
         % ice surface
-        plot(axAA,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7C,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
         % calving front
-        plot(axAA,[x2(c2) x2(c2)]./10^3,[h2(c2) h2(c2)-H2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7C,[x2(c2) x2(c2)]./10^3,[h2(c2) h2(c2)-H2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
         % floating bed
-        plot(axAA,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7C,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
         % ice surface speed
-        plot(axCC,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7G,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5);
         % dH
         dHgl(i) = H2(gl2)-H1(gl1); 
         % cf and gl positions
-        plot(axEE,x2(gl2)/1e3,smb_mean(i)*3.1536e7,'x','markersize',markersize,...
-            'linewidth',linewidth,'color',col1(i,:));
-        plot(axEE,x2(c2)/1e3,smb_mean(i)*3.1536e7,'o','markersize',markersize,...
-            'linewidth',linewidth,'color',col1(i,:));   
-    % calving front position and ice mass discharge
-    figure(7);
-    plot(ax13,smb_mean(i)*3.1536e7,F(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
-    if i==length(files)
-        figure(8);
-        plot(ax16,t/3.1536e7+2002,movmean(XCF2/10^3,100),'-','color',colF(4,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh}');        
-        plot(ax17,t/3.1536e7+2002,movmean(Fgl2,100),'-','color',colF(4,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh}');
+%         plot(ax7K,x2(gl2)/1e3,smb_mean(i)*3.1536e7,'x','markersize',markersize,...
+%             'linewidth',linewidth,'color',col1(i,:));
+%         plot(ax7K,x2(c2)/1e3,smb_mean(i)*3.1536e7,'o','markersize',markersize,...
+%             'linewidth',linewidth,'color',col1(i,:));   
+    % calving front position and grounding line discharge over time
+    if i==1
+        XCF2_SMBenh_min = XCF2;
+        Fgl2_SMBenh_min = Fgl2; 
+    elseif i==6
+        XCF2_SMBenh_mid = XCF2;
+        Fgl2_SMBenh_mid = Fgl2; 
+    elseif i==length(files)
+        XCF2_SMBenh_max = XCF2;
+        Fgl2_SMBenh_max = Fgl2; 
     end
+   
     % save results 
     dsmb_enh(i) = files(i).change; % m/a
     %dSMR(i) = dSMR_max*3.1536e7; % m/a
@@ -1739,28 +1699,31 @@ for i=1:length(files)
     % F (Gt/a) = (U m/s)*(H m)*(W m)*(917 kg/m^3)*(3.1536e7 s/a)*(1e-12 Gt/kg)
     % use the mean of a rectangular and an ellipsoidal bed
     F(i) = (H2(gl2)*U2(gl2)*W(gl2))*917*1e-12*3.1536e7; % Gt/a
-    figure(6); hold on;
+    figure(7); hold on;
         % ice surface
-        plot(axBB,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7D,x2(1:c2)./10^3,h2(1:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
         % calving front
-        plot(axBB,[x2(c2) x2(c2)]./10^3,[h2(c2) h2(c2)-H2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7D,[x2(c2) x2(c2)]./10^3,[h2(c2) h2(c2)-H2(c2)],'color',col1(i,:),'linewidth',linewidth-0.5);
         % floating bed
-        plot(axBB,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
+        plot(ax7D,x2(gl2:c2)./10^3,h2(gl2:c2)-H2(gl2:c2),'color',col1(i,:),'linewidth',linewidth-0.5);
         % ice surface speed
-        plot(axDD,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5); 
+        plot(ax7H,x2(1:c2)./10^3,U2(1:c2).*3.1536e7,'color',col1(i,:),'linewidth',linewidth-0.5); 
         % cf and gl positions
-        plot(axFF,x2(gl2)/1e3,files(i).change_TF,'x',...
-            'markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
-        plot(axFF,x2(c2)/1e3,files(i).change_TF,'o',...
-            'markersize',markersize,'linewidth',linewidth,'color',col1(i,:));        
-    % ice mass discharge
-    figure(7);
-    plot(ax14,files(i).change_TF,F(i),'o','markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
-    if i==length(files)
-        figure(8);
-        plot(ax16,t/3.1536e7+2002,movmean(XCF2/10^3,100),'-','color',colF(5,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh} & \DeltaF_{T,max}');                
-        plot(ax17,t/3.1536e7+2002,movmean(Fgl2,100),'-','color',colF(5,:),'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh} & \DeltaF_{T,max}');
-    end  
+%         plot(ax7L,x2(gl2)/1e3,smb_mean(i)*3.1536e7,'x',...
+%             'markersize',markersize,'linewidth',linewidth,'color',col1(i,:));
+%         plot(ax7L,x2(c2)/1e3,smb_mean(i)*3.1536e7,'o',...
+%             'markersize',markersize,'linewidth',linewidth,'color',col1(i,:));        
+    % calving front position and grounding line discharge over time
+    if i==1
+        XCF2_SMBenhTF_min = XCF2;
+        Fgl2_SMBenhTF_min = Fgl2; 
+    elseif i==6
+        XCF2_SMBenhTF_mid = XCF2;
+        Fgl2_SMBenhTF_mid = Fgl2; 
+    elseif i==length(files)
+        XCF2_SMBenhTF_max = XCF2;
+        Fgl2_SMBenhTF_max = Fgl2; 
+    end 
     % save results 
     dsmb_enh(i) = files(i).change_SMB; % m/a
     dTF(i) = files(i).change_TF; % m/a
@@ -1775,53 +1738,88 @@ end
 varNames = {'dSMB_enh','dTF','dL','dgl','dHgl','dUgl','Qgl'};
 T_smb_enh_TF = table(dsmb_enh,dTF,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
 
-% Add observed 2018 conditions to figures 5 and 6
+% -----plot Fgl and Xcf
+% observations
+figure(6);
+plot(ax6A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
+plot(ax6B,F_obs(:,1),F_obs(:,2),'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
+figure(8);
+plot(ax8A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
+plot(ax8B,F_obs(:,1),F_obs(:,2),'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','observed');        
+% min/max ranges
+% fill(ax8A, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+%     [movmean(XCF2_SMBmin/10^3,100) movmean(fliplr(XCF2_SMBmax)/10^3,100)],...
+%     [223,194,125]./255,'LineStyle','none','facealpha',0.5);
+% fill(ax8B, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+%     [movmean(Fgl2_SMBmin,100) movmean(fliplr(Fgl2_SMBmax),100)],...
+%     [223,194,125]./255,'LineStyle','none','facealpha',0.5);
+% % TF
+% fill(ax8A, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+%     [movmean(XCF2_TFmin/10^3,100) movmean(fliplr(XCF2_TFmax)/10^3,100)],...
+%     [199,234,229]./255,'LineStyle','none','facealpha',0.5);
+% fill(ax8B, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+%     [movmean(Fgl2_TFmin,100) movmean(fliplr(Fgl2_TFmax),100)],...
+%     [199,234,229]./255,'LineStyle','none','facealpha',0.5);
+% % SMB_enh
+% fill(ax8A, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+%     [movmean(XCF2_SMBenh_min/10^3,100) movmean(fliplr(XCF2_SMBenh_max)/10^3,100)],...
+%     [216,218,235]./255,'LineStyle','none','facealpha',0.5);
+% fill(ax8B, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+%     [movmean(Fgl2_SMBenh_min,100) movmean(fliplr(Fgl2_SMBenh_max),100)],...
+%     [216,218,235]./255,'LineStyle','none','facealpha',0.5);
+% % SMB_enh & TF
+% fill(ax8A, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+%     [movmean(XCF2_SMBenhTF_min/10^3,100) movmean(fliplr(XCF2_SMBenhTF_max)/10^3,100)],...
+%     [254,224,182]./255,'LineStyle','none','facealpha',0.5);
+% fill(ax8B, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
+%     [movmean(Fgl2_SMBenhTF_min,100) movmean(fliplr(Fgl2_SMBenhTF_max),100)],...
+%     [254,224,182]./255,'LineStyle','none','facealpha',0.5);
+% mid
+plot(ax8A,t/3.1536e7+2002,movmean(XCF2_SMBmid/10^3,100),'color',[191,129,45]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max}');  
+plot(ax8B,t/3.1536e7+2002,movmean(Fgl2_SMBmid,100),'color',[191,129,45]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max}');        
+plot(ax8A,t/3.1536e7+2002,movmean(XCF2_TFmid/10^3,100),'color',[128,205,193]./255,'linewidth',linewidth+0.5,'displayName','\DeltaF_{T,max}');        
+plot(ax8B,t/3.1536e7+2002,movmean(Fgl2_TFmid,100),'color',[128,205,193]./255,'linewidth',linewidth+0.5,'displayName','\DeltaF_{T,max}');        
+plot(ax8A,t/3.1536e7+2002,movmean(XCF2_SMBenh_mid/10^3,100),'color',[140,81,10]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh}');        
+plot(ax8B,t/3.1536e7+2002,movmean(Fgl2_SMBenh_mid,100),'color',[140,81,10]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh}');        
+plot(ax8A,t/3.1536e7+2002,movmean(XCF2_SMBenhTF_mid/10^3,100),'color',[1,102,94]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh} & \DeltaF_{T,max}');        
+plot(ax8B,t/3.1536e7+2002,movmean(Fgl2_SMBenhTF_mid,100),'color',[1,102,94]./255,'linewidth',linewidth+0.5,'displayName','\DeltaSMB_{max,enh} & \DeltaF_{T,max}');        
+
+% Add observed 2018 conditions to figures 5 and 7
 b=1; % create a loop to make section collapsible
 while b==1
     % geometry
-    plot(axA,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
-    plot(axA,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
-    plot(axA,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18); h18(c18)-H18(c18)],'--k','linewidth',linewidth-0.5);
-    plot(axB,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
-    plot(axB,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
-    plot(axB,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18)-H18(c18); h18(c18)],'--k','linewidth',linewidth-0.5);
-    plot(axC,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
-    plot(axC,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
-    plot(axC,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18)-H18(c18); h18(c18)],'--k','linewidth',linewidth-0.5);
-    plot(axAA,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
-    plot(axAA,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
-    plot(axAA,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18); h18(c18)-H18(c18)],'--k','linewidth',linewidth-0.5);
-    plot(axBB,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
-    plot(axBB,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
-    plot(axBB,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18)-H18(c18); h18(c18)],'--k','linewidth',linewidth-0.5);
+    plot(ax5A,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
+    plot(ax5A,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
+    plot(ax5A,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18); h18(c18)-H18(c18)],'--k','linewidth',linewidth-0.5);
+    plot(ax7A,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
+    plot(ax7A,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
+    plot(ax7A,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18)-H18(c18); h18(c18)],'--k','linewidth',linewidth-0.5);
+    plot(ax7B,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
+    plot(ax7B,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
+    plot(ax7B,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18)-H18(c18); h18(c18)],'--k','linewidth',linewidth-0.5);
+    plot(ax7C,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
+    plot(ax7C,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
+    plot(ax7C,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18); h18(c18)-H18(c18)],'--k','linewidth',linewidth-0.5);
+    plot(ax7D,x18/10^3,h18,'--k','linewidth',linewidth-0.5);
+    plot(ax7D,x18/10^3,h18-H18,'--k','linewidth',linewidth-0.5);
+    plot(ax7D,[x18(c18)/10^3; x18(c18)/10^3],[h18(c18)-H18(c18); h18(c18)],'--k','linewidth',linewidth-0.5);
     % speed
-    plot(axD,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
-    plot(axE,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
-    plot(axF,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
-    plot(axCC,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
-    plot(axDD,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
-%     % calving front and groundling line positions
-%     plot(axJ,x18(c18)/10^3,smb_mean(1),'ok','linewidth',linewidth-0.5,'markersize',markersize);
-%     plot(axJ,x18(gl18)/10^3,smb_mean(1),'xk','linewidth',linewidth-0.5,'markersize',markersize);
-%     plot(axK,x18(c18)/10^3,TF0,'ok','linewidth',linewidth-0.5,'markersize',markersize);
-%     plot(axK,x18(gl18)/10^3,TF0,'xk','linewidth',linewidth-0.5,'markersize',markersize);
-%     plot(axL,x18(c18)/10^3,DFW0,'ok','linewidth',linewidth-0.5,'markersize',markersize);
-%     plot(axL,x18(gl18)/10^3,DFW0,'xk','linewidth',linewidth-0.5,'markersize',markersize);
-%     plot(axGG,x18(c18)/10^3,smb_mean(1),'ok','linewidth',linewidth-0.5,'markersize',markersize);
-%     plot(axGG,x18(gl18)/10^3,smb_mean(1),'xk','linewidth',linewidth-0.5,'markersize',markersize);
-%     plot(axHH,x18(c18)/10^3,TF0,'ok','linewidth',linewidth-0.5,'markersize',markersize);
-%     plot(axHH,x18(gl18)/10^3,TF0,'xk','linewidth',linewidth-0.5,'markersize',markersize);
-    
+    plot(ax5B,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
+    plot(ax7E,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
+    plot(ax7F,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
+    plot(ax7G,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
+    plot(ax7H,x18/10^3,U18*3.1536e7,'--k','linewidth',linewidth-0.5);
+
     b=b+1;
 end
     
 % save figures 
 if save_figures
     cd([homepath,'figures/']);
-    figure(5); exportgraphics(gcf,[homepath,'figures/sensitivityTests_steady_state_initial_geom+speed_independent.png'],'Resolution',600);
-    figure(6); exportgraphics(gcf,[homepath,'figures/sensitivityTests_steady_state_initial_geom+speed_enhanced.png'],'Resolution',600);
-    figure(7); exportgraphics(gcf,[homepath,'figures/sensitivityTests_steady_state_initial_discharge.png'],'Resolution',600);
-    figure(8); exportgraphics(gcf,[homepath,'figures/sensitivityTests_steady_state_initial_QglXcf.png'],'Resolution',600);
+    figure(5); exportgraphics(gcf,[homepath,'figures/sensitivityTests_geom+speed_unperturbed.png'],'Resolution',600);
+    figure(6); exportgraphics(gcf,[homepath,'figures/sensitivityTests_QglXcf_unperturbed.png'],'Resolution',600);
+    figure(7); exportgraphics(gcf,[homepath,'figures/sensitivityTests_geom+speed_climate_scenarios.png'],'Resolution',600);
+    figure(8); exportgraphics(gcf,[homepath,'figures/sensitivityTests_QglXcf_climate_scenarios.png'],'Resolution',600);
     disp('figures 5-8 saved.');
 end
 
