@@ -17,7 +17,7 @@ clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
 plotTimeSteps = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
-plotClimateParams = 0; % = 1 to plot SMB, DFW, TF over time
+plotClimateParams = 1; % = 1 to plot SMB, DFW, TF over time
 saveFinal = 0; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
@@ -104,11 +104,11 @@ delta_TF0 = 0:0.1:1; % ^oC change in TF
 % -----store mean final SMB for plotting
 smb_mean = NaN*zeros(1,length(delta_SMB0));
 
-for j=1:length(delta_SMB0)
+for j=1%:length(delta_SMB0)
     
     % -----switch scenarios on and off
     delta_SMB = 0; %delta_SMB0(j);
-    delta_DFW = delta_DFW0(j);
+    delta_DFW = 0; %delta_DFW0(j);
     delta_TF = 0; %delta_TF0(j);
     SMB_enhance = 0; % = 1 to increase SMR due to decreased SMB    
 
