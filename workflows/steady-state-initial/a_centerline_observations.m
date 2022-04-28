@@ -445,9 +445,10 @@ if save_files
     disp('figure 4 saved');
 end
 
-%% 5. Bed rock estimates from Huss and Farinotti (2014), BedMachine
+%% 5. Bed rock estimates from Huss and Farinotti (2014), BedMachine Antarctica
 
-% -----load variables from file (note: grid is the same for bedrock and thickness)
+% -----SOM
+% load variables from file (note: grid is the same for bedrock and thickness)
 % bedrock
 [SOM.b, SOM.R] = readgeoraster([homepath,'data/bed_elevations/SOM/bedrock/bedrock.tif']);
 SOM.b = double(SOM.b);
@@ -455,15 +456,26 @@ SOM.b(SOM.b==-9999) = NaN;
 % thickness
 SOM.H = readgeoraster([homepath,'data/bed_elevations/SOM/thickness/thickness.tif']);
 SOM.H = double(SOM.H);
-
-% -----extract grid info
+% coordinates
 SOM.X = linspace(SOM.R.XWorldLimits(1), SOM.R.XWorldLimits(2), SOM.R.RasterSize(2));
 SOM.Y = linspace(SOM.R.YWorldLimits(1), SOM.R.YWorldLimits(2), SOM.R.RasterSize(1));
-
-% -----interpolate along centerline
+% interpolate along centerline
 [SOM.X_mesh, SOM.Y_mesh] = meshgrid(SOM.X, SOM.Y);
 SOM.b_cl = interp2(SOM.X, SOM.Y, flipud(SOM.b), cl.X, cl.Y);
 SOM.H_cl = interp2(SOM.X, SOM.Y, flipud(SOM.H), cl.X, cl.Y);
+
+% -----BedMachine Antarctica
+% bed
+BM.b = double(ncread([homepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'bed'));
+% thickness
+BM.H = double(ncread([homepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'thickness'));
+% coordinates
+BM.X = double(ncread([homepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'x'));
+BM.Y = double(ncread([homepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'y'));
+% interpolate along centerline
+[BM.X_mesh, BM.Y_mesh] = meshgrid(BM.X, BM.Y);
+BM.b_cl = interp2(BM.X, BM.Y, BM.b', cl.X, cl.Y);
+BM.H_cl = interp2(BM.X, BM.Y, BM.H', cl.X, cl.Y);
 
 % -----plot
 figure(5); clf; 
@@ -528,7 +540,11 @@ end
 H_adj = mean(Hn, 2, 'omitnan')'; 
 
 % adjust b using thickness and surface
-b_adj = h_pc-H_adj;
+b_width_ave = h_pc-H_adj;
+
+% save only centerline elevations from SOM and BM
+b_cl_SOM = SOM.b_cl;
+b_cl_BM = BM.b_cl;
 
 % -----plot-----
 figure(6); clf; hold on; legend;
@@ -540,14 +556,12 @@ plot(x/10^3,b,'--k','linewidth',2,'DisplayName','b_{cl}');
 plot(x/10^3,b_adj,'-k','linewidth',2,'DisplayName','b_{width-averaged}');
 plot(x/10^3,h_pc,'-b','linewidth',2,'DisplayName','h');
 plot(x/10^3,SOM.b_cl,'-m','linewidth',2,'DisplayName','Huss and Farinotti (2014)');
+plot(x/10^3,BM.b_cl,'-g','linewidth',2,'DisplayName','BedMachine Antarctica');
 
 % -----save-----
 if save_files
     % bed variable
-    save([homepath,'inputs-outputs/observed_bed_elevations_width_averaged.mat'],'b_adj', 'x');
-    disp('b_adj saved to file');
-    % figure
-    saveas(figure(5), [homepath,'figures/observed_bed_elevations.png'], 'png');
-    disp('figure 5 saved');
+    save([homepath,'inputs-outputs/observed_bed_elevations.mat'],'b_width_ave','b_cl_SOM','b_cl_BM', 'x','-append');
+    disp('bed variables saved to file');
 end
 
