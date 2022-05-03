@@ -534,7 +534,7 @@ end
 
 close all; 
 
-figure_save = 0;            % = 1 to save figure
+save_figure = 0;            % = 1 to save figure
 save_variables = 0;         % = 1 to save final downscaled SMB
 
 years = 1996:2016;          % years
@@ -553,8 +553,8 @@ while loop==1
     cl.Y = load('Crane_centerline.mat','y').y;
         
     % Load most advanced terminus position (2019)
-    term = dsearchn([cl.X cl.Y],[load('observed_terminus_positions.mat').term(61).X ...
-    load('observed_terminus_positions.mat').term(61).Y]); 
+    term = dsearchn([cl.X cl.Y],[load('observed_terminus_positions.mat').term.X(end) ...
+    load('observed_terminus_positions.mat').term.Y(end)]); 
     % clip centerline at this point
     %cl.X = cl.X(1:term); cl.Y = cl.Y(1:term);
     
@@ -570,32 +570,32 @@ while loop==1
     rho_i = 917; % kg/m^3
     
     % Load RACMO variables
-    SF.Lat = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lat'); % degrees north
-    SF.Lon = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','lon'); % degrees east
-    SF.sf = squeeze(ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','snowfall')); % kg m-2 mo-1 
-    time = ncread('RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc','time'); % days since 1950/01/01
+    SF.Lat = ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc'],'lat'); % degrees north
+    SF.Lon = ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc'],'lon'); % degrees east
+    SF.sf = squeeze(ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc'],'snowfall')); % kg m-2 mo-1 
+    time = ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_snowfall_monthly_1979_2016.nc'],'time'); % days since 1950/01/01
     
-    SM.Lat = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lat'); % degrees north
-    SM.Lon = ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','lon'); % degrees east
-    SM.sm = squeeze(ncread('RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc','snowmelt')); % kg m-2 mo-1
+    SM.Lat = ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc'],'lat'); % degrees north
+    SM.Lon = ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc'],'lon'); % degrees east
+    SM.sm = squeeze(ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_snowmelt_monthly_1979_2016.nc'],'snowmelt')); % kg m-2 mo-1
     
-    RO.Lat = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lat'); % degrees north
-    RO.Lon = ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','lon'); % degrees east
-    RO.ro = squeeze(ncread('RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc','runoff')); % kg m-2 mo-1
+    RO.Lat = ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc'],'lat'); % degrees north
+    RO.Lon = ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc'],'lon'); % degrees east
+    RO.ro = squeeze(ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_runoff_monthly_1979_2016.nc'],'runoff')); % kg m-2 mo-1
     
-    SMB.Lat = ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','lat'); % degrees north
-    SMB.Lon = ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','lon'); % degrees east
-    SMB.smb = squeeze(ncread('SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc','smb')); % kg m-2 mo-1
+    SMB.Lat = ncread([homepath,'data/RACMO2.3/SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc'],'lat'); % degrees north
+    SMB.Lon = ncread([homepath,'data/RACMO2.3/SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc'],'lon'); % degrees east
+    SMB.smb = squeeze(ncread([homepath,'data/RACMO2.3/SMB_RACMO2.3p2_monthly_XPEN055_197901_201908.nc'],'smb')); % kg m-2 mo-1
     
     clear h; 
-    h.Lat = ncread('Height_latlon_XPEN055.nc','lat'); % degrees north
-    h.Lon = ncread('Height_latlon_XPEN055.nc','lon'); % degrees east
-    h.h = ncread('Height_latlon_XPEN055.nc','height'); % m above the surface
+    h.Lat = ncread([homepath,'data/RACMO2.3/Height_latlon_XPEN055.nc'],'lat'); % degrees north
+    h.Lon = ncread([homepath,'data/RACMO2.3/Height_latlon_XPEN055.nc'],'lon'); % degrees east
+    h.h = ncread([homepath,'data/RACMO2.3/Height_latlon_XPEN055.nc'],'height'); % m above the surface
     h.cl = griddata(h.Lon,h.Lat,h.h,cl.Lon,cl.Lat); 
     
-    T.Lat = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','lat'); % degrees north
-    T.Lon = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','lon'); % degrees east
-    T.T = squeeze(ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','t2m')); % degrees K
+    T.Lat = ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc'],'lat'); % degrees north
+    T.Lon = ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc'],'lon'); % degrees east
+    T.T = squeeze(ncread([homepath,'data/RACMO2.3/RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc'],'t2m')); % degrees K
     
     % Grab RACMO grid
         % Note: RACMO day # = (year - 1950)*365 + (day # in year)
@@ -617,7 +617,7 @@ while loop==1
     
     % Load 2016 Crane ice surface
     cd([homepath,'inputs-outputs/']);
-    h_cl = load("observed_surface_elevations.mat").h(28).surface';   
+    h_cl = load("observed_surface_elevations.mat").h(13).h_centerline';   
         
     % Grab points within a certain distance from centerline, interpolate
     nearbyPts = []; % Hold points within a certain distance
@@ -974,9 +974,8 @@ for i=1:length(years)
 end 
     
 % save figure
-if figure_save
-    cd([homepath,'figures/']);
-    saveas(gcf,'modeled_climate_variables_2009-2019.png','png');
+if save_figure
+    saveas(gcf,[homepath,'figures/modeled_climate_variables_2009-2019.png'],'png');
     disp('Figure 1 saved');
 end 
 
@@ -989,7 +988,7 @@ if save_variables
     smb.linear = SMB.linear; smb.downscaled_averaged = SMB.downscaled_average; smb.downscaled_average_linear = SMB.downscaled_average_linear;
     t.adjusted = T.adjusted; t.adjusted_average = T.adjusted_average; t.adjusted_average_linear = T.adjusted_average_linear;
     
-    save([homepath,'inputs-outputs/downscaled_RACMO_variables_2009-2019.mat'],'ro','sf','sm','smb','t');
+    save([homepath,'inputs-outputs/downscaled_RACMO_variables_2009-2019.mat'],'ro','sf','sm','smb','t','years');
     disp('downscaled climate variables saved');
 end 
 

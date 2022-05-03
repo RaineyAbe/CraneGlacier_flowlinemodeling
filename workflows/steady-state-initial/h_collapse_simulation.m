@@ -18,7 +18,7 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
     
 plotTimeSteps = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
 plotClimateParams = 1; % = 1 to plot SMB, DFW, TF over time
-saveFinal = 0; % = 1 to save pre-collapse and final (2100) conditions
+saveFinal = 1; % = 1 to save pre-collapse and final (2100) conditions
 
 % define home path in directory and add necessary paths
 homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
@@ -94,7 +94,7 @@ mdot0 = -SMR0; % m/s
 C = 3e-4; % use original from Slater et al. (2020)
 
 % -----define potential changes in SMB, DFW, & TF
-% - decrease maximum SMB by increments of 0.5 m a-1 down to -10 m a-1
+% - decrease maximum SMB by increments of 5 m a-1 down to -50 m a-1
 % - increase DFW by increments of 1 m up to 10 m
 % - increase TF by increments of 0.1 ^oC up to 1 ^oC
 delta_SMB0 = (0:-1:-10)./3.1536e7; % m/s change in SMB at the calving front (used to increase gradient)
@@ -104,10 +104,10 @@ delta_TF0 = 0:0.1:1; % ^oC change in TF
 % -----store mean final SMB for plotting
 smb_mean = NaN*zeros(1,length(delta_SMB0));
 
-for j=1%:length(delta_SMB0)
+for j=5:length(delta_SMB0)
     
     % -----switch scenarios on and off
-    delta_SMB = 0; %delta_SMB0(j);
+    delta_SMB = delta_SMB0(j);
     delta_DFW = 0; %delta_DFW0(j);
     delta_TF = 0; %delta_TF0(j);
     SMB_enhance = 0; % = 1 to increase SMR due to decreased SMB    
@@ -862,7 +862,7 @@ for j=1%:length(delta_SMB0)
                 plot(axD, t(i)./3.1536e7, DFW, '.', 'Color', col(i,:), 'markersize', 20, 'displayname', '2022');
             else
                 figure(2);
-                plot(axA, x./10^3, SMB, 'color', col(i,:), 'linewidth', 2);
+                plot(axA, x./10^3, SMB*3.1536e7, 'color', col(i,:), 'linewidth', 2);
                 plot(axB, t(i)/3.1536e7, TF, '.', 'Color', col(i,:), 'markersize', 20); 
                 plot(axC, x/10^3, SMR, 'color', col(i,:), 'linewidth', 2);
                 plot(axD, t(i)./3.1536e7, DFW, '.', 'Color', col(i,:), 'markersize', 20);
