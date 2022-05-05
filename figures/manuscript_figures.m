@@ -223,14 +223,7 @@ text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),(max(
 a1 = annotation('arrow','color','w','position',[0.76 0.76 -0.1 0],'linewidth',linewidth);
 a2 = annotation('arrow','color','w','position',[0.72 0.2 -0.05 0.1],'linewidth',linewidth);
 a3 = annotation('arrow','color','w','position',[0.56 0.18 0 0.1],'linewidth',linewidth);
-
-% Draw boxes over melt features        
-% rectangle(ax(5),'Position',[-2.4109e6 1.2565e6 0.0009e6 0.002e6],...
-%     'EdgeColor','w','linewidth',linewidth);
-% rectangle(ax(5),'Position',[-2.4149e6 1.2469e6 0.0055e6 0.0032e6],...
-%     'EdgeColor','w','linewidth',linewidth);
-% rectangle(ax(5),'Position',[-2.4117 1.2588 0.0005 0.0007]*1e6,...
-%     'EdgeColor','w','linewidth',linewidth);
+a4 = annotation('arrow','color','w','position',[0.7 0.85 -0.1 0.0],'linewidth',linewidth);
     
 % save figures 1 and 2
 if save_figure
@@ -288,7 +281,7 @@ ax(1)=axes('Position',[0.11 0.7 0.75 0.28],'linewidth',2,'fontsize',...
     fontsize,'fontname',font,'XTickLabels',[]); % geometry
     hold on; grid on; 
     ylabel('Elevation [m]'); 
-    xlim([0 60]); 
+    xlim([0 65]); 
     ylim([-1200 1800]); 
     legend('Location','northeast');
     % elevation
@@ -301,12 +294,12 @@ ax(1)=axes('Position',[0.11 0.7 0.75 0.28],'linewidth',2,'fontsize',...
     % calving front location
     for i=1:length(termx)
         plot(ax(1),termx(i)/10^3*[1,1],[interp1(x0,b_width_ave,termx(i)) 30],...
-            '--','linewidth',linewidth,...
+            'linewidth',linewidth,...
             'color',col1(round(interp1(1996:2019,1:length(col1),round(termdate(i)))),:),...
             'HandleVisibility','off');
     end
     % bed picks
-    plot(ax(1),cl.xi./10^3,b,'--k','linewidth',linewidth,'displayname','b_{centerline}');
+    plot(ax(1),cl.xi./10^3,b,':k','linewidth',linewidth,'displayname','b_{centerline}');
     % bed, width-averaged
     plot(ax(1),x0./10^3,b_width_ave,'-k','linewidth',linewidth,'displayname','b_{width-averaged}');    
     % Add text label
@@ -316,7 +309,7 @@ ax(1)=axes('Position',[0.11 0.7 0.75 0.28],'linewidth',2,'fontsize',...
 ax(2)=axes('Position',[0.11 0.39 0.75 0.28],'linewidth',2,...
     'fontsize',fontsize,'fontname',font,'XTickLabels',[]); % speed
     hold on; grid on; ylabel('Speed [m/yr]');
-    xlim([0 60]); ylim([0 1600]);
+    xlim([0 65]); ylim([0 1600]);
     for i=1:length(U)-1
         plot(ax(2),cl.xi(1:dsearchn(cl.xi',termx(dsearchn(termdate',1999+i))))./10^3,...
             U(i).U_centerline(1:dsearchn(cl.xi',termx(dsearchn(termdate',1999+i)))).*3.1536e7,...
@@ -331,8 +324,8 @@ ax(3)= axes('Position',[0.11 0.08 0.75 0.28],'linewidth',2,...
     hold on; grid on; 
     xlabel('Distance along centerline [km]'); 
     ylabel('SMB [m/yr]');
-    xlim([0 60]); 
-    ylim([0.3 0.7]); 
+    xlim([0 65]); 
+    ylim([0.25 0.65]); 
     legend('Location','northeast');
     % Add colorbar
     colormap(col1); 
@@ -1189,11 +1182,11 @@ dt2 = 0.001*3.1536e7;
 t = [t_start:dt1:t_mid t_mid+dt2:dt2:t_end];
 
 % define color schemes
-% figures 5 & 6
+% figures 9 & 11
 col1=cmocean('thermal',14);  
 col1(1,:) = []; col1(end-1:end,:)=[]; % don't use end member colors
-% figure 8
-colF = [197,27,125;222,119,174;241,182,218; 127,188,65;77,146,33]./255;
+% figure 12
+col2 = [[222,119,174]./255; [127,188,65]./255; [142,1,82]./255; [39,100,25]./255]; % colors for plotting box plots
 
 % set up axes
 loop=1; % loop to minimize plotting commands
@@ -1202,8 +1195,9 @@ while loop==1
     % geometry, speed, calving front & grounding line positions
     figure(9); clf; 
     set(gcf,'Position',[0 75 375 550]);
-    ax9A=axes('position',[0.15 0.5 0.8 0.35]); hold on; grid on; % geometry
+    ax9A=axes('position',[0.15 0.5 0.8 0.35]); hold on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        grid on; 
         ylabel('Elevation [m]');         
         xlim([25 80]); 
         ylim([-800 500]);
@@ -1217,8 +1211,9 @@ while loop==1
         cb1=colorbar('horiz'); set(cb1,'fontname',fontname,'fontsize',fontsize-3,...
             'Ticks',0:0.5:1,'TickLabels',string([5,10,15]),'position',[0.15 0.9 0.8 0.02]);
         set(get(cb1,'label'),'String','d_{fw} [m]','fontsize',fontsize-3);   
-    ax9B=axes('position',[0.15 0.1 0.8 0.35]); hold on; grid on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:300:1200,'linewidth',1);        
+    ax9B=axes('position',[0.15 0.1 0.8 0.35]); hold on; % speed
+        set(gca,'fontsize',fontsize,'YTick',0:300:1200,'linewidth',1);   
+        grid on;
         xlabel('Distance along centerline [km]');
         ylabel('Speed [m/yr]');  
         xlim([25 80]); 
@@ -1230,12 +1225,14 @@ while loop==1
     % Fgl, calving front & grounding line positions
     figure(10); clf;
     set(gcf,'Position',[0 50 1000 625]); 
+    % Xcf time series
     ax10A = axes('position',[0.05 0.57 0.55 0.4]); hold on;
-        set(gca,'fontsize',fontsize,'linewidth',1); grid on;
+        set(gca,'fontsize',fontsize,'linewidth',1); 
+        grid on;
         xlim([1995 2100]); 
-        ylim([40 75]);
+        ylim([35 75]);
         ylabel('Calving front position [km]');
-        legend('location','southeast');
+        legend('location','south');
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.92+min(get(gca,'YLim')),...
@@ -1244,50 +1241,51 @@ while loop==1
         clps_st = 2002.0849; % Jan 31, 2002
         clps_end = 2002.2822; % April 13, 2002
         rectangle(ax10A,'Position',[clps_st 25 clps_end-clps_st 90],'FaceColor',[253,141,60]./255,'EdgeColor',[253,141,60]./255);
-    % Xcf box plots
+    % Xcf box plot
     ax10B = axes('position',[0.66 0.57 0.33 0.4]); hold on; 
-        set(gca, 'fontsize', fontsize, 'linewidth', 1); grid on; 
+        set(gca, 'fontsize', fontsize, 'linewidth', 1); 
+        grid on; 
         xlim([2010 2110]); 
         ylim([40 75]);        
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.92+min(get(gca,'YLim')),...
             'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
-        % add grey rectangle for Larsen B ice shelf collapse
-%         rectangle(ax6B,'Position',[clps_st 25 clps_end-clps_st 90],'FaceColor',[189,189,189]./255,'EdgeColor',[189,189,189]./255);
+    % Fgl time series
     ax10C = axes('position',[0.05 0.09 0.55 0.4]); hold on; 
-        set(gca,'fontsize',fontsize,'linewidth',1); grid on; 
+        set(gca,'fontsize',fontsize,'linewidth',1); 
+        grid on; 
         xlim([1995 2100]); 
         ylim([0 9]);        
         xlabel('Year'); 
         ylabel('Grounding line discharge [Gt/y]'); 
-        legend('location','northeast');
+        legend('location','north');
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.92+min(get(gca,'YLim')),...
             'c','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
         % add grey rectangle for Larsen B ice shelf collapse
         rectangle(ax10C,'Position',[clps_st 0 clps_end-clps_st 10],'FaceColor',[253,141,60]./255,'EdgeColor',[253,141,60]./255); 
-    % Fgl box plots
+    % Fgl box plot
     ax10D = axes('position',[0.66 0.09 0.33 0.4]); hold on; 
-        set(gca,'fontsize',fontsize,'linewidth',1); grid on; 
+        set(gca,'fontsize',fontsize,'linewidth',1,'YTick',0.4:0.2:1.6); 
+        grid on; 
         xlim([2010 2110]); 
-        ylim([1 1.25]);        
+        ylim([0.5 1.5]);   
         xlabel('Year'); 
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.92+min(get(gca,'YLim')),...
             'd','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
-        % add grey rectangle for Larsen B ice shelf collapse
-%         rectangle(ax6D,'Position',[clps_st 0 clps_end-clps_st 8],'FaceColor',[189,189,189]./255,'EdgeColor',[189,189,189]./255);
     
     % -----future SMB, TF, SMB_enh, SMB_enh+TF scenarios-----
     % geometry, speed, calving front & grounding line positions
     figure(11); clf; 
     set(gcf,'Position',[0 75 1250 550]);
     % SMB
-    ax11A=axes('position',[0.05 0.5 0.19 0.35]); hold on; grid on; % geometry
+    ax11A=axes('position',[0.05 0.5 0.19 0.35]); hold on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        grid on; 
         ylabel('Elevation [m]');         
         xlim([25 60]); 
         ylim([-800 500]);
@@ -1301,8 +1299,9 @@ while loop==1
         cb2=colorbar('horiz'); set(cb2,'fontname',fontname,'fontsize',fontsize-3,...
             'Ticks',0:0.5:1,'TickLabels',string(0:-5:-10),'position',[0.05 0.9 0.19 0.02]);
         set(get(cb2,'label'),'String','\DeltaSMB [m/y]','fontsize',fontsize-3);   
-    ax11E=axes('position',[0.05 0.1 0.19 0.35]); hold on; grid on; % speed
+    ax11E=axes('position',[0.05 0.1 0.19 0.35]); hold on; % speed
         set(gca,'fontsize',fontsize,'YTick',0:500:1000,'linewidth',1); 
+        grid on; 
         xlabel('Distance along centerline [km]');
         ylabel('Speed [m/yr]');  
         xlim([25 60]); 
@@ -1312,15 +1311,12 @@ while loop==1
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
             'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
     % TF
-    ax11B=axes('position',[0.29 0.5 0.19 0.35]); hold on; grid on; % geometry
+    ax11B=axes('position',[0.29 0.5 0.19 0.35]); hold on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        grid on; 
         xlim([25 60]); 
         ylim([-800 500]);
         plot(x1./10^3,b1,'-k','linewidth',2);
-        % add text label            
-%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),...
-%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
-%             'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
         % add colorbar
         colormap(col1);
         cb3=colorbar('horiz'); set(cb3,'fontname',fontname,'fontsize',fontsize-3,...
@@ -1331,44 +1327,32 @@ while loop==1
         xlim([25 60]); 
         ylim([0 1200]);
         xlabel('Distance along centerline [km]');
-        % add text label            
-%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-%             'f','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
     % SMB_enh
-    ax11C=axes('position',[0.53 0.5 0.19 0.35]); hold on; grid on; % geometry
+    ax11C=axes('position',[0.53 0.5 0.19 0.35]); hold on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        grid on; 
         xlim([25 60]); 
         ylim([-800 500]);
-        plot(x1./10^3,b1,'-k','linewidth',2);
-        % add text label            
-%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-%             'c','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+        plot(x1./10^3,b1,'-k','linewidth',2); 
         % add colorbar
         colormap(col1);
         cb4=colorbar('horiz'); set(cb4,'fontname',fontname,'fontsize',fontsize-3,...
             'Ticks',0:0.5:1,'TickLabels',[{'0'},{'-5'},{'-10'}],'position',[0.53 0.9 0.19 0.02]);
         set(get(cb4,'label'),'String','\Delta SMB_{enh} [m/yr]','fontsize',fontsize-3);   
-    ax11G=axes('position',[0.53 0.1 0.19 0.35]); hold on; grid on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'linewidth',1);        
+    ax11G=axes('position',[0.53 0.1 0.19 0.35]); hold on; % speed
+        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'linewidth',1);   
+        grid on;
         xlim([25 60]); 
         ylim([0 1200]);
         xlabel('Distance along centerline [km]');        
-        % add text label            
-%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-%             'g','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
+ 
     % SMB_enh & TF
-    ax11D=axes('position',[0.77 0.5 0.19 0.35]); hold on; grid on; % geometry
+    ax11D=axes('position',[0.77 0.5 0.19 0.35]); hold on; % geometry
         set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        grid on;
         xlim([25 60]); 
         ylim([-800 500]);
         plot(x1./10^3,b1,'-k','linewidth',2);
-        % add text label            
-%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-%             'd','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
         % add colorbar
         colormap(col1);
         cb5=colorbar('horiz'); set(cb5,'fontname',fontname,'fontsize',fontsize-3,'Ticks',0:1/2:1,...
@@ -1379,19 +1363,17 @@ while loop==1
         xlim([25 60]); 
         ylim([0 1200]);
         xlabel('Distance along centerline [km]');        
-        % add text label            
-%         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.92+min(get(gca,'XLim')),...
-%             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.89+min(get(gca,'YLim')),...
-%             'h','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
-    % Fgl, calving front & grounding line positions
+    % Fgl & calving front positions
     figure(12); clf;
     set(gcf,'Position',[50 50 1000 625]); 
+    % Xcf time series
     ax12A = axes('position',[0.05 0.57 0.55 0.4]); hold on;
-        set(gca,'fontsize',fontsize,'linewidth',1); grid on;
+        set(gca,'fontsize',fontsize,'linewidth',1); 
+        grid on;
         xlim([1995 2100]); 
-        ylim([35 60]);
+        ylim([35 75]);
         ylabel('Calving front position [km]');
-        legend('location','southeast');
+        legend('location','north');
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.92+min(get(gca,'YLim')),...
@@ -1400,27 +1382,30 @@ while loop==1
         clps_st = 2002.0849; % Jan 31, 2002
         clps_end = 2002.2822; % April 13, 2002
         rectangle(ax12A,'Position',[clps_st 25 clps_end-clps_st 90],'FaceColor',[253,141,60]./255,'EdgeColor',[253,141,60]./255);
-    % Xcf box plots
+    % Xcf box plot
     ax12B = axes('position',[0.66 0.57 0.33 0.4]); hold on; 
         set(gca, 'fontsize', fontsize, 'linewidth', 1); 
         grid on; 
+    % Fgl time series
     ax12C = axes('position',[0.05 0.09 0.55 0.4]); hold on; 
-        set(gca,'fontsize',fontsize,'linewidth',1); grid on; 
+        set(gca,'fontsize',fontsize,'linewidth',1); 
+        grid on; 
         xlim([1995 2100]); 
         ylim([0 9]);        
         xlabel('Year'); 
         ylabel('Grounding line discharge [Gt/y]'); 
-        legend('location','northeast');
+        legend('location','north');
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.92+min(get(gca,'YLim')),...
             'c','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
         % add grey rectangle for Larsen B ice shelf collapse
         rectangle(ax12C,'Position',[clps_st 0 clps_end-clps_st 10],'FaceColor',[253,141,60]./255,'EdgeColor',[253,141,60]./255); 
-    % Fgl box plots
+    % Fgl box plot
     ax12D = axes('position',[0.66 0.09 0.33 0.4]); hold on; 
-        set(gca,'fontsize',fontsize,'linewidth',1); grid on; 
-
+        set(gca,'fontsize',fontsize,'linewidth',1); 
+        grid on;
+        
     loop=loop+1; % exit loop 
     
 end
@@ -1525,15 +1510,15 @@ end
 figure(10);
 fill(ax10A, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
     [XCF2_DFWmin/10^3 fliplr(XCF2_DFWmax)/10^3],...
-    [150,150,150]./255,'LineStyle','none','HandleVisibility','off');
+    [150,150,150]./255,'LineStyle','none','displayname','\Deltad_{fw,range}');
 plot(ax10A,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
     [x0(c0)*ones(1,length(Fgl_preCollapse))/10^3 XCF2_DFWmid/10^3],...
-    '-k','linewidth',linewidth,'HandleVisibility','off');        
+    '-k','linewidth',linewidth,'displayname','\Deltad_{fw,median}');        
 fill(ax10C, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
     [Fgl2_DFWmin fliplr(Fgl2_DFWmax)],...
-    [150,150,150]./255,'LineStyle','none','displayname','\Deltad_{fw,range}');
+    [150,150,150]./255,'LineStyle','none','HandleVisibility','off');
 plot(ax10C,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
-    [Fgl_preCollapse Fgl2_DFWmid],'-k','linewidth',linewidth,'displayName','\Deltad_{fw,median}'); 
+    [Fgl_preCollapse Fgl2_DFWmid],'-k','linewidth',linewidth,'handlevisibility','off'); 
 % plot box plots for every 20 years
 t_bp = 2020:20:2100;
 XCF_bp = [XCF(:,(t/3.1536e7+2002)==2020) XCF(:,(t/3.1536e7+2002)==2040)... 
@@ -1819,42 +1804,53 @@ T_smb_enh_TF = table(dsmb_enh,dTF,round(dL)/10^3,round(dgl)/10^3,round(dHgl),rou
 % -----plot Fgl and Xcf     
 % mid
 % SMB
-plot(ax12A,t/3.1536e7+2002,XCF2_SMBmid/10^3,'color',[191,129,45]./255,'linewidth',linewidth,'HandleVisibility','off');  
-plot(ax12C,t/3.1536e7+2002,Fgl2_SMBmid,'color',[191,129,45]./255,'linewidth',linewidth,'displayName','\DeltaSMB');        
+figure(12);
+plot(ax12A,t/3.1536e7+2002,XCF2_SMBmid/10^3,'color',col2(1,:),'linewidth',linewidth,'displayname','\DeltaSMB');  
+plot(ax12C,t/3.1536e7+2002,Fgl2_SMBmid,'color',col2(1,:),'linewidth',linewidth,'HandleVisibility','off');        
 % TF
-plot(ax12A,t/3.1536e7+2002,XCF2_TFmid/10^3,'color',[128,205,193]./255,'linewidth',linewidth,'HandleVisibility','off');        
-plot(ax12C,t/3.1536e7+2002,Fgl2_TFmid,'color',[128,205,193]./255,'linewidth',linewidth,'displayName','\DeltaF_{T}');        
+plot(ax12A,t/3.1536e7+2002,XCF2_TFmid/10^3,'color',col2(2,:),'linewidth',linewidth,'displayName','\DeltaF_{T}');        
+plot(ax12C,t/3.1536e7+2002,Fgl2_TFmid,'color',col2(2,:),'linewidth',linewidth,'HandleVisibility','off');        
 % SMB_enh
-plot(ax12A,t/3.1536e7+2002,XCF2_SMBenh_mid/10^3,'color',[140,81,10]./255,'linewidth',linewidth,'HandleVisibility','off');        
-plot(ax12C,t/3.1536e7+2002,Fgl2_SMBenh_mid,'color',[140,81,10]./255,'linewidth',linewidth,'displayName','\DeltaSMB_{enh}');        
+plot(ax12A,t/3.1536e7+2002,XCF2_SMBenh_mid/10^3,'color',col2(3,:),'linewidth',linewidth,'displayname','\DeltaSMB_{enh}');        
+plot(ax12C,t/3.1536e7+2002,Fgl2_SMBenh_mid,'color',col2(3,:),'linewidth',linewidth,'HandleVisibility','off');        
 % SMB_enh & TF
 plot(ax12A,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
-    [x0(c0)*ones(1,length(Fgl_preCollapse))/10^3 XCF2_SMBenhTF_mid/10^3],'color',[1,102,94]./255,'linewidth',linewidth,'HandleVisibility','off');        
+    [x0(c0)*ones(1,length(Fgl_preCollapse))/10^3 XCF2_SMBenhTF_mid/10^3],'color',col2(4,:),'linewidth',linewidth,'DisplayName','\DeltaSMB_{enh} & \DeltaF_{T}');        
 plot(ax12C,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
-    [Fgl_preCollapse Fgl2_SMBenhTF_mid],'color',[1,102,94]./255,'linewidth',linewidth,'displayName','\DeltaSMB_{enh} & \DeltaF_{T}');        
+    [Fgl_preCollapse Fgl2_SMBenhTF_mid],'color',col2(4,:),'linewidth',linewidth,'HandleVisibility','off');        
 % boxplots
-box_width = 0.3; 
-BP.colors = [[191,129,45]./255; [128,205,193]./255; [140,81,10]./255; [1,102,94]./255]; % colors for plotting box plots
-BP.groups = strings(length(BP.years),1); % climate scenario groups
-BP.groups(1:length(BP.years)/4) = "SMB";
-BP.groups(length(BP.years)/4+1:length(BP.years)/4*2) = "TF";
-BP.groups(length(BP.years)/4*2+1:length(BP.years)/4*3) = "SMB_{enh}";
-BP.groups(length(BP.years)/4*3+1:length(BP.years)) = "SMB_{enh}+TF";
+% Note: must add two dummy groups to increase spacing between boxes
+box_width = 0.7; 
+% climate scenario groups
+BP.groups(1:55) = "SMB";
+BP.groups(56:110) = "TF";
+BP.groups(111:165) = "SMB_{enh}";
+BP.groups(166:220) = "TF+SMB_{enh}";
+BP.groups(221:225) = "A";
+BP.groups(226:230) = "Z";
+BP.years = [BP.years; (2020:20:2100)'; (2020:20:2100)'];
+BP.XCF = [BP.XCF; NaN*ones(length(2020:20:2100),1); NaN*ones(length(2020:20:2100),1)];
+BP.FGL = [BP.FGL; NaN*ones(length(2020:20:2100),1); NaN*ones(length(2020:20:2100),1)];
 bp = boxchart(ax12B,categorical(BP.years), BP.XCF./1000, 'GroupByColor', BP.groups,...
-    'BoxWidth', 0.3, 'whiskerlinestyle', 'none', 'markerstyle', 'none');
-bp(1).BoxFaceColor = BP.colors(1,:); bp(2).BoxFaceColor = BP.colors(2,:); 
-bp(3).BoxFaceColor = BP.colors(3,:); bp(4).BoxFaceColor = BP.colors(4,:);
-% add text label   
-text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
-    (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.92+min(get(gca,'YLim')),...
-    'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
+    'BoxWidth', box_width, 'markerstyle', 'none');
+bp(2).BoxFaceColor = col2(1,:); bp(2).WhiskerLineColor = col2(1,:);
+bp(3).BoxFaceColor = col2(2,:); bp(3).WhiskerLineColor = col2(2,:);
+bp(4).BoxFaceColor = col2(3,:); bp(4).WhiskerLineColor = col2(3,:);
+bp(5).BoxFaceColor = col2(4,:); bp(5).WhiskerLineColor = col2(4,:);
 bp = boxchart(ax12D,categorical(BP.years), BP.FGL, 'GroupByColor',BP.groups,...
-    'BoxWidth', box_width, 'whiskerlinestyle', 'none', 'markerstyle', 'none');
-bp(1).BoxFaceColor = BP.colors(1,:); bp(2).BoxFaceColor = BP.colors(2,:); 
-bp(3).BoxFaceColor = BP.colors(3,:); bp(4).BoxFaceColor = BP.colors(4,:);
-% add text labels   
-text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
-    (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.92+min(get(gca,'YLim')),...
+    'BoxWidth', box_width, 'markerstyle', 'none');
+bp(2).BoxFaceColor = col2(1,:); bp(2).WhiskerLineColor = col2(1,:);
+bp(3).BoxFaceColor = col2(2,:); bp(3).WhiskerLineColor = col2(2,:);
+bp(4).BoxFaceColor = col2(3,:); bp(4).WhiskerLineColor = col2(3,:);
+bp(5).BoxFaceColor = col2(4,:); bp(5).WhiskerLineColor = col2(4,:);
+% modify y-axis limits, add text labels
+set(ax12B,'YLim',[35 75]);
+text(ax12B,categorical(2020),...
+    (max(get(ax12B,'YLim'))-min(get(ax12B,'YLim')))*0.92+min(get(ax12B,'YLim')),...
+    'b','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
+set(ax12D,'YLim',[0.5 1.5],'YTick',0.4:0.2:1.6);
+text(ax12D,categorical(2020),...
+    (max(get(ax12D,'YLim'))-min(get(ax12D,'YLim')))*0.92+min(get(ax12D,'YLim')),...
     'd','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
 % observations
 % terminus - Dryak and Enderlin
