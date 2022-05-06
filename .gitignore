@@ -19,3 +19,6 @@ Matlab-R2
 
 # Time series images
 figures/timeseries/
+
+# PowerPoint files
+*.pptx
