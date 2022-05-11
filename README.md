@@ -4,7 +4,7 @@ Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf
 
 Rainey Aberle and Ellyn Enderlin
 
-![](workflows/dynamic-initial-UNTESTED/figures/studyArea.png)
+![](figures/sensitivityTests_QglXcf_climate_scenarios.png)
 
 ---
 
@@ -27,13 +27,18 @@ To access observational data and model outputs averaged across the glacier width
 - Model outputs: all files with the `modeled_*.mat` file name structure. 
 - Other:
     - `Crane_centerline.mat`: delineated glacier centerline coordinates (Antarctic polar stereographic)
-    - `downscaled_RACMO_variables_2009-2019.mat`: RACMO2.3 model outputs for snowmelt, snowfall, runoff, and surface mass balance (SMB) interpolated to the glacier centerline and downscaled using statistical methods described by No\"el et al. (2016)
+    - `downscaled_RACMO_variables_2009-2019.mat`: RACMO2.3 model outputs for snowmelt, snowfall, runoff, and surface mass balance (SMB) interpolated to the glacier centerline and downscaled using statistical methods described by Noël et al. (2016)
     - `Tributary*.mat`: estimated mass flux from glacier tributaries to the main trunk
     
-### Modeling results: see `workflows/steady-state-initial/results`.
+### Modeling results: 
+See `workflows/steady-state-initial/results`.
 - `1_SMB_DFW_TF`: results in model year 2100 for the range of SMB, freshwater depth in crevasses (DFW), and ocean thermal forcing (TF) perturbations applied independently.
 - `2_SMB_enh`: results in model year 2100 for SMB plus surface meltwater runoff-enhanced submarine melt (SMB_enh).  
 - `3_SMB_enh+TF`: results in model year 2100 for concurrent SMB_enh and TF perturbations. 
+
+### Figures:
+
+See `figures/` for figures used in manuscript and otherwise. 
 
 ---
 
