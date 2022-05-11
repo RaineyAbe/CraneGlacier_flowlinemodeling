@@ -10,13 +10,16 @@
 %   - Regional glacier terminus time series
 %   - 2018 Model Misfits
 
-close all; clear all;
+% close all; 
+clear all;
 
-% Define home path, output path, and add paths to necessary functions
+% -----Define necessary paths
 % homepath = path to root directory "CraneGlacier_flowlinemodeling"
 homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 % outpath = where output figures will be places
 outpath = [homepath,'figures/'];
+
+% -----Add necessary paths to working directories
 addpath([homepath,'functions/']);
 addpath([homepath,'functions/gridLegend_v1.4/']);
 addpath([homepath,'functions/cmocean_v2.0/cmocean/']);
@@ -24,7 +27,7 @@ addpath([homepath,'inputs-outputs/']);
 % addpath([homepath,'functions/OIBPicking/functions/']);
 addpath([homepath,'data/bed_elevations/OIB_L1B']);
 
-% Load Crane centerline
+% -----Load Crane centerline
 cl.Xi = load('Crane_centerline.mat').x; cl.Yi = load('Crane_centerline.mat').y;
 % Define x as distance along centerline
 cl.xi = zeros(1,length(cl.Xi));
@@ -35,9 +38,10 @@ end
 cl.x = 0:300:cl.xi(end);
 cl.X = interp1(cl.xi,cl.Xi,cl.x); cl.Y = interp1(cl.xi,cl.Yi,cl.x);
 
-% load model initialization file
+% -----Load model initialization variables
 load([homepath,'inputs-outputs/model_initialization_pre-collapse.mat']);
 
+% -----Define parameters for figures
 fontsize = 16;          % font size for figure text
 fontname = 'Arial';     % font name
         
@@ -937,141 +941,128 @@ if save_figure
     disp('figure 7 saved.'); 
 end
         
-%% 2018 Model Misfits
+%% 2007-2018 Model Misfits
     
 save_figure = 0;       % = 1 to save figure
+linewidth = 1.5; 
 
-% Load observed conditions
+% -----Load observed 2007-2018 conditions
+% ice surface
+h_obs = load([homepath,'inputs-outputs/observed_surface_elevations.mat']).h;
+Ih_obs = 8:13; % indices for 2009-2011, 2016-2018 observed surface elevation
 % ice speed
-U_obs_2018 = load([homepath,'inputs-outputs/observed_surface_speeds.mat']).U(21).U_width_ave;
-% estimate observed thickness in 2018 using surface and bed
-% calculate the thickness required to remain grounded at each grid cell
-rho_sw = 1000; % density of sea water (kg/m^3)
-rho_i = 917; % density of ice (kg/m^3)
-Hf = -(rho_sw./rho_i).*b0; % flotation thickness (m)
-h = load([homepath,'inputs-outputs/observed_surface_elevations.mat']).h;
-h_obs_2018 = interp1(cl.xi,h(13).h_centerline,x0);
-% thickness
-H_obs_2018 = h_obs_2018 - b0;
-% find the location of the grounding line and use a floating
-% geometry from the grounding linU_widthavge to the calving front
-if length(Hf)>=find(Hf-H_obs_2018>0,1,'first')+1
-    xgl = interp1(Hf(find(Hf-H_obs_2018>0,1,'first')-1:find(Hf-H_obs_2018>0,1,'first')+1)...
-        -H_obs_2018(find(Hf-H_obs_2018>0,1,'first')-1:find(Hf-H_obs_2018>0,1,'first')+1),...
-        x0(find(Hf-H_obs_2018>0,1,'first')-1:find(Hf-H_obs_2018>0,1,'first')+1),0,'linear','extrap'); % (m along centerline)
-else
-    xgl = x0(find(Hf-H_obs_2018>0,1,'first')-1);
-end
-gl_obs_2018 = dsearchn(x0',xgl);
-h_obs_2018(gl_obs_2018+1:c0) = (1-rho_i/rho_sw).*H_obs_2018(gl_obs_2018+1:c0); %adjust the surface elevation of ungrounded ice to account for buoyancy
-H_obs_2018(h_obs_2018<0)=0-b0(h_obs_2018<0); h_obs_2018(h_obs_2018<0)=0; % surface cannot go below sea level
-h_obs_2018(h_obs_2018-H_obs_2018<b0) = b0(h_obs_2018-H_obs_2018<b0)+H_obs_2018(h_obs_2018-H_obs_2018<b0); % thickness cannot go beneath bed elevation
+U_obs = load([homepath,'inputs-outputs/observed_surface_speeds.mat']).U;
+IU_obs = 16:21; % indices for 2012-2017 observed surface speed
 % terminus position
 termX = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
 termY = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
 termx = cl.xi(dsearchn([cl.Xi cl.Yi],[termX' termY']));
 termdate = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
-xcf_obs_2018 = termx(39);
-c_obs_2018 = dsearchn(cl.xi',xcf_obs_2018);
 clear termX termY termx termdate
 
-% load modeled 2018 conditions
-H_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).H;
-U_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).U;
-c_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).c;
-h_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).h;
-b_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).b;
-x_mod_2018 = load([homepath,'inputs-outputs/modeled_conditions_2018.mat']).x;
+% -----Load modeled 2007-2018 conditions
+mod_cond = load([homepath,'inputs-outputs/modeled_conditions_2007-2018_2.mat']).mod_cond;
+Ih_mod = [3:5, 10:12]; % indices for 2009-2011, 2016-2018 modeled surface elevation
+IU_mod = 6:11; % indices for 2007-2017 observed surface speed
 
-% use observed calving front as cutoff for plotting
-Ic = dsearchn(x_mod_2018',xcf_obs_2018); % index of observed calving front on modeled spatial grid
+% color scheme for plotting time series
+col = parula(length(2007:2018)+1); 
 
 % plot
 figure(8); clf;
 set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0.8 0.1 0.1]]);
-% surface speed misfit
-ax1 = axes('position',[0.08 0.67 0.36 0.3]); hold on; grid on;
+% modeled surface elevation
+ax1 = axes('position',[0.08 0.55 0.4 0.4]); hold on; 
+    grid on;
+%     xlim([25 60]);
+    ylim([0 1000]);
+    ylabel('Modeled surface elevation [m]');
+    legend('location','northeast');
     set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
-    xlim([0 52]); ylabel('Misfit [m]'); 
-    % surface elevation misfit
-    plot(ax1, x_mod_2018(1:Ic)/10^3,h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),...
-        '-','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
-    % 10 km moving mean surface elevation misfit
-    plot(ax1, x_mod_2018(1:Ic)/10^3,movmean(h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),50),...
-        '-','linewidth',1,'color',[0.8 0.1 0.1],'HandleVisibility','off');    
-    % mean surface elevation misfit
-    plot(ax1, x_mod_2018(1:Ic)/10^3,mean(h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),'omitnan')*ones(1,length(x_mod_2018(1:Ic))),...
-        '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');    
-    % text for mean misfit
-    text(max(get(gca,'XLim')),mean(h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),'omitnan'),...
-        sprintf('%.1f',mean(h_mod_2018(1:Ic)-interp1(x0,h_obs_2018,x_mod_2018(1:Ic)),'omitnan')),'color',[0.8 0.1 0.1],...
-        'fontsize',fontsize-2);
-    % (a)
-    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.08+min(get(gca,'YLim')),...
-            'a)','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');  
-% surface speed misfit
-ax2 = axes('position',[0.56 0.67 0.36 0.3]); hold on; grid on;
+    % grounding line location
+    plot(ax1, [mod_cond(end).x(mod_cond(end).gl)/10^3 mod_cond(end).x(mod_cond(end).gl)/10^3],...
+        [min(get(ax1,'YLim')) max(get(ax1,'YLim'))],'-k','linewidth',linewidth,'HandleVisibility','off');
+    for i=1:length(mod_cond)
+        plot(ax1, mod_cond(i).x/10^3, mod_cond(i).h, 'linewidth', linewidth, 'color', col(i,:), 'displayname', num2str(mod_cond(i).year));
+    end
+    % add text label            
+    text((max(get(ax1,'XLim'))-min(get(ax1,'XLim')))*0.9+min(get(ax1,'XLim')),...
+        (max(get(ax1,'YLim'))-min(get(ax1,'YLim')))*0.1+min(get(ax1,'YLim')),...
+        'a)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
+% modeled flow speed
+ax2 = axes('position',[0.56 0.55 0.4 0.4],'YTick',0:300:1500); hold on; 
     set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
-    xlim([0 52]); 
-    ylabel('Misfit [m/yr]');
-    % surface speed misfit
-    plot(ax2, x_mod_2018(1:Ic)/10^3,(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic))).*3.1536e7,...
-        '-','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
-    % 10 km moving mean surface speed misfit
-    plot(ax2, x_mod_2018(1:Ic)/10^3,movmean((U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic))),50).*3.1536e7,...
-        '-','linewidth',1,'color',[0.8 0.1 0.1],'HandleVisibility','off');
-    % mean surface speed misfit
-    plot(ax2, x_mod_2018(1:Ic)/10^3,mean(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic)),'omitnan')*3.1536e7*ones(1,length(x_mod_2018(1:Ic))),...
-        '--','linewidth',2,'color',[0.8 0.1 0.1],'HandleVisibility','off');
-    % text for mean misfit
-    text(max(get(gca,'XLim')),mean(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic)),'omitnan')*3.1536e7,...
-        sprintf('%.1f',mean(U_mod_2018(1:Ic)-interp1(cl.xi,U_obs_2018,x_mod_2018(1:Ic)),'omitnan')*3.1536e7),'color',[0.8 0.1 0.1],...
-        'fontsize',fontsize-2);
-    % (b)
-    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.08+min(get(gca,'YLim')),...
-            'b)','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold'); 
-set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0 0.4 0.8]]);
-% modeled and observed surface elevation 
-ax3 = axes('position',[0.08 0.1 0.36 0.5]); hold on; grid on; 
-    legend('Location','north'); 
-    set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
-    xlim([0 52]); 
-    xlabel('Distance along centerline [km]'); 
-    ylabel('Elevation [m]'); 
-    plot(ax3, x_mod_2018(1:Ic)/10^3,h_mod_2018(1:Ic),'-k','linewidth',2,'displayname','h_{modeled}');
-    plot(ax3, x0(1:dsearchn(x0',xcf_obs_2018))/10^3,h_obs_2018(1:dsearchn(x0',xcf_obs_2018)),'--k','linewidth',2,'displayname','h_{observed}');
-    % (c)
-    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
-            'c)','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');     
-    %yyaxis right; set(ax3,'YTick',[],'YTickLabel',[]);
-% modeled and observed surface speed 
-ax4 = axes('position',[0.56 0.1 0.36 0.5]); hold on; grid on; 
-    legend('Location','north');
-    set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
-    xlabel('Distance along centerline [km]'); 
-%         yyaxis left; 
-    ylabel('Speed [m/yr]'); ylim([100 850]);
-    plot(ax4, x_mod_2018(1:Ic)/10^3,U_mod_2018(1:Ic)*3.1536e7,'-k','linewidth',2,'displayname','U_{modeled}');
-    plot(ax4, cl.xi(1:c_obs_2018)/10^3,U_obs_2018(1:c_obs_2018)*3.1536e7,'--k','linewidth',2,'displayname','U_{observed}');
-    xlim([0 52]); 
-    ylim([0 1100]);
-    text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.05+min(get(gca,'YLim')),...
-            'd)','backgroundcolor','w','fontsize',18,'linewidth',1,'fontweight','bold');
-%         yyaxis right; ylabel('Basal Roughness Factor [s^{1/m} m^{-1/m}]'); ylim([min(beta0)-0.2 max(beta)+0.2]);
-%             plot(x/10^3,movmean(beta,5),'-','linewidth',2,'color',[0 0.4 0.8],'displayname','\beta');
-    
-    % display grounding line misfit
-%     disp('Mean misfits at the grounding line:');
-%     disp(['    Speed: ',num2str((U(gl)-interp1(cl.x,U_obs(10).U,x(gl)))*3.1536e7),' m/yr']);
-%     disp(['    Elevation: ',num2str((h(gl)-interp1(cl.x,h_obs(36).surface,x(gl)))),' m']);
+    grid on;
+    ylabel('Modeled flow speed [m/yr]');
+%     xlim([25 60]);
+    ylim([0 1000]);
+    % grounding line location
+    plot(ax2, [mod_cond(end).x(mod_cond(end).gl)/10^3 mod_cond(end).x(mod_cond(end).gl)/10^3],...
+        [min(get(ax2,'YLim')) max(get(ax2,'YLim'))],'-k','linewidth',linewidth,'displayname','2018 gl');
+    for i=1:length(mod_cond)
+        plot(ax2, mod_cond(i).x/10^3, mod_cond(i).U*3.1536e7, 'linewidth', linewidth, 'color', col(i,:), 'displayname', num2str(mod_cond(i).year));
+    end
+    % add text label            
+    text((max(get(ax2,'XLim'))-min(get(ax2,'XLim')))*0.9+min(get(ax2,'XLim')),...
+        (max(get(ax2,'YLim'))-min(get(ax2,'YLim')))*0.1+min(get(ax2,'YLim')),...
+        'b)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');    
+% surface elevation misfit
+ax3 = axes('position',[0.08 0.1 0.4 0.4]); hold on; 
+grid on;
+    set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2);
+    xlabel('Distance along centerline [km]');
+    ylabel('Surface elevation misfit [m]');  
+%     xlim([25 60]);
+    ylim([-50 200]);
+    % grounding line location
+    plot(ax3, [mod_cond(end).x(mod_cond(end).gl)/10^3 mod_cond(end).x(mod_cond(end).gl)/10^3],...
+        [min(get(ax3,'YLim')) max(get(ax3,'YLim'))],'-k','linewidth',linewidth,'displayname','2018 gl');
+    for i=1:length(Ih_obs)
+%         misfit = mod_cond(Ih_mod(i)).h...
+%             - interp1(cl.xi(~isnan(h_obs(Ih_obs(i)).h_centerline)),h_obs(Ih_obs(i)).h_centerline(~isnan(h_obs(Ih_obs(i)).h_centerline)),mod_cond(Ih_mod(i)).x);
+%         % account for error in dataset
+%         misfit(misfit<0) = misfit;
+        plot(ax3, mod_cond(Ih_mod(i)).x/10^3, mod_cond(Ih_mod(i)).h...
+            - interp1(cl.xi(~isnan(h_obs(Ih_obs(i)).h_centerline)),h_obs(Ih_obs(i)).h_centerline(~isnan(h_obs(Ih_obs(i)).h_centerline)),mod_cond(Ih_mod(i)).x),...
+            'linewidth', linewidth, 'color', col(Ih_mod(i),:), 'displayname', num2str(mod_cond(Ih_mod(i)).year));
+    end
+    % add text label            
+    text((max(get(ax3,'XLim'))-min(get(ax3,'XLim')))*0.9+min(get(ax3,'XLim')),...
+        (max(get(ax3,'YLim'))-min(get(ax3,'YLim')))*0.1+min(get(ax3,'YLim')),...
+        'c)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');    
+% flow speed misfit
+ax4 = axes('position',[0.56 0.1 0.4 0.4]); hold on; 
+grid on;
+    set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2);
+    xlabel('Distance along centerline [km]');
+    ylabel('Flow speed misfit [m/yr]'); 
+%     xlim([25 60]);
+    ylim([-800 800]);
+    % grounding line location
+    plot(ax4, [mod_cond(end).x(mod_cond(end).gl)/10^3 mod_cond(end).x(mod_cond(end).gl)/10^3],...
+        [min(get(ax4,'YLim')) max(get(ax4,'YLim'))],'-k','linewidth',linewidth,'displayname','2018 gl');
+    for i=1:length(IU_obs)
+        % dataset error
+        U_err = interp1(cl.xi, U_obs(IU_obs(i)).U_err, mod_cond(IU_mod(i)).x); 
+        % difference between modeled and observed
+        misfit = mod_cond(IU_mod(i)).U...
+            - interp1(cl.xi(~isnan(U_obs(IU_obs(i)).U_width_ave)), U_obs(IU_obs(i)).U_width_ave(~isnan(U_obs(IU_obs(i)).U_width_ave)), mod_cond(IU_mod(i)).x);
+        % adjust misfit for dataset error
+        misfit(misfit<0) = misfit(misfit<0) + U_err(misfit<0);
+        misfit(misfit>0) = misfit(misfit>0) - U_err(misfit>0);
+        % plot 
+        plot(ax4, mod_cond(IU_mod(i)).x/10^3, misfit.*3.1536e7,...
+            'linewidth', linewidth, 'color', col(IU_mod(i),:), 'displayname', num2str(mod_cond(IU_mod(i)).year));
+    end
+    % add text label            
+    text((max(get(ax4,'XLim'))-min(get(ax4,'XLim')))*0.9+min(get(ax4,'XLim')),...
+        (max(get(ax4,'YLim'))-min(get(ax4,'YLim')))*0.1+min(get(ax4,'YLim')),...
+        'd)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');    
 
+   
 % save figure
 if save_figure
-    exportgraphics(figure(8),[homepath,'figures/model_misfits_2018.png'],'Resolution',300);
+    exportgraphics(figure(8),[homepath,'figures/model_misfits_2007-2018.png'],'Resolution',300);
     disp('figure 8 saved');
 end
 
@@ -1082,6 +1073,7 @@ fontsize = 16;      % font size
 fontname = 'Arial'; % font name
 linewidth = 2;      % line width
 markersize = 10;    % marker size
+print_tables = 1;   % = 1 to print data tables in LaTeX format
 
 % load modeled conditions
 % 2100: unperturbed scenario
@@ -1901,3 +1893,68 @@ if save_figures
     disp('figures 9-12 saved.');
 end
 
+% option to print tables in LaTeX format
+if print_tables
+    
+    % DFW
+    disp('T_DFW:')
+    disp(['d_fw  dL  dxgl dHgl  dUgl  Qgl']);
+    T_DFW2 = table2array(T_DFW);
+    for i=1:length(T_DFW2(:,1))
+        disp([num2str(round(T_DFW2(i,1))), ' & ', num2str(round(T_DFW2(i,2),1)), ' & ',...
+            num2str(round(T_DFW2(i,3),1)), ' & ', num2str(round(T_DFW2(i,4))), ' & ',...
+            num2str(round(T_DFW2(i,5))), ' & ', num2str(round(T_DFW2(i,6),2)), ' \\']);
+    end
+    disp('     ');
+    disp('-----------------------------');
+    
+    % SMB
+    disp('T_SMB:')
+    disp(['d_smb  dL  dxgl dHgl  dUgl  Qgl']);
+    T_SMB2 = table2array(T_SMB);
+    for i=1:length(T_SMB2(:,1))
+        disp([num2str(round(T_SMB2(i,1))), ' & ', num2str(round(T_SMB2(i,2),1)), ' & ',...
+            num2str(round(T_SMB2(i,3),1)), ' & ', num2str(round(T_SMB2(i,4))), ' & ',...
+            num2str(round(T_SMB2(i,5))), ' & ', num2str(round(T_SMB2(i,6),2)), ' \\']);
+    end
+    disp('     ');
+    disp('-----------------------------');
+    
+    % F_T
+    disp('T_TF:')
+    disp(['d_TF  dL  dxgl dHgl  dUgl  Qgl']);
+    T_TF2 = table2array(T_TF);
+    for i=1:length(T_TF2(:,1))
+        disp([num2str(round(T_TF2(i,1),1)), ' & ', num2str(round(T_TF2(i,2),1)), ' & ',...
+            num2str(round(T_TF2(i,3),1)), ' & ', num2str(round(T_TF2(i,4))), ' & ',...
+            num2str(round(T_TF2(i,5))), ' & ', num2str(round(T_TF2(i,6),2)), ' \\']);
+    end
+    disp('     ');
+    disp('-----------------------------');
+    
+    % SMB_enh
+    disp('T_SMB_enh:')
+    disp(['d_smb  dL  dxgl dHgl  dUgl  Qgl']);
+    T_smb_enh2 = table2array(T_smb_enh);
+    for i=1:length(T_smb_enh2(:,1))
+        disp([num2str(T_smb_enh2(i,1)), ' & ', num2str(round(T_smb_enh2(i,2),1)), ' & ',...
+            num2str(round(T_smb_enh2(i,3),1)), ' & ', num2str(round(T_smb_enh2(i,4))), ' & ',...
+            num2str(round(T_smb_enh2(i,5))), ' & ', num2str(round(T_smb_enh2(i,6),2)), ' \\']);
+    end
+    disp('   ');
+    disp('-----------------------------');
+    
+    % SMB_enh & F_T
+    disp('T_SMB_enh_TF:')
+    disp(['d_SMB_enh  d_TF  dL  dxgl dHgl  dUgl  Qgl']);
+    T_smb_enh_TF2 = table2array(T_smb_enh_TF);
+    for i=1:length(T_smb_enh_TF2(:,1))
+        disp([num2str(T_smb_enh_TF2(i,1)), ' & ', num2str(round(T_smb_enh_TF2(i,2),1)), ' & ',...
+            num2str(round(T_smb_enh_TF2(i,3),1)), ' & ', num2str(round(T_smb_enh_TF2(i,4),1)), ' & ',...
+            num2str(round(T_smb_enh_TF2(i,5))), ' & ', num2str(round(T_smb_enh_TF2(i,6))),...
+            ' & ',num2str(round(T_smb_enh_TF2(i,7),2)), ' \\']);
+    end
+    disp('     ');
+    disp('-----------------------------');
+    
+end

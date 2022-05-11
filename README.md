@@ -10,14 +10,30 @@ Rainey Aberle and Ellyn Enderlin
 
 ### Workflows:
 
-- `steady-state-initial`: tune the model by simulating 
+- `steady-state-initial`: tune the model by simulating the pre-ice shelf collapse conditions until reaching near a steady state, the ice shelf collapse, and 
 - `dynamic-initial-UNTESTED`: (not recommended) tune the model to produce post-collapse conditions 2009-2018
 
 ### Order of operations:
 
-- Synthesize centerline observations: `a_centerline_observations.m`, `b_glacier_width.mlx`, `c_downscale_RACMO.m`, `d_LarsenC_melt.m`
-- Save conditions to initialize model: `e_save_initialization.m`
-- Run model simulations: `f_collapse_simulation.m`
+- Synthesize observations and modeled conditions: `a_centerline_observations.m`, `b_glacier_width.mlx`, `c_downscale_RACMO.m`, `d_rate_factor.m`, `e_cumulative_strain.m`,  `f_LarsenC_melt.m`
+- Save conditions to initialize model: `g_save_initialization.m`
+- Run model simulations: `h_collapse_simulation.m`
+
+### Extracted data:
+
+To access observational data and model outputs averaged across the glacier width, see `inputs-outputs`. 
+
+- Centerline observations: all files with the `observed_*.mat` file name structure.
+- Model outputs: all files with the `modeled_*.mat` file name structure. 
+- Other:
+    - `Crane_centerline.mat`: delineated glacier centerline coordinates (Antarctic polar stereographic)
+    - `downscaled_RACMO_variables_2009-2019.mat`: RACMO2.3 model outputs for snowmelt, snowfall, runoff, and surface mass balance (SMB) interpolated to the glacier centerline and downscaled using statistical methods described by No\"el et al. (2016)
+    - `Tributary*.mat`: estimated mass flux from glacier tributaries to the main trunk
+    
+### Modeling results: see `workflows/steady-state-initial/results`.
+- `1_SMB_DFW_TF`: results in model year 2100 for the range of SMB, freshwater depth in crevasses (DFW), and ocean thermal forcing (TF) perturbations applied independently.
+- `2_SMB_enh`: results in model year 2100 for SMB plus surface meltwater runoff-enhanced submarine melt (SMB_enh).  
+- `3_SMB_enh+TF`: results in model year 2100 for concurrent SMB_enh and TF perturbations. 
 
 ---
 
@@ -60,6 +76,8 @@ Gesch, D. B., Verdin, K. L., and Greenlee, S. K. (1999). New land surface digita
 Paden, J., Li, J., Leuschen, C., Rodriguez-Morales, F. and Hale, R. (2010). Icebridge mcords l2 ice thickness, version 1. https://doi.org/63710.5067/GDQ0CUCVTE2Q
 
 Paden, J., Li, J., Leuschen, C., Rodriguez-Morales, F. and Hale, R. (2014). Icebridge mcords l1b geolocated radar echo639strength profiles, version 2. https://doi.org/10.5067/90S1XZRBAX5N
+
+Noël, B., Jan Van De Berg, W., MacHguth, H., Lhermitte, S., Howat, I., Fettweis, X. and Van Den Broeke, M.R. (2016). A daily, 1 km resolution data set of downscaled Greenland ice sheet surface mass balance (1958-2015). _10_(5), 2361–2377. _The Cryosphere._ https://doi.org/10.5194/tc-10-2361-2016
 
 Wuite, J., Rott, H., Hetzenecker, M., Floricioiu, D., De Rydt, J., Gudmundsson, G. H., Nagler, T., and Kern, M. (2015). Evolution of surface velocities and ice discharge of Larsen B outlet glaciers from 1995 to 2013. _9_(3): 957-969. _The Cryosphere._ https://doi.org/10.5194/tc-9-957-2015
 

@@ -121,8 +121,10 @@ for j=1%:length(delta_SMB0)
     % -----initialize parameters-----
     x=x0; U=U0; W=W0; gl=gl0; dUdx=dUdx0; A=A0; h=h0; b=b0; H=H0; 
     DFW=DFW0; dx=dx0; SMB=SMB0; SMR=SMR0; c=c0;
-    beta0 = interp1([0 x0(end)], [0.5 2], x0); 
+    beta0 = interp1([0 x0(end)], [0.3 1.8], x0); 
     sigma_b = 1000e3; 
+    Q0 = movmean(Q0,30);
+    A0 = A0/2;
     
     DFW_min = 10 + delta_DFW; % m
 
@@ -215,8 +217,7 @@ for j=1%:length(delta_SMB0)
                 set(gca,'FontSize',14,'linewidth',2);
                 title([num2str(t(i)*3.1536e7), 'yrs']);
                 xlim([0 95]); ylim([min(b)-100 max(h)+200]);
-                xlabel('Distance along centerline [km]'); 
-                ylabel('Elevation [m]');
+                xlabel('distance along centerline [km]'); ylabel('elevation [m]');
                 % ice surface
                 plot(x(1:c)./10^3,h(1:c),'color',col(i,:),'linewidth',2,'displayname','2009');
                 % calving front
@@ -232,18 +233,18 @@ for j=1%:length(delta_SMB0)
                 hold on; grid on;
                 set(gca,'FontSize',14,'linewidth',2);
                 xlim([0 95]); 
-                xlabel('Distance along centerline [km]'); 
-                ylabel('Flow speed [m a^{-1}]');
+    %                     ylim([0 800]);
+                xlabel('distance along centerline [km]'); ylabel('speed [m a^{-1}]');
                 plot(x(1:c)./10^3,U(1:c).*3.1536e7,'color',col(i,:),'linewidth',2,'displayname','2009');
                 % calving front & grounding line positions
                 ax3 = axes('Position',[0.7 0.1 0.28 0.8]); 
                 hold on; grid on;
                 set(gca,'FontSize',14,'linewidth',2);
                 xlim([30 95]);
-                xlabel('Distance along centerline [km]'); 
+                xlabel('distance along centerline [km]'); 
                 ylabel('Year');
-                plot(x(c)/10^3,t(i)./3.1536e7+1997,'.','markersize',15,'color',col(i,:),'displayname','2009');
-                plot(ax3,x(gl)./10^3,t(i)./3.1536e7+1997,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off');
+                plot(x(c)/10^3,t(i)./3.1536e7,'.','markersize',15,'color',col(i,:),'displayname','2009');
+                plot(ax3,x(gl)./10^3,t(i)./3.1536e7,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off');
             elseif mod(t(i),dt*200)==0 % display every dt*200
                 figure(1);
                 % glacier geometry
@@ -256,8 +257,8 @@ for j=1%:length(delta_SMB0)
                 % ice speed
                 plot(ax2,x(1:c)/10^3,U(1:c).*3.1536e7,'-','Color',col(i,:),'linewidth',2,'DisplayName',num2str(round(t(i)./3.1536e7)+2009));
                 % calving front & grounding line positions
-                plot(ax3,x(c)/10^3,t(i)/3.1536e7+1997,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
-                plot(ax3,x(gl)/10^3,t(i)/3.1536e7+1997,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
+                plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
+                plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
             end    
         end
 
@@ -607,11 +608,10 @@ for j=1%:length(delta_SMB0)
     % use smaller dt for the first 18 years
     t_start = 0*3.1536e7; % 2002
     t_mid = 18*3.1536e7; % 2020
-    t_end = 98*3.1536e7; 
+    t_end = 80*3.1536e7; % 2100
     dt1 = 0.0005*3.1536e7; 
     dt2 = 0.001*3.1536e7; 
     t = [t_start:dt1:t_mid t_mid+dt2:dt2:t_end]; 
-    clear dt1 dt2
     
     % -----initialize variables to track throughout model run
     Fgl = zeros(1,length(t)); % grounding line discharge [Gt/a]
@@ -622,21 +622,21 @@ for j=1%:length(delta_SMB0)
     
     % -----run flowline model
     
-    for i=1:dsearchn(t', 20*3.1536e7)%length(t)
-
+    for i=1:dsearchn(t', 16*3.1536e7)%length(t)
+        
         % decrease DFW if above set minimum
         if DFW > DFW_min
-            if t(i)/3.1536e7 > 0.01 && t(i)/3.1536e7 < 1 
-                DFW = DFW-0.0078;
+            if t(i) > dt1 && t(i)/3.1536e7 < 1 
+                DFW = DFW - 12/(3.1536e7/dt1); % decrease by 10 m/yr
             elseif t(i)/3.1536e7 >= 1 && t(i)/3.1536e7 < 3
-                DFW = DFW-0.0006717;
+                DFW = DFW - 2/(3.1536e7/dt1); % decrease by 2 m/yr
             elseif t(i)/3.1536e7 >= 3
-                DFW = DFW-0.0005;
+                DFW = DFW - 1/(3.1536e7/dt1); % decrease by 1 m/yr
             end
         end
 
         % save modeled conditions in at years 2007-2018 (model years 5-16)
-        if mod(t(i),3.1536e7)==0 && t(i)/3.1536e7 >= 5 && t(i)/3.1536e7 <= 16
+        if mod(t(i),3.1536e7)<dt1 && t(i)/3.1536e7 >= 5 && t(i)/3.1536e7 <= 16
             count=count+1;
             mod_cond(count).year = t(i)/3.1536e7+2002;
             mod_cond(count).x = x;            
@@ -647,7 +647,7 @@ for j=1%:length(delta_SMB0)
             mod_cond(count).gl = gl;
             % save to file in 2018
             if save_final && t(i)/3.1536e7==16
-                save([homepath,'inputs-outputs/modeled_conditions_2007-2018.mat'],'mod_cond');
+                save([homepath,'inputs-outputs/modeled_conditions_2007-2018_2.mat'],'mod_cond');
                 disp('2007-2018 modeled conditions saved');
             end
         end
@@ -737,7 +737,7 @@ for j=1%:length(delta_SMB0)
 
         % -----plot geometry, speed, & grounding line and calving front positions
         col = parula(length(t)); % color scheme for plots
-        if plot_time_steps && mod(t(i),t(end)/98)==0 %&& mod(t(i),t(end)/98)==0 % display every 1 year
+        if plot_time_steps && mod(t(i),3.1536e7)<dt1/2 %&& mod(t(i),t(end)/98)==0 % display every 1 year
             if i==1
                 % plot observed terminus positions
                 figure(1); 
@@ -821,7 +821,7 @@ for j=1%:length(delta_SMB0)
                 SMR(gl+1:c) = (SMR0-delta_mdot)/(SMR_mean_fit.a+1)*feval(SMR_mean_fit,x(gl+1:c)-x(gl));
             end
         end 
-        if plot_climate_params && mod(t(i),t(end)/98)==0 % display every 1 year
+        if plot_climate_params && mod(t(i),3.1536e7)<dt1/2 % display every 1 year
             if i==1
                 figure(2); clf
                 drawnow
