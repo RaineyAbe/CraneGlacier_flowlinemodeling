@@ -4,9 +4,9 @@
 
 clear all; close all;
 
-% Define homepath
-homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
-cd([homepath,'inputs-outputs/']);
+% Define path in directory to CraneGlacier_flowlinemodeling
+basepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
+cd([basepath,'inputs-outputs/']);
 
 % Add path to required functions
 % addpath([homepath,'functions/OIBPicking/functions/']);
@@ -19,7 +19,7 @@ save_width = 1;     % = 1 to save width
 
 %% Load and display Landsat image
 
-cd([homepath,'data/imagery/']);
+cd([basepath,'data/imagery/']);
 
 ls = dir('LC08*20200114_01_T2_B8.TIF');
 [LS.im,R] = readgeoraster(ls.name); [LS.ny,LS.nx] = size(LS.im);
@@ -57,10 +57,10 @@ if outlineExists==0
     plot(ol.polygon,'displayname','glacier outline','facecolor',col(3,:));
     
     % Save picks
-    cd([homepath,'inputs-outputs/']);
+    cd([basepath,'inputs-outputs/']);
     save('observed_glacier_outline.mat','ol');
 else
-    cd([homepath,'inputs-outputs/']);
+    cd([basepath,'inputs-outputs/']);
     ol = load('observed_glacier_outline.mat').ol; 
     % Create polygon from picks, plot
     ol.polygon = polyshape(ol.x,ol.y);
@@ -196,7 +196,7 @@ ax2 = subplot(1,3,3); hold on;
 %% Save results! 
 
 % Save figures
-cd([homepath,'figures/']);
+cd([basepath,'figures/']);
 saveas(fig1,'observed_glacier_width.png','png');
 disp('figure saved');
 % Save calculated width values
@@ -206,7 +206,7 @@ if save_width
         width.extx = segs.intx; width.exty = segs.inty;
         width.segsx = segs.xn; width.segsy = segs.yn;
         width.segsx_clip = segs.xn_clip; width.segsy_clip = segs.yn_clip;
-    cd([homepath,'inputs-outputs/']);
+    cd([basepath,'inputs-outputs/']);
     save('observed_glacier_width.mat','width');
     disp(['saved width variables in: ',pwd]);
 end

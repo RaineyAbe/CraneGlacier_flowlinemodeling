@@ -21,12 +21,12 @@
 
 clear all; close all;
 
-% define homepath
-homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
+% Define path in directory to CraneGlacier_flowlinemodeling
+basepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 
 % add path to required functions
-addpath([homepath,'functions/hugheylab-nestedSortStruct'],...
-    [homepath,'functions/']);
+addpath([basepath,'functions/hugheylab-nestedSortStruct'],...
+    [basepath,'functions/']);
 
 % determine whether or not to save
 save_files = 0; % = 0 to NOT save, = 1 to save
@@ -34,8 +34,8 @@ save_files = 0; % = 0 to NOT save, = 1 to save
 %% 1. Load centerline coordinates, width, and fjord end
 
 % -----Centerline-----
-cl.X = load([homepath,'inputs-outputs/Crane_centerline.mat']).x; 
-cl.Y = load([homepath,'inputs-outputs/Crane_centerline.mat']).y;
+cl.X = load([basepath,'inputs-outputs/Crane_centerline.mat']).x; 
+cl.Y = load([basepath,'inputs-outputs/Crane_centerline.mat']).y;
 % Define x as distance along centerline
 x = zeros(1,length(cl.X));
 for i=2:(length(cl.X))
@@ -46,14 +46,14 @@ end
 h_geoid = geoidheight(cl.lat, cl.lon);
 
 % -----Width-----
-width = load([homepath, 'inputs-outputs/observed_glacier_width.mat']).width;
+width = load([basepath, 'inputs-outputs/observed_glacier_width.mat']).width;
 % add points in width segments at 200 m increments
 % width.
 
 % -----Fjord end-----
-fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
+fjord_end = shaperead([basepath,'data/terminus/fjord_end.shp']);
 
-%% 2. Width-averaged surface elevations (GOTOPO30, ASTER, & OIB)
+%% 2. Surface elevations (GOTOPO30, ASTER, & OIB)
 
 % -------------------------------------------------------------------------
 %   a. Load surface elevation datasets, average over glacier width
@@ -63,7 +63,7 @@ fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
 k=0; % counter for number of files in h structure
 
 % -----GOTOPO30 (~1996)-----
-[GT.h, GT.R] = readgeoraster([homepath,'data/surface_elevations/gt30w120s60_aps.tif']);
+[GT.h, GT.R] = readgeoraster([basepath,'data/surface_elevations/gt30w120s60_aps.tif']);
 GT.h(GT.h==-9999) = NaN; % set no-data values to NaN
 % extract x and y coordinates
 [GT.ny, GT.nx] = size(GT.h); % number of x and y points
@@ -84,11 +84,11 @@ end
 h(k).numPts = length(h(k).h_centerline(~isnan(h(k).h_centerline))); % number of valid data points in centerline profile
 
 % -----ASTER (2001-2002)-----
-Afn = dir([homepath,'data/surface_elevations/ASTER/AST14DEM*_aps.tif']);
+Afn = dir([basepath,'data/surface_elevations/ASTER/AST14DEM*_aps.tif']);
 % loop through files
 for i=1:length(Afn)
     A(i).fn = Afn(i).name;
-    [A(i).h, A(i).R] = readgeoraster([homepath,'data/surface_elevations/ASTER/',A(i).fn]);
+    [A(i).h, A(i).R] = readgeoraster([basepath,'data/surface_elevations/ASTER/',A(i).fn]);
     A(i).h = double(A(i).h);
     A(i).h(A(i).h==-9999) = NaN; % set no data values to NaN
     [A(i).ny, A(i).nx] = size(A(i).h); % number of x and y points
@@ -112,13 +112,13 @@ for i=1:length(Afn)
 end
 
 % -----OIB (2009-12, 2016-18)-----
-OIB_files = dir([homepath,'data/surface_elevations/OIB_L2/C*.csv']);
+OIB_files = dir([basepath,'data/surface_elevations/OIB_L2/C*.csv']);
 % loop through files
 for i=1:length(OIB_files)
     
     % load file
     OIB(i).fn = OIB_files(i).name; % file name
-    file = readmatrix([homepath,'data/surface_elevations/OIB_L2/',OIB(i).fn]); % full csv file
+    file = readmatrix([basepath,'data/surface_elevations/OIB_L2/',OIB(i).fn]); % full csv file
     file(file==-9999) = NaN; % replace no data values with NaN
     % extract coordinates
     OIB(i).lat = file(:,1);
@@ -210,9 +210,9 @@ end
 
 % -----save h and figure-----
 if save_files
-    save([homepath,'inputs-outputs/observed_surface_elevations.mat'], 'h');
+    save([basepath,'inputs-outputs/observed_surface_elevations.mat'], 'h');
     disp('h saved to file');
-    saveas(figure(1), [homepath,'figures/observed_surface_elevations.png'], 'png');
+    saveas(figure(1), [basepath,'figures/observed_surface_elevations.png'], 'png');
     disp('figure saved to file');
 end
 
@@ -226,7 +226,7 @@ k=0; % counter for number of files in U structure
 % -----ERS (1994)-----
 k=k+1;
 % file name
-ERS_files{1} = [homepath,'data/surface_velocities/ENVEO_velocities/LarsenFleming_s19940120_e19940319.1.0_20170928/LarsenFleming_s19940120_e19940319.tif'];
+ERS_files{1} = [basepath,'data/surface_velocities/ENVEO_velocities/LarsenFleming_s19940120_e19940319.1.0_20170928/LarsenFleming_s19940120_e19940319.tif'];
 % load file
 [ERS(1).A, ERS(1).R] = readgeoraster(ERS_files{1});
 [ERS(1).ny, ERS(1).nx, ~] = size(ERS(1).A); % dimension sizes
@@ -253,7 +253,7 @@ U(k).numPts = length(U(k).U_width_ave(~isnan(U(1).U_width_ave))); % number of va
 % -----ERS (1995)-----
 k=k+1;
 % file name
-ERS_files{2} = [homepath,'data/surface_velocities/ENVEO_velocities/glacapi_iv_LB_ERS_1995_v2.tif'];
+ERS_files{2} = [basepath,'data/surface_velocities/ENVEO_velocities/glacapi_iv_LB_ERS_1995_v2.tif'];
 % load file
 [ERS(2).A, ERS(2).R] = readgeoraster(ERS_files{2});
 [ERS(2).ny, ERS(2).nx, ~] = size(ERS(2).A); % dimension sizes
@@ -279,12 +279,12 @@ U(k).numPts = length(U(k).U_width_ave(~isnan(U(2).U_width_ave))); % number of va
 
 % -----ITS_LIVE (1999-2017)-----
 % file names
-ITS_LIVE_files = dir([homepath,'data/surface_velocities/ITS_LIVE/ANT*.nc']);
+ITS_LIVE_files = dir([basepath,'data/surface_velocities/ITS_LIVE/ANT*.nc']);
 % Loop through files
 for i=1:length(ITS_LIVE_files)
     % load coordinates
-    IL(i).X = ncread([homepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'x'); % X [m]
-    IL(i).Y = ncread([homepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'y'); % Y [m]
+    IL(i).X = ncread([basepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'x'); % X [m]
+    IL(i).Y = ncread([basepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'y'); % Y [m]
     % determine subset over which to extract velocity data
     Ix = find(IL(i).X >= min(width.segsx_clip(:)) & IL(i).X <= max(width.segsx_clip(:)));
     Iy = find(IL(i).Y >= min(width.segsy_clip(:)) & IL(i).Y <= max(width.segsy_clip(:)));
@@ -292,12 +292,12 @@ for i=1:length(ITS_LIVE_files)
     % crop coordinates to subset
     IL(i).X = IL(i).X(Ix); IL(i).Y = IL(i).Y(Iy);
     % read in velocity
-    IL(i).U = ncread([homepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'v', startloc, counts)'; % [m/y]
+    IL(i).U = ncread([basepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'v', startloc, counts)'; % [m/y]
     IL(i).U(IL(i).U==-32767) = NaN; % replace no data values with NaN
     % convert to m/s
     IL(i).U = IL(i).U./3.1536e7;
     % read in velocity error
-    IL(i).U_err = ((ncread([homepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'v_err', startloc, counts))')./3.1536e7; % u error [m/s]
+    IL(i).U_err = ((ncread([basepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'v_err', startloc, counts))')./3.1536e7; % u error [m/s]
     % save info in structure
     k=k+1;
     U(k).date = ITS_LIVE_files(i).name(11:14); % observation date
@@ -412,22 +412,22 @@ if save_files
     U(k).numPts = NaN;
     U(k).U_err = NaN;
     % U variable
-    save([homepath,'inputs-outputs/observed_surface_speeds.mat'],'U');
+    save([basepath,'inputs-outputs/observed_surface_speeds.mat'],'U');
     disp('U saved to file');
     % figures
-    saveas(figure(2), [homepath,'figures/observed_surface_speeds.png'], 'png');
+    saveas(figure(2), [basepath,'figures/observed_surface_speeds.png'], 'png');
     disp('figure 2 saved');
-    saveas(figure(3), [homepath,'figures/observed_pre-collapse_speed.png'], 'png');
+    saveas(figure(3), [basepath,'figures/observed_pre-collapse_speed.png'], 'png');
     disp('figure 3 saved');
 end
 
 %% 4. Terminus positions (Landsat-derived; Dryak and Enderlin, 2020)
 
 % -----load files-----
-term.X = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
-term.Y = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
+term.X = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
+term.Y = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
 term.x = x(dsearchn([cl.X cl.Y],[term.X' term.Y']));
-term.date = load([homepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
+term.date = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
 
 % -----plot-----
 figure(4); clf; 
@@ -439,9 +439,9 @@ ylabel('year');
 
 % -----save-----
 if save_files
-    save([homepath,'inputs-outputs/observed_terminus_positions.mat'], 'term');
+    save([basepath,'inputs-outputs/observed_terminus_positions.mat'], 'term');
     disp('terminus positions saved');
-    saveas(figure(4), [homepath,'figures/observed_terminus_positions.png'], 'png');
+    saveas(figure(4), [basepath,'figures/observed_terminus_positions.png'], 'png');
     disp('figure 4 saved');
 end
 
@@ -450,11 +450,11 @@ end
 % -----SOM
 % load variables from file (note: grid is the same for bedrock and thickness)
 % bedrock
-[SOM.b, SOM.R] = readgeoraster([homepath,'data/bed_elevations/SOM/bedrock/bedrock.tif']);
+[SOM.b, SOM.R] = readgeoraster([basepath,'data/bed_elevations/SOM/bedrock/bedrock.tif']);
 SOM.b = double(SOM.b);
 SOM.b(SOM.b==-9999) = NaN;
 % thickness
-SOM.H = readgeoraster([homepath,'data/bed_elevations/SOM/thickness/thickness.tif']);
+SOM.H = readgeoraster([basepath,'data/bed_elevations/SOM/thickness/thickness.tif']);
 SOM.H = double(SOM.H);
 % coordinates
 SOM.X = linspace(SOM.R.XWorldLimits(1), SOM.R.XWorldLimits(2), SOM.R.RasterSize(2));
@@ -466,12 +466,12 @@ SOM.H_cl = interp2(SOM.X, SOM.Y, flipud(SOM.H), cl.X, cl.Y);
 
 % -----BedMachine Antarctica
 % bed
-BM.b = double(ncread([homepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'bed'));
+BM.b = double(ncread([basepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'bed'));
 % thickness
-BM.H = double(ncread([homepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'thickness'));
+BM.H = double(ncread([basepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'thickness'));
 % coordinates
-BM.X = double(ncread([homepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'x'));
-BM.Y = double(ncread([homepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'y'));
+BM.X = double(ncread([basepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'x'));
+BM.Y = double(ncread([basepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'y'));
 % interpolate along centerline
 [BM.X_mesh, BM.Y_mesh] = meshgrid(BM.X, BM.Y);
 BM.b_cl = interp2(BM.X, BM.Y, BM.b', cl.X, cl.Y);
@@ -499,10 +499,10 @@ xlabel('Easting [km]'); ylabel('Northing [km]');
 if save_files
     % bed variable
     b_cl_SOM = SOM.b_cl;
-    save([homepath,'inputs-outputs/observed_bed_elevations.mat'],'b_cl_SOM','-append');
+    save([basepath,'inputs-outputs/observed_bed_elevations.mat'],'b_cl_SOM','-append');
     disp('b_cl_SOM saved to file');
     % figure
-    saveas(figure(5), [homepath,'figures/observed_bed_elevation_thickness_SOM.png'], 'png');
+    saveas(figure(5), [basepath,'figures/observed_bed_elevation_thickness_SOM.png'], 'png');
     disp('figure 5 saved');
 end
 
@@ -512,8 +512,8 @@ end
 %   a. Load bed elevation (OIB picks) and bathymetry (Rebesco, 2006)
 % -------------------------------------------------------------------------
 
-b = load([homepath,'inputs-outputs/observed_bed_elevations.mat']).HB.hb0;
-bathym = load([homepath,'inputs-outputs/observed_bed_elevations.mat']).bathym;
+b = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).HB.hb0;
+bathym = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).bathym;
 
 % -------------------------------------------------------------------------
 %   b. Average thickness over width to adjust bed profile assuming a
@@ -521,7 +521,7 @@ bathym = load([homepath,'inputs-outputs/observed_bed_elevations.mat']).bathym;
 % -------------------------------------------------------------------------
 
 % load pre-collapse surface elevation profile
-h_pc = load([homepath,'inputs-outputs/observed_surface_elevations.mat']).h(14).h_width_ave;
+h_pc = load([basepath,'inputs-outputs/observed_surface_elevations.mat']).h(14).h_width_ave;
 h_pc(find(isnan(h_pc),1,'first'):end) = 0;
 
 % calculate thickness
@@ -561,7 +561,7 @@ plot(x/10^3,BM.b_cl,'-g','linewidth',2,'DisplayName','BedMachine Antarctica');
 % -----save-----
 if save_files
     % bed variable
-    save([homepath,'inputs-outputs/observed_bed_elevations.mat'],'b_width_ave','b_cl_SOM','b_cl_BM', 'x','-append');
+    save([basepath,'inputs-outputs/observed_bed_elevations.mat'],'b_width_ave','b_cl_SOM','b_cl_BM', 'x','-append');
     disp('bed variables saved to file');
 end
 

@@ -7,13 +7,13 @@ clear all; close all;
 
 save_A_adj = 0; % = 1 to save adjusted rate factor 
 
-% Define homepath in directory
-homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
-cd([homepath,'inputs-outputs']);
+% Define path in directory to CraneGlacier_flowlinemodeling
+basepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
+cd([basepath,'inputs-outputs']);
 
 % Add path to functions
-addpath([homepath,'functions/']);
-addpath([homepath,'functions/hugheylab-nestedSortStruct']);
+addpath([basepath,'functions/']);
+addpath([basepath,'functions/hugheylab-nestedSortStruct']);
 
 % Load Crane Centerline
 cl.x = load('Crane_centerline.mat').x; cl.y = load('Crane_centerline.mat').y;
@@ -87,9 +87,9 @@ legend('Location','eastoutside');
     
 % 4. Save adjusted rate factor and figure
 if save_A_adj
-    save([homepath,'inputs-outputs/modeled_rate_factor.mat'],'A_adj','eta_dot_cum','-append');
+    save([basepath,'inputs-outputs/modeled_rate_factor.mat'],'A_adj','eta_dot_cum','-append');
     disp('Adjusted rate factor saved');
-    saveas(figure(1),[homepath,'figures/modeled_rate_factor.png'],'png');
+    saveas(figure(1),[basepath,'figures/modeled_rate_factor.png'],'png');
     disp('figure 1 saved');
 end 
     

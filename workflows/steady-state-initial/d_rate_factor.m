@@ -7,11 +7,11 @@ clear all; close all;
 
 save_A = 0;     % = 1 to save rate factor A when finished
 
-% define home path
-homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
+% Define path in directory to CraneGlacier_flowlinemodeling
+basepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 
 % add path to necessary functions
-addpath([homepath,'functions/']);    
+addpath([basepath,'functions/']);    
 
 % Define temporal averaging window for air temperature 
 year_start = 1996;
@@ -23,7 +23,7 @@ mo_start = (year_start-1979)*12+1; % Jan
 mo_end = (year_end-1979)*12+12; % Dec
 
 % load centerline
-cd([homepath,'inputs-outputs/']);
+cd([basepath,'inputs-outputs/']);
 x_cl = load('Crane_centerline.mat').x; y_cl = load('Crane_centerline.mat').y;
 % convert to lat lon coordinates
 cl_lonlat = ps2wgs(x_cl,y_cl,'StandardParallel',-71,'StandardMeridian',0);
@@ -40,7 +40,7 @@ end
 h_cl_11 = load('observed_surface_elevations.mat').h(10).h_centerline;
 
 %Load RACMO air temperature and height
-cd([homepath,'data/RACMO2.3/']);
+cd([basepath,'data/RACMO2.3/']);
 T_lat = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','lat'); %degrees north
 T_lon = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','lon'); %degrees east
 T = squeeze(ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','t2m')); % degrees K
@@ -161,7 +161,7 @@ title('Rate factor');
 
 % save rate factor A
 if save_A
-    cd([homepath,'inputs-outputs/']);
+    cd([basepath,'inputs-outputs/']);
     save('modeled_rate_factor.mat','A','-append');
     disp('rate factor saved.');
 end

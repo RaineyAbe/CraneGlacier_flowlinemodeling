@@ -17,9 +17,9 @@
 
 clear all; close all;
 
-% Define homepath
-homepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
-cd([homepath,'inputs-outputs/']);
+% Define path in directory to CraneGlacier_flowlinemodeling
+basepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
+cd([basepath,'inputs-outputs/']);
 
 % Modify settings
 save_initial = 0;   % = 1 to save initialization file
@@ -56,7 +56,7 @@ h0 = movmedian(h0, 5);
 % -------------------------------------------------------------------------
 % 3. glacier bed elevation, b0(x)
 % -------------------------------------------------------------------------
-b0 = load('observed_bed_elevations.mat').b_adj;
+b0 = load('observed_bed_elevations_width_averaged.mat').b_adj;
 b0(1:2) = b0(3);
 % smooth slightly
 b0=movmean(b0,20);
@@ -65,7 +65,7 @@ if size(b0)==[186 1]
 end
 % adjust bed elevation to account for grounding line location
 % initial grounding line ~5km inland of fjord_end (Rebesco et al., 2006)
-fjord_end = shaperead([homepath,'data/terminus/fjord_end.shp']);
+fjord_end = shaperead([basepath,'data/terminus/fjord_end.shp']);
 Ifjord_end = find(cl.x > polyxpoly(cl.x, cl.y, fjord_end.X, fjord_end.Y), 1, 'first');
 gl0 = find(x0 >= x0(Ifjord_end)-5e3, 1, 'first');
 % calculate required thickness to be perfectly grounded at gl0 using
@@ -110,9 +110,9 @@ end
 % 8. surface mass balance, SMB0(x)
 % -------------------------------------------------------------------------
 % Use the mean value at each point along the centerline for 2009-2019 
-SMB0 = load('modeled_climate_variables_2009-2019.mat').SMB.downscaled_average_linear./3.1536e7; % m/s
+SMB0 = load('downscaled_RACMO_variables_2009-2019.mat').smb.downscaled_average_linear./3.1536e7; % m/s
 %RO0 = load('downscaledClimateVariables_2009-2019.mat').RO.downscaled_average_linear./3.1536e7; % m/s
-RO0 = load('modeled_climate_variables_2009-2019.mat').SM.downscaled_average_linear.*0.05./3.1536e7; % m/s
+RO0 = load('downscaled_RACMO_variables_2009-2019.mat').sm.downscaled_average_linear.*0.05./3.1536e7; % m/s
     % From Vaughan (2006): ﻿the upper estimates for runoff in 2000 and 2050 are equivalent 
     % to only 11% and 27% of the yearly total snow accumulation for the Antarctic Peninsula, 
     % respectively (given by areas H to J in Vaughan et al., 1999)
@@ -145,7 +145,7 @@ Q0_err = interp1(x_Q,Q_err,x0)./3.1536e7; % m/s
 % 10. Calving front location (index of x), c0
 % -------------------------------------------------------------------------
 % use 2002 observed terminus position 
-term = load([homepath,'inputs-outputs/observed_terminus_positions.mat']).term;
+term = load([basepath,'inputs-outputs/observed_terminus_positions.mat']).term;
 c0 = dsearchn(x0', term.x(1));
 
 % end of fjord location
