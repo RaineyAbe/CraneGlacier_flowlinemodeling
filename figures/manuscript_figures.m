@@ -1211,15 +1211,15 @@ while loop==1
     figure(9); clf; 
     set(gcf,'Position',[0 75 375 550]);
     ax9A=axes('position',[0.17 0.5 0.78 0.35]); hold on; % geometry
-        set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[],'linewidth',1);
         grid on; 
         ylabel('Elevation [m]');         
         xlim([25 80]); 
-        ylim([-800 500]);
+        ylim([-700 500]);
         plot(x1./10^3,b1,'-k','linewidth',2);
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'a)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
         % add colorbar
         colormap(col1);
@@ -1227,15 +1227,15 @@ while loop==1
             'Ticks',0:0.5:1,'TickLabels',["-5", "0", "+5"],'position',[0.15 0.88 0.8 0.02]);
         set(get(cb1,'label'),'String','d_{fw} [m]','fontsize',fontsize-3);   
     ax9B=axes('position',[0.17 0.1 0.78 0.35]); hold on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:300:1200,'linewidth',1);   
+        set(gca,'fontsize',fontsize,'YTick',0:500:1500,'linewidth',1);   
         grid on;
         xlabel('Distance along centerline [km]');
         ylabel('Speed [m/yr]');  
         xlim([25 80]); 
-        ylim([0 1050]);
+        ylim([250 1500]);
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'b)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
     % Fgl, calving front & grounding line positions
     figure(10); clf;
@@ -1245,7 +1245,7 @@ while loop==1
         set(gca,'fontsize',fontsize,'linewidth',1); 
         grid on;
         xlim([1995 2100]); 
-        ylim([40 60]);
+        ylim([35 70]);
         ylabel('Calving front position [km]');
         legend('location','south');
         % add text label            
@@ -1278,15 +1278,15 @@ while loop==1
     set(gcf,'Position',[0 75 1250 550]);
     % SMB
     ax11A=axes('position',[0.05 0.5 0.19 0.35]); hold on; % geometry
-        set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[],'linewidth',1);
         grid on; 
         ylabel('Elevation [m]');         
         xlim([25 60]); 
-        ylim([-800 500]);
+        ylim([-700 500]);
         plot(x1./10^3,b1,'-k','linewidth',2);
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'a)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
         % add colorbar
         colormap(col1);
@@ -1294,22 +1294,22 @@ while loop==1
             'Ticks',0:0.5:1,'TickLabels',[{'0.0'},{'-2.5'},{'-5.0'}],'position',[0.05 0.9 0.19 0.02]);
         set(get(cb2,'label'),'String','\DeltaSMB [m/y]','fontsize',fontsize-3);   
     ax11E=axes('position',[0.05 0.1 0.19 0.35]); hold on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'linewidth',1); 
+        set(gca,'fontsize',fontsize,'YTick',0:500:5000,'linewidth',1); 
         grid on; 
         xlabel('Distance along centerline [km]');
         ylabel('Speed [m/yr]');  
         xlim([25 60]); 
-        ylim([250 1250]);
+        ylim([250 1500]);
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'e)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
     % TF
     ax11B=axes('position',[0.29 0.5 0.19 0.35]); hold on; % geometry
-        set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[],'linewidth',1);
         grid on; 
         xlim([25 60]); 
-        ylim([-800 500]);
+        ylim([-700 500]);
         plot(x1./10^3,b1,'-k','linewidth',2);
         % add colorbar
         colormap(col1);
@@ -1317,24 +1317,24 @@ while loop==1
             'Ticks',0:0.5:1,'TickLabels',[{'0.0'},{'+0.5'},{'+1.0'}],'position',[0.29 0.9 0.19 0.02]);
         set(get(cb3,'label'),'String','\Delta F_T [^oC]','fontsize',fontsize-3);   
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'b)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
     ax11F=axes('position',[0.29 0.1 0.19 0.35]); hold on; grid on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'linewidth',1);        
+        set(gca,'fontsize',fontsize,'YTick',0:500:1500,'linewidth',1);        
         xlim([25 60]); 
-        ylim([250 1250]);
+        ylim([250 1500]);
         xlabel('Distance along centerline [km]');
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'f)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
     % SMB_enh
     ax11C=axes('position',[0.53 0.5 0.19 0.35]); hold on; % geometry
-        set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[],'linewidth',1);
         grid on; 
         xlim([25 60]); 
-        ylim([-800 500]);
+        ylim([-700 500]);
         plot(x1./10^3,b1,'-k','linewidth',2); 
         % add colorbar
         colormap(col1);
@@ -1342,25 +1342,25 @@ while loop==1
             'Ticks',0:0.5:1,'TickLabels',[{'0.0'},{'-2.5'},{'-5.0'}],'position',[0.53 0.9 0.19 0.02]);
         set(get(cb4,'label'),'String','\Delta SMB_{enh} [m/yr]','fontsize',fontsize-3);  
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'c)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
     ax11G=axes('position',[0.53 0.1 0.19 0.35]); hold on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'linewidth',1);   
+        set(gca,'fontsize',fontsize,'YTick',0:500:1500,'linewidth',1);   
         grid on;
         xlim([25 60]); 
-        ylim([250 1250]);
+        ylim([250 1500]);
         xlabel('Distance along centerline [km]');        
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'g)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');  
     % SMB_enh & TF
     ax11D=axes('position',[0.77 0.5 0.19 0.35]); hold on; % geometry
-        set(gca,'fontsize',fontsize,'YTick',-1200:400:1200,'XTickLabel',[],'linewidth',1);
+        set(gca,'fontsize',fontsize,'YTick',-1500:500:1500,'XTickLabel',[],'linewidth',1);
         grid on;
         xlim([25 60]); 
-        ylim([-800 500]);
+        ylim([-700 500]);
         plot(x1./10^3,b1,'-k','linewidth',2);
         % add colorbar
         colormap(col1);
@@ -1368,17 +1368,17 @@ while loop==1
             'TickLabels',[{'0.0 & 0.0'},{'-2.5 & +0.5'},{'-5.0 & +1.0'}],'position',[0.77 0.9 0.19 0.02]);
         set(get(cb5,'label'),'String','\DeltaSMB_{enh} [m/yr] & \DeltaF_T [^oC]','fontsize',fontsize-3);  
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'd)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
     ax11H=axes('position',[0.77 0.1 0.19 0.35]); hold on; grid on; % speed
-        set(gca,'fontsize',fontsize,'YTick',0:500:1000,'linewidth',1);        
+        set(gca,'fontsize',fontsize,'YTick',0:500:1500,'linewidth',1);        
         xlim([25 60]); 
-        ylim([250 1250]);
+        ylim([250 1500]);
         xlabel('Distance along centerline [km]'); 
         % add text label            
-        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.1+min(get(gca,'XLim')),...
-            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.1+min(get(gca,'YLim')),...
+        text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
+            (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
             'h)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
     % Fgl & calving front positions
     figure(12); clf;
@@ -1388,9 +1388,9 @@ while loop==1
         set(gca,'fontsize',fontsize,'linewidth',1); 
         grid on;
         xlim([1995 2100]); 
-        ylim([40 60]);
+        ylim([35 70]);
         ylabel('Calving front position [km]');
-        legend('location','south');
+        legend('location','north','numcolumns',2);
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.02+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.92+min(get(gca,'YLim')),...
@@ -1537,7 +1537,7 @@ plot(ax10B,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
     [Fgl_preCollapse Fgl2_DFWmid],'-k','linewidth',linewidth,'handlevisibility','off'); 
 % create table to store result quantities
 varNames = {'dfwd','dL','dxgl','dHgl','dUgl','Qfwd'};
-T_DFW = table(dDFW,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),Fdfw,'VariableNames',varNames);
+T_DFW = table(dDFW,dL/10^3,dgl/10^3,dHgl,dUgl,Fdfw,'VariableNames',varNames);
 
 % (1) SMB
 dSMB = zeros(length(ISMB),1); % change in SMB
@@ -1597,7 +1597,7 @@ BP.years = [2020*ones(length(XCF(:,(t/3.1536e7+2002)==2020)),1); 2040*ones(lengt
     2100*ones(length(XCF(:,(t/3.1536e7+2002)==2100)),1)];
 % create table to store result quantities
 varNames = {'dsmb','dL','dxgl','dHgl','dUgl','Qsmb'};
-T_SMB = table(round(dSMB),round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),Fsmb,'VariableNames',varNames);
+T_SMB = table(dSMB,dL/10^3,dgl/10^3,dHgl,dUgl,Fsmb,'VariableNames',varNames);
 
 % (2) F_T
 dTF = zeros(length(IFT),1); % change in F_T
@@ -1657,7 +1657,7 @@ BP.years = [BP.years; 2020*ones(length(XCF(:,(t/3.1536e7+2002)==2020)),1); 2040*
     2060*ones(length(XCF(:,(t/3.1536e7+2002)==2060)),1); 2080*ones(length(XCF(:,(t/3.1536e7+2002)==2080)),1); ...
     2100*ones(length(XCF(:,(t/3.1536e7+2002)==2100)),1)];
 varNames = {'dTF','dL','dgl','dHgl','dUgl','Qgl'};
-T_TF = table(dTF,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
+T_TF = table(dTF,dL/10^3,dgl/10^3,dHgl,dUgl,F,'VariableNames',varNames);
 
 % (3) SMB_enh
 cd([basepath,'workflows/steady-state-initial/results/2_SMB_enh/']);
@@ -1730,7 +1730,7 @@ BP.years = [BP.years; 2020*ones(length(XCF(:,(t/3.1536e7+2002)==2020)),1); 2040*
     2060*ones(length(XCF(:,(t/3.1536e7+2002)==2060)),1); 2080*ones(length(XCF(:,(t/3.1536e7+2002)==2080)),1); ...
     2100*ones(length(XCF(:,(t/3.1536e7+2002)==2100)),1)];
 varNames = {'dSMB_enh','dL','dgl','dHgl','dUgl','Qgl'};
-T_smb_enh = table(dsmb_enh,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
+T_smb_enh = table(dsmb_enh,dL/10^3,dgl/10^3,dHgl,dUgl,F,'VariableNames',varNames);
 
 % (4) SMB_enh + F_T
 cd([basepath,'workflows/steady-state-initial/results/3_SMB_enh+TF/']);
@@ -1803,7 +1803,7 @@ BP.years = [BP.years; 2020*ones(length(XCF(:,(t/3.1536e7+2002)==2020)),1); 2040*
     2060*ones(length(XCF(:,(t/3.1536e7+2002)==2060)),1); 2080*ones(length(XCF(:,(t/3.1536e7+2002)==2080)),1); ...
     2100*ones(length(XCF(:,(t/3.1536e7+2002)==2100)),1)];
 varNames = {'dSMB_enh','dTF','dL','dgl','dHgl','dUgl','Qgl'};
-T_smb_enh_TF = table(dsmb_enh,dTF,round(dL)/10^3,round(dgl)/10^3,round(dHgl),round(dUgl),F,'VariableNames',varNames);
+T_smb_enh_TF = table(dsmb_enh,dTF,dL/10^3,dgl/10^3,dHgl,dUgl,F,'VariableNames',varNames);
 
 % -----plot Fgl and Xcf     
 % mid
@@ -1852,7 +1852,7 @@ set(ax12B,'YLim',[35 60]);
 text(ax12B,categorical(2020),...
     (max(get(ax12B,'YLim'))-min(get(ax12B,'YLim')))*0.92+min(get(ax12B,'YLim')),...
     'b)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
-set(ax12D,'YLim',[0.8 1.5],'YTick',0.4:0.2:1.6);
+set(ax12D,'YLim',[0.7 1.5],'YTick',0.4:0.2:1.6);
 text(ax12D,categorical(2020),...
     (max(get(ax12D,'YLim'))-min(get(ax12D,'YLim')))*0.92+min(get(ax12D,'YLim')),...
     'd)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
@@ -1928,7 +1928,7 @@ if print_tables
     disp(['d_smb  dL  dxgl dHgl  dUgl  Qgl']);
     T_SMB2 = table2array(T_SMB);
     for i=1:length(T_SMB2(:,1))
-        disp([num2str(round(T_SMB2(i,1))), ' & ', num2str(round(T_SMB2(i,2),1)), ' & ',...
+        disp([num2str(round(T_SMB2(i,1),2)), ' & ', num2str(round(T_SMB2(i,2),1)), ' & ',...
             num2str(round(T_SMB2(i,3),1)), ' & ', num2str(round(T_SMB2(i,4))), ' & ',...
             num2str(round(T_SMB2(i,5))), ' & ', num2str(round(T_SMB2(i,6),2)), ' \\']);
     end
@@ -1940,7 +1940,7 @@ if print_tables
     disp(['d_TF  dL  dxgl dHgl  dUgl  Qgl']);
     T_TF2 = table2array(T_TF);
     for i=1:length(T_TF2(:,1))
-        disp([num2str(round(T_TF2(i,1),1)), ' & ', num2str(round(T_TF2(i,2),1)), ' & ',...
+        disp([num2str(round(T_TF2(i,1),2)), ' & ', num2str(round(T_TF2(i,2),1)), ' & ',...
             num2str(round(T_TF2(i,3),1)), ' & ', num2str(round(T_TF2(i,4))), ' & ',...
             num2str(round(T_TF2(i,5))), ' & ', num2str(round(T_TF2(i,6),2)), ' \\']);
     end
@@ -1952,7 +1952,7 @@ if print_tables
     disp(['d_smb  dL  dxgl dHgl  dUgl  Qgl']);
     T_smb_enh2 = table2array(T_smb_enh);
     for i=1:length(T_smb_enh2(:,1))
-        disp([num2str(T_smb_enh2(i,1)), ' & ', num2str(round(T_smb_enh2(i,2),1)), ' & ',...
+        disp([num2str(T_smb_enh2(i,1),2), ' & ', num2str(round(T_smb_enh2(i,2),1)), ' & ',...
             num2str(round(T_smb_enh2(i,3),1)), ' & ', num2str(round(T_smb_enh2(i,4))), ' & ',...
             num2str(round(T_smb_enh2(i,5))), ' & ', num2str(round(T_smb_enh2(i,6),2)), ' \\']);
     end
@@ -1964,7 +1964,7 @@ if print_tables
     disp(['d_SMB_enh  d_TF  dL  dxgl dHgl  dUgl  Qgl']);
     T_smb_enh_TF2 = table2array(T_smb_enh_TF);
     for i=1:length(T_smb_enh_TF2(:,1))
-        disp([num2str(T_smb_enh_TF2(i,1)), ' & ', num2str(round(T_smb_enh_TF2(i,2),1)), ' & ',...
+        disp([num2str(T_smb_enh_TF2(i,1),2), ' & ', num2str(round(T_smb_enh_TF2(i,2),2)), ' & ',...
             num2str(round(T_smb_enh_TF2(i,3),1)), ' & ', num2str(round(T_smb_enh_TF2(i,4),1)), ' & ',...
             num2str(round(T_smb_enh_TF2(i,5))), ' & ', num2str(round(T_smb_enh_TF2(i,6))),...
             ' & ',num2str(round(T_smb_enh_TF2(i,7),2)), ' \\']);

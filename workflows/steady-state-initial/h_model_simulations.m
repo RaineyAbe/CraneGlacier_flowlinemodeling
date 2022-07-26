@@ -17,7 +17,7 @@ clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
 plot_conditions = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
-plot_climate_params = 1; % = 1 to plot SMB, DFW, TF throughout the model time period
+plot_climate_params = 0; % = 1 to plot SMB, DFW, TF throughout the model time period
 save_final = 1; % = 1 to save pre-collapse and final (2100) conditions
 
 % Define path in directory to CraneGlacier_flowlinemodeling
@@ -51,16 +51,16 @@ E = 1; % enhancement factor
 DFW0 = 0; % fresh water depth in crevasses [m]
 
 % -----instability checks (using thickness and speed)
-H_max = 2000; % maximum thickness (m)
-H_min = 100;  % minimum thickness (m)
-U_min = 100./3.1536e7;  % minimum mean speed (m s^-1)
+H_max = 2000; % maximum thickness [m]
+H_min = 100;  % minimum thickness [m]
+U_min = 100./3.1536e7;  % minimum mean speed [m/s]
     
 % -----initial conditions-----
 dx0 = mean(x0(2:end)-x0(1:end-1));
-H0 = h0-b0; % ice thickness (m)
+H0 = h0-b0; % ice thickness [m]
 dUdx0 = [(U0(2:end)-U0(1:end-1))./(x0(2:end)-x0(1:end-1)) 0]; % strain rate (1/s) %%EE: flipped this to be consistent w/ other computations 15/09/21
 % find the location of the grounding line and the end of the ice-covered domain
-Hf = -(rho_sw./rho_i).*b0; % flotation thickness (m)
+Hf = -(rho_sw./rho_i).*b0; % flotation thickness [m]
 gl0 = find(Hf-H0>0,1,'first')-1; % grounding line location 
 if isempty(gl0)
     % set grounding line to calving front location if all ice is grounded
@@ -81,19 +81,20 @@ term = load([basepath,'inputs-outputs/observed_terminus_positions.mat']).term;
 
 % -----tune TF-SMR relationship to observations
 % TF-SMR Eqn from Rignot et al. (2016) and Xu et al. (2013):
-% mdot = (C * -b0(gl0) * sum(RO(1:gl))^0.39 + 0.15)*TF0^1.18
+% mdot = (C * -b0(gl0) * RO^0.39 + 0.15)*TF0^1.18
 % Use initial melt rate estimates from Dryak and Enderlin (2020) to solve
 % for C. rearrange Eqn.:
-% C= (mdot - 0.15*TF^1.18) / (-b0(gl0) * sum(RO(1:gl))^0.39 * TF^1.18)
+% C= (mdot/(TF^0.15) - 0.15) / (-b0(gl0)*RO^0.39) 
 % Note: mdot and RO must be in units of m/d.
-% initial total runoff = sum(RO0(x) * W(x) * dx(x))
-% terminus area-averaged runoff = initial total runoff / (H(c) * W(c))
-RO0_sum = sum(RO0(1:c0).*W0(1:c0).*dx0) / (H0(c0) * W0(c0)); % m/s
+% initial total runoff = sum(RO0(x) * W(x) * dx(x))  
+% calving front area-averaged runoff = initial total runoff / (H(c) * W(c))
+RO0_sum = sum(RO0(1:c0).*W0(1:c0).*dx0) / (H0(c0) * W0(c0)); % [m/s]
+mdot0 = -SMR0; % initial submarine melt rate [m/s]
 TF0 = 0.2; % ocean thermal forcing [^oC], estimated from Larsen B icebergs
-% C = (mdot0*86400/nthroot(TF0,1/2.3) - 0.15) / ...
-%     (-b0(c0) * nthroot(RO0_sum*86400,1/0.39) * nthroot(TF0,1/2.3)); % unrealistic number!
-C = 3e-4; % use original tuned constant from Rignot et al. (2016) and Slater et al. (2020)
-mdot0 = -((C*-b0(gl0)*nthroot((sum(RO0(1:gl0))*86400),1/0.39) + 0.15)*(TF0^1.18))/86400; % m/s
+% C = (mdot0*86400/(TF0^1.18) - 0.15) / ...
+%     (-b0(gl0) * (RO0_sum*86400)^0.39); % unrealistic number!
+C = 3e-4; % original tuned constant from Rignot et al. (2016) and Slater et al. (2020)
+mdot0 = -(C * -b0(gl0) * (RO0_sum*86400)^0.39 + 0.15) * (TF0^1.18) / 86400; % m/s
 
 % -----define potential changes in SMB, DFW, & TF
 % - decrease maximum SMB by increments of 5 m a-1 down to -50 m a-1
@@ -604,14 +605,13 @@ for j=length(delta_SMB0)
     disp('Simulating post-ice shelf collapse conditions');
     
     % -----time stepping [s]
-    % use smaller dt for the first 18 years
     t_start = 0*3.1536e7; % 2002
     t_mid = 18*3.1536e7; % 2020
-    t_end = 98*3.1536e7; 
+    t_end = 98*3.1536e7; % 2100
+    % use smaller dt for the first 18 years
     dt1 = 0.0005*3.1536e7; 
     dt2 = 0.001*3.1536e7; 
     t = [t_start:dt1:t_mid t_mid+dt2:dt2:t_end]; 
-    clear dt1 dt2
     
     % -----initialize variables to track throughout model run
     Fgl = zeros(1,length(t)); % grounding line discharge [Gt/a]
@@ -623,16 +623,20 @@ for j=length(delta_SMB0)
     % -----run flowline model
     % determine linear change in DFW at each time step
     dDFWi = delta_DFW/length(find(t/3.1536e7 + 2002 > 2018));
-    for i=1:length(t)%dsearchn(t', 20*3.1536e7)
+    for i=1:dsearchn(t', 91*3.1536e7)
 
         % pre-2018 DFW change
         if t(i)/3.1536e7 + 2002 < 2018 
             if t(i)/3.1536e7 > 0.01 && t(i)/3.1536e7 < 1 
-                DFW = DFW-0.0084;
-            elseif t(i)/3.1536e7 >= 1 && t(i)/3.1536e7 < 3
-                DFW = DFW-0.00007;
-            elseif t(i)/3.1536e7 >= 3 %&& t(i)./3.1536e7 <= 6
-                DFW = DFW-0.0005;
+                DFW = DFW-0.008;
+            elseif t(i)/3.1536e7 >= 1 && t(i)/3.1536e7 < 2
+                DFW = DFW-0.0007;
+            elseif t(i)/3.1536e7 >= 2 && t(i)/3.1536e7 < 5
+                DFW = DFW-0.00015;
+            elseif t(i)/3.1536e7 >= 5 
+                DFW = DFW-0.00058; 
+%             elseif t(i)/3.1536e7 >= 3 %&& t(i)./3.1536e7 <= 6
+%                 DFW = DFW-0.0005;
             end
         % post-2018 DFW
         elseif t(i)/3.1536e7 + 2002 >= 2018
@@ -799,9 +803,10 @@ for j=length(delta_SMB0)
         if t(i)/3.1536e7 < 16
             % SMR change
             TF = TF0;
-            delta_mdot = ((C*-b(gl)*nthroot((sum(RO0(1:gl0))*86400),1/0.39) + 0.15)*(TF^1.18))/86400 + mdot0; % m/s
+            RO_sum = sum(RO(1:c).*W(1:c).*dx(1:c)) / (H(c) * W(c)); % calving front face-averaged runoff [m/s]
+            delta_mdot = -(C * -b(gl) * (RO_sum*86400)^0.39 + 0.15) * (TF^1.18) / 86400 - mdot0; % m/s
             if gl<c
-                SMR(gl+1:c) = (SMR0 - delta_mdot) / SMR_mean_fit_gl * feval(SMR_mean_fit, x(gl+1:c)-x(gl));
+                SMR(gl+1:c) = (SMR0 + delta_mdot) / SMR_mean_fit_gl * feval(SMR_mean_fit, x(gl+1:c)-x(gl));
             end
         else
             % SMB change
@@ -817,9 +822,10 @@ for j=length(delta_SMB0)
                 RO = (interp1(x0,SMB0,x)-SMB)+interp1(x0,RO0,x);   
             end
             % SMR change
-            delta_mdot = ((C*-b(gl)*nthroot((sum(RO(1:gl))*86400),1/0.39) + 0.15)*(TF^1.18))/86400 + mdot0; % m/s
+            RO_sum = sum(RO(1:c).*W(1:c).*dx) / (H(c) * W(c)); % calving front face-averaged runoff [m/s]
+            delta_mdot = -(C * -b(gl) * (RO_sum*86400)^0.39 + 0.15) * (TF^1.18) / 86400 - mdot0; % m/s
             if gl<c
-                SMR(gl+1:c) = (SMR0-delta_mdot)/SMR_mean_fit_gl * feval(SMR_mean_fit,x(gl+1:c)-x(gl));
+                SMR(gl+1:c) = (SMR0 + delta_mdot)/SMR_mean_fit_gl * feval(SMR_mean_fit,x(gl+1:c)-x(gl));
             end
         end 
         if plot_climate_params && mod(t(i),t(end)/98)==0 % display every 1 year
