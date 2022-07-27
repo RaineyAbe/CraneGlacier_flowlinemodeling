@@ -17,8 +17,8 @@ clear all; close all;
 warning off; % turn off warnings (velocity coefficient matrix is close to singular)
     
 plot_conditions = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
-plot_climate_params = 0; % = 1 to plot SMB, DFW, TF throughout the model time period
-save_final = 1; % = 1 to save pre-collapse and final (2100) conditions
+plot_climate_params = 1; % = 1 to plot SMB, DFW, TF throughout the model time period
+save_final = 0; % = 1 to save pre-collapse and final (2100) conditions
 
 % Define path in directory to CraneGlacier_flowlinemodeling
 basepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
@@ -623,7 +623,7 @@ for j=length(delta_SMB0)
     % -----run flowline model
     % determine linear change in DFW at each time step
     dDFWi = delta_DFW/length(find(t/3.1536e7 + 2002 > 2018));
-    for i=1:dsearchn(t', 91*3.1536e7)
+    for i=1:dsearchn(t', 16*3.1536e7)
 
         % pre-2018 DFW change
         if t(i)/3.1536e7 + 2002 < 2018 
@@ -635,8 +635,6 @@ for j=length(delta_SMB0)
                 DFW = DFW-0.00015;
             elseif t(i)/3.1536e7 >= 5 
                 DFW = DFW-0.00058; 
-%             elseif t(i)/3.1536e7 >= 3 %&& t(i)./3.1536e7 <= 6
-%                 DFW = DFW-0.0005;
             end
         % post-2018 DFW
         elseif t(i)/3.1536e7 + 2002 >= 2018

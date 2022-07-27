@@ -44,6 +44,7 @@ legend('Location','eastoutside');
     col = parula(length(Iu)+1); % color scheme for plotting
 
     eta_dot_cum = zeros(length(Iu),length(cl.x)); % cumulative strain rate (unitless)
+    eta_dot_cum_years = NaN*zeros(1, length(Iu)); % save the years
     eta_dot = zeros(length(Iu),length(cl.x)); % strain rate (1/s)
     dx = [0 x(2:end)-x(1:end-1)]; % (m)
     
@@ -58,6 +59,11 @@ legend('Location','eastoutside');
             ./(x(end-1)-x(end)).*3.1536e7; % backward difference
         % cumulative strain (1/yr)
         eta_dot_cum(i,:) = cumsum(eta_dot(i,:).*dx./(U(Iu(i)).U_width_ave.*3.1536e7),'omitnan');
+        if i<length(Iu)
+            eta_dot_cum_years(i) = str2num(U(Iu(i)).date);
+        else
+            eta_dot_cum_years(i) = 1995;
+        end
 
         % Plot resulting strain rate
         figure(1);
@@ -66,28 +72,28 @@ legend('Location','eastoutside');
     end
     
     % use mean cumulative strain rate to adjust A
-    eta_dot_cum_m = nanmean(eta_dot_cum);
-    plot(x(1:135)/10^3,eta_dot_cum_m(1:135),'-k','linewidth',2,'displayname','mean');
+    eta_dot_cum_mu = mean(eta_dot_cum, 'omitnan');
+    plot(x(1:135)/10^3,eta_dot_cum_mu(1:135),'-k','linewidth',2,'displayname','mean');
 
 % 2. Calculate relative weights of cumulative strain rate at each year
     
-    eta_dot_cum_m_norm = (eta_dot_cum_m-min(eta_dot_cum_m))/(max(eta_dot_cum_m)-min(eta_dot_cum_m));
+    eta_dot_cum_mu_norm = (eta_dot_cum_mu-min(eta_dot_cum_mu))/(max(eta_dot_cum_mu)-min(eta_dot_cum_mu));
 
 % 3. Adjust rate factor using coefficients
     
     % Calculate adjusted rate factor A_adj
-    A_adj = A'.*(1+eta_dot_cum_m_norm);
+    A_adj = A'.*(1+eta_dot_cum_mu_norm);
     A_adj(135:end) = A_adj(134); % use the last point for the rest of the centerline
     % Plot
     subplot(2,1,2); hold on; 
-    xlabel('Distance along centerline (km)'); ylabel('Rate factor [Pa^{-3} a^{-1}]');
+    xlabel('Distance along centerline (km)'); ylabel('Rate factor [Pa^{-3} yr^{-1}]');
     grid on; legend('Location','eastoutside'); set(gca,'fontsize',14,'linewidth',2);
     plot(x(1:135)/10^3,A_adj(1:135)*3.1536e7,'-k','linewidth',2,'DisplayName','A_{adj}');
     plot(x(1:135)/10^3,A(1:135)*3.1536e7,'--k','linewidth',2,'DisplayName','A');
     
 % 4. Save adjusted rate factor and figure
 if save_A_adj
-    save([basepath,'inputs-outputs/modeled_rate_factor.mat'],'A_adj','eta_dot_cum','-append');
+    save([basepath,'inputs-outputs/modeled_rate_factor.mat'],'A_adj','eta_dot_cum','eta_dot_cum_years','-append');
     disp('Adjusted rate factor saved');
     saveas(figure(1),[basepath,'figures/modeled_rate_factor.png'],'png');
     disp('figure 1 saved');

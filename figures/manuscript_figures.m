@@ -909,16 +909,17 @@ A = load([basepath,'inputs-outputs/modeled_rate_factor.mat']).A;
 A_adj = load([basepath,'inputs-outputs/modeled_rate_factor.mat']).A_adj;
 % load annual cumulative strain rates
 eta_dot_cum = load([basepath,'inputs-outputs/modeled_rate_factor.mat']).eta_dot_cum; 
+eta_dot_cum_years = load([basepath,'inputs-outputs/modeled_rate_factor.mat']).eta_dot_cum_years;
 % years associated with each row
 years = [2013:2017 1995];
 % define basal roughness
 beta0 = interp1([0 x0(end)], [0.5 2], x0); 
 
 % plot
-col1 = parula(length(1995:2017)); % color scheme for plotting
+col1 = parula(length(1995:2019)); % color scheme for plotting
 figure(7); clf; 
 set(gcf,'Position',[-1000 50 750 650],'defaultAxesColorOrder',[[0 0.4 0.8];[0 0 0]]);
-ax1 = axes('pos',[0.1 0.35 0.8 0.63]);
+ax1 = axes('pos',[0.1 0.35 0.8 0.6]);
 set(ax1,'linewidth',2,'fontsize',fontsize,'fontname',fontname,'XTickLabels',[]);
 yyaxis left; 
     xlim([0 45]); 
@@ -926,9 +927,9 @@ yyaxis left;
     %ylabel('$$ \Sigma ( \dot{\eta} ) (s^{-1})$$','Interpreter','latex','fontname','Arial','fontsize',18);
     ylabel('Cumulative strain rate');
     hold on; grid on; 
-    plot(ax1, cl.xi(1:135)/10^3,eta_dot_cum(end,1:135),'-','color',col1(1,:),'linewidth',linewidth,'HandleVisibility','off');drawnow %,'displayname',num2str(years(i)));    
+    plot(ax1, cl.xi(1:135)/10^3,eta_dot_cum(end,1:135),'-','color',col1(1,:),'linewidth',linewidth,'displayname','Pre-collapse'); drawnow    
     for i=1:length(eta_dot_cum(:,1))-1
-        plot(ax1, cl.xi(1:135)/10^3,eta_dot_cum(i,1:135),'-','color',col1(i+18,:),'linewidth',linewidth,'HandleVisibility','off');drawnow %,'displayname',num2str(years(i)));
+        plot(ax1, cl.xi(1:135)/10^3,eta_dot_cum(i,1:135),'-','color',col1(i+18,:),'linewidth',linewidth,'DisplayName',num2str(eta_dot_cum_years(i))); drawnow
     end
     % add text label            
     text((max(get(ax1,'XLim'))-min(get(ax1,'XLim')))*0.02+min(get(ax1,'XLim')),...
@@ -937,14 +938,11 @@ yyaxis left;
 yyaxis right; 
     ylabel('Rate factor [Pa^{-3}/yr]'); 
     colormap(col1);
-    % colorbar
-    cb = colorbar('position',[0.2 0.6 0.02 0.3],'fontname',fontname,...
-        'fontsize',fontsize-2,'Ticks',[0 1],'TickLabels',[{'1995'},{'2017'}]);
     hold on; grid on; 
     xlim([0 45]); 
     ylim([0.91e-17 1.92e-17]);
     % legend
-    legend('location','north');%[0.15 0.75 0.1 0.08]);
+    legend('position',[0.15 0.7 0.1 0.08]);
     plot(ax1,cl.xi(1:135)/10^3,A(1:135)*3.1536e7,'--k','linewidth',linewidth+0.5,'displayname','A');
     plot(ax1,cl.xi(1:135)/10^3,A_adj(1:135)*3.1536e7,'-k','linewidth',linewidth+0.5,'displayname','A_{adj}');
 ax2 = axes('pos',[0.1 0.08 0.8 0.25]); hold on;
@@ -976,7 +974,7 @@ h_obs = load([basepath,'inputs-outputs/observed_surface_elevations.mat']).h;
 Ih_obs = 8:13; % indices for 2009-2011, 2016-2018 observed surface elevation
 % ice speed
 U_obs = load([basepath,'inputs-outputs/observed_surface_speeds.mat']).U;
-IU_obs = 16:21; % indices for 2012-2017 observed surface speed
+IU_obs = 11:21; % indices for 2007-2017 observed surface speed
 % terminus position
 termX = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
 termY = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
@@ -987,14 +985,14 @@ clear termX termY termx termdate
 % -----Load modeled 2007-2018 conditions
 mod_cond = load([basepath,'inputs-outputs/modeled_conditions_2007-2018.mat']).mod_cond;
 Ih_mod = [3:5, 10:12]; % indices for 2009-2011, 2016-2018 modeled surface elevation
-IU_mod = 6:11; % indices for 2007-2017 observed surface speed
+IU_mod = 1:11; % indices for 2007-2017 observed surface speed
 
 % color scheme for plotting time series
 col = parula(length(2007:2018)+1); 
 
 % plot
 figure(8); clf;
-set(gcf,'position',[200 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0.8 0.1 0.1]]);
+set(gcf,'position',[-1000 200 1000 700],'defaultAxesColorOrder',[[0 0 0];[0.8 0.1 0.1]]);
 % modeled surface elevation
 ax1 = axes('position',[0.08 0.55 0.4 0.4]); hold on; 
     grid on;
@@ -1014,12 +1012,12 @@ ax1 = axes('position',[0.08 0.55 0.4 0.4]); hold on;
         (max(get(ax1,'YLim'))-min(get(ax1,'YLim')))*0.1+min(get(ax1,'YLim')),...
         'a)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
 % modeled flow speed
-ax2 = axes('position',[0.56 0.55 0.4 0.4],'YTick',0:300:1500); hold on; 
+ax2 = axes('position',[0.56 0.55 0.4 0.4],'YTick',0:400:1600); hold on; 
     set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
     grid on;
     ylabel('Modeled flow speed [m/yr]');
 %     xlim([25 60]);
-    ylim([0 1300]);
+    ylim([0 1700]);
     % grounding line location
     plot(ax2, [mod_cond(end).x(mod_cond(end).gl)/10^3 mod_cond(end).x(mod_cond(end).gl)/10^3],...
         [min(get(ax2,'YLim')) max(get(ax2,'YLim'))],'-k','linewidth',linewidth,'displayname','2018 gl');
@@ -1037,18 +1035,22 @@ grid on;
     xlabel('Distance along centerline [km]');
     ylabel('Surface elevation misfit [m]');  
 %     xlim([25 60]);
-    ylim([-75 175]);
+    ylim([-75 150]);
     % grounding line location
     plot(ax3, [mod_cond(end).x(mod_cond(end).gl)/10^3 mod_cond(end).x(mod_cond(end).gl)/10^3],...
         [min(get(ax3,'YLim')) max(get(ax3,'YLim'))],'-k','linewidth',linewidth,'displayname','2018 gl');
     for i=1:length(Ih_obs)
-%         misfit = mod_cond(Ih_mod(i)).h...
-%             - interp1(cl.xi(~isnan(h_obs(Ih_obs(i)).h_centerline)),h_obs(Ih_obs(i)).h_centerline(~isnan(h_obs(Ih_obs(i)).h_centerline)),mod_cond(Ih_mod(i)).x);
-%         % account for error in dataset
-%         misfit(misfit<0) = misfit;
-        plot(ax3, mod_cond(Ih_mod(i)).x/10^3, mod_cond(Ih_mod(i)).h...
-            - interp1(cl.xi(~isnan(h_obs(Ih_obs(i)).h_centerline)),h_obs(Ih_obs(i)).h_centerline(~isnan(h_obs(Ih_obs(i)).h_centerline)),mod_cond(Ih_mod(i)).x),...
-            'linewidth', linewidth, 'color', col(Ih_mod(i),:), 'displayname', num2str(mod_cond(Ih_mod(i)).year));
+        % dataset error
+        h_err = 22; % surface elevation observational error margin [m]
+        % difference between modeled and observed
+        misfit = mod_cond(Ih_mod(i)).h...
+            -interp1(cl.xi(~isnan(h_obs(Ih_obs(i)).h_centerline)),...
+            h_obs(Ih_obs(i)).h_centerline(~isnan(h_obs(Ih_obs(i)).h_centerline)),...
+            mod_cond(Ih_mod(i)).x);
+        % adjust misfit for dataset error
+        misfit(misfit<0) = misfit(misfit<0) + h_err;
+        misfit(misfit>0) = misfit(misfit>0) - h_err;
+        plot(ax3, mod_cond(Ih_mod(i)).x/10^3, movmean(misfit, 5),'linewidth', linewidth, 'color', col(Ih_mod(i),:), 'displayname', num2str(mod_cond(Ih_mod(i)).year));
     end
     % add text label            
     text((max(get(ax3,'XLim'))-min(get(ax3,'XLim')))*0.9+min(get(ax3,'XLim')),...
@@ -1061,7 +1063,7 @@ grid on;
     xlabel('Distance along centerline [km]');
     ylabel('Flow speed misfit [m/yr]'); 
     xlim([0 60]);
-    ylim([-600 600]);
+    ylim([-600 1600]);
     % grounding line location
     plot(ax4, [mod_cond(end).x(mod_cond(end).gl)/10^3 mod_cond(end).x(mod_cond(end).gl)/10^3],...
         [min(get(ax4,'YLim')) max(get(ax4,'YLim'))],'-k','linewidth',linewidth,'displayname','2018 gl');
@@ -1075,7 +1077,7 @@ grid on;
         misfit(misfit<0) = misfit(misfit<0) + U_err(misfit<0);
         misfit(misfit>0) = misfit(misfit>0) - U_err(misfit>0);
         % plot 
-        plot(ax4, mod_cond(IU_mod(i)).x/10^3, misfit.*3.1536e7,...
+        plot(ax4, mod_cond(IU_mod(i)).x/10^3, movmean(misfit, 5).*3.1536e7,...
             'linewidth', linewidth, 'color', col(IU_mod(i),:), 'displayname', num2str(mod_cond(IU_mod(i)).year));
     end
     % add text label            
@@ -1189,7 +1191,7 @@ h_2018(h_2018-H_2018<b0) = b0(h_2018-H_2018<b0)+H_2018(h_2018-H_2018<b0); % thic
 % define time stepping (s)
 t_start = 0*3.1536e7; % 2002
 t_mid = 18*3.1536e7; % 2020
-t_end = 98*3.1536e7; 
+t_end = 98*3.1536e7; % 2100
 dt1 = 0.0005*3.1536e7; 
 dt2 = 0.001*3.1536e7; 
 t = [t_start:dt1:t_mid t_mid+dt2:dt2:t_end];
