@@ -23,6 +23,8 @@ clear all; close all;
 
 % Define path in directory to CraneGlacier_flowlinemodeling
 basepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
+% Define path in directory to datasets
+datapath = '/Volumes/LaCie/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/data/';
 
 % add path to required functions
 addpath([basepath,'functions/hugheylab-nestedSortStruct'],...
@@ -51,7 +53,7 @@ width = load([basepath, 'inputs-outputs/observed_glacier_width.mat']).width;
 % width.
 
 % -----Fjord end-----
-fjord_end = shaperead([basepath,'data/terminus/fjord_end.shp']);
+fjord_end = shaperead([datapath,'terminus/fjord_end.shp']);
 
 %% 2. Surface elevations (GOTOPO30, ASTER, & OIB)
 
@@ -63,7 +65,7 @@ fjord_end = shaperead([basepath,'data/terminus/fjord_end.shp']);
 k=0; % counter for number of files in h structure
 
 % -----GOTOPO30 (~1996)-----
-[GT.h, GT.R] = readgeoraster([basepath,'data/surface_elevations/gt30w120s60_aps.tif']);
+[GT.h, GT.R] = readgeoraster([datapath,'surface_elevations/gt30w120s60_aps.tif']);
 GT.h(GT.h==-9999) = NaN; % set no-data values to NaN
 % extract x and y coordinates
 [GT.ny, GT.nx] = size(GT.h); % number of x and y points
@@ -84,7 +86,7 @@ end
 h(k).numPts = length(h(k).h_centerline(~isnan(h(k).h_centerline))); % number of valid data points in centerline profile
 
 % -----ASTER (2001-2002)-----
-Afn = dir([basepath,'data/surface_elevations/ASTER/AST14DEM*_aps.tif']);
+Afn = dir([datapath,'surface_elevations/ASTER/AST14DEM*_aps.tif']);
 % loop through files
 for i=1:length(Afn)
     A(i).fn = Afn(i).name;
@@ -112,7 +114,7 @@ for i=1:length(Afn)
 end
 
 % -----OIB (2009-12, 2016-18)-----
-OIB_files = dir([basepath,'data/surface_elevations/OIB_L2/C*.csv']);
+OIB_files = dir([datapath,'surface_elevations/OIB_L2/C*.csv']);
 % loop through files
 for i=1:length(OIB_files)
     
@@ -226,7 +228,7 @@ k=0; % counter for number of files in U structure
 % -----ERS (1994)-----
 k=k+1;
 % file name
-ERS_files{1} = [basepath,'data/surface_velocities/ENVEO_velocities/LarsenFleming_s19940120_e19940319.1.0_20170928/LarsenFleming_s19940120_e19940319.tif'];
+ERS_files{1} = [datapath,'surface_velocities/ENVEO_velocities/LarsenFleming_s19940120_e19940319.1.0_20170928/LarsenFleming_s19940120_e19940319.tif'];
 % load file
 [ERS(1).A, ERS(1).R] = readgeoraster(ERS_files{1});
 [ERS(1).ny, ERS(1).nx, ~] = size(ERS(1).A); % dimension sizes
@@ -253,7 +255,7 @@ U(k).numPts = length(U(k).U_width_ave(~isnan(U(1).U_width_ave))); % number of va
 % -----ERS (1995)-----
 k=k+1;
 % file name
-ERS_files{2} = [basepath,'data/surface_velocities/ENVEO_velocities/glacapi_iv_LB_ERS_1995_v2.tif'];
+ERS_files{2} = [datapath,'surface_velocities/ENVEO_velocities/glacapi_iv_LB_ERS_1995_v2.tif'];
 % load file
 [ERS(2).A, ERS(2).R] = readgeoraster(ERS_files{2});
 [ERS(2).ny, ERS(2).nx, ~] = size(ERS(2).A); % dimension sizes
@@ -279,12 +281,12 @@ U(k).numPts = length(U(k).U_width_ave(~isnan(U(2).U_width_ave))); % number of va
 
 % -----ITS_LIVE (1999-2017)-----
 % file names
-ITS_LIVE_files = dir([basepath,'data/surface_velocities/ITS_LIVE/ANT*.nc']);
+ITS_LIVE_files = dir([datapath,'surface_velocities/ITS_LIVE/ANT*.nc']);
 % Loop through files
 for i=1:length(ITS_LIVE_files)
     % load coordinates
-    IL(i).X = ncread([basepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'x'); % X [m]
-    IL(i).Y = ncread([basepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'y'); % Y [m]
+    IL(i).X = ncread([datapath, 'surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'x'); % X [m]
+    IL(i).Y = ncread([datapath, 'surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'y'); % Y [m]
     % determine subset over which to extract velocity data
     Ix = find(IL(i).X >= min(width.segsx_clip(:)) & IL(i).X <= max(width.segsx_clip(:)));
     Iy = find(IL(i).Y >= min(width.segsy_clip(:)) & IL(i).Y <= max(width.segsy_clip(:)));
@@ -292,12 +294,12 @@ for i=1:length(ITS_LIVE_files)
     % crop coordinates to subset
     IL(i).X = IL(i).X(Ix); IL(i).Y = IL(i).Y(Iy);
     % read in velocity
-    IL(i).U = ncread([basepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'v', startloc, counts)'; % [m/y]
+    IL(i).U = ncread([datapath,'surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'v', startloc, counts)'; % [m/y]
     IL(i).U(IL(i).U==-32767) = NaN; % replace no data values with NaN
     % convert to m/s
     IL(i).U = IL(i).U./3.1536e7;
     % read in velocity error
-    IL(i).U_err = ((ncread([basepath,'data/surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'v_err', startloc, counts))')./3.1536e7; % u error [m/s]
+    IL(i).U_err = ((ncread([datapath,'surface_velocities/ITS_LIVE/',ITS_LIVE_files(i).name],'v_err', startloc, counts))')./3.1536e7; % u error [m/s]
     % save info in structure
     k=k+1;
     U(k).date = ITS_LIVE_files(i).name(11:14); % observation date

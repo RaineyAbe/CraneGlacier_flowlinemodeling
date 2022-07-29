@@ -974,7 +974,7 @@ h_obs = load([basepath,'inputs-outputs/observed_surface_elevations.mat']).h;
 Ih_obs = 8:13; % indices for 2009-2011, 2016-2018 observed surface elevation
 % ice speed
 U_obs = load([basepath,'inputs-outputs/observed_surface_speeds.mat']).U;
-IU_obs = 11:21; % indices for 2007-2017 observed surface speed
+IU_obs = 15:21; % indices for 2011-2017 observed surface speed
 % terminus position
 termX = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
 termY = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
@@ -985,7 +985,7 @@ clear termX termY termx termdate
 % -----Load modeled 2007-2018 conditions
 mod_cond = load([basepath,'inputs-outputs/modeled_conditions_2007-2018.mat']).mod_cond;
 Ih_mod = [3:5, 10:12]; % indices for 2009-2011, 2016-2018 modeled surface elevation
-IU_mod = 1:11; % indices for 2007-2017 observed surface speed
+IU_mod = 5:11; % indices for 2007-2017 observed surface speed
 
 % color scheme for plotting time series
 col = parula(length(2007:2018)+1); 
@@ -1050,7 +1050,7 @@ grid on;
         % adjust misfit for dataset error
         misfit(misfit<0) = misfit(misfit<0) + h_err;
         misfit(misfit>0) = misfit(misfit>0) - h_err;
-        plot(ax3, mod_cond(Ih_mod(i)).x/10^3, movmean(misfit, 5),'linewidth', linewidth, 'color', col(Ih_mod(i),:), 'displayname', num2str(mod_cond(Ih_mod(i)).year));
+        plot(ax3, mod_cond(Ih_mod(i)).x/10^3, misfit,'linewidth', linewidth, 'color', col(Ih_mod(i),:), 'displayname', num2str(mod_cond(Ih_mod(i)).year));
     end
     % add text label            
     text((max(get(ax3,'XLim'))-min(get(ax3,'XLim')))*0.9+min(get(ax3,'XLim')),...
@@ -1063,7 +1063,7 @@ grid on;
     xlabel('Distance along centerline [km]');
     ylabel('Flow speed misfit [m/yr]'); 
     xlim([0 60]);
-    ylim([-600 1600]);
+    ylim([-600 850]);
     % grounding line location
     plot(ax4, [mod_cond(end).x(mod_cond(end).gl)/10^3 mod_cond(end).x(mod_cond(end).gl)/10^3],...
         [min(get(ax4,'YLim')) max(get(ax4,'YLim'))],'-k','linewidth',linewidth,'displayname','2018 gl');
@@ -1072,12 +1072,14 @@ grid on;
         U_err = interp1(cl.xi, U_obs(IU_obs(i)).U_err, mod_cond(IU_mod(i)).x); 
         % difference between modeled and observed
         misfit = mod_cond(IU_mod(i)).U...
-            - interp1(cl.xi(~isnan(U_obs(IU_obs(i)).U_width_ave)), U_obs(IU_obs(i)).U_width_ave(~isnan(U_obs(IU_obs(i)).U_width_ave)), mod_cond(IU_mod(i)).x);
+            - interp1(cl.xi(~isnan(U_obs(IU_obs(i)).U_width_ave)), ...
+            U_obs(IU_obs(i)).U_width_ave(~isnan(U_obs(IU_obs(i)).U_width_ave)), ...
+            mod_cond(IU_mod(i)).x);
         % adjust misfit for dataset error
         misfit(misfit<0) = misfit(misfit<0) + U_err(misfit<0);
         misfit(misfit>0) = misfit(misfit>0) - U_err(misfit>0);
         % plot 
-        plot(ax4, mod_cond(IU_mod(i)).x/10^3, movmean(misfit, 5).*3.1536e7,...
+        plot(ax4, mod_cond(IU_mod(i)).x/10^3, misfit.*3.1536e7,...
             'linewidth', linewidth, 'color', col(IU_mod(i),:), 'displayname', num2str(mod_cond(IU_mod(i)).year));
     end
     % add text label            
