@@ -1035,18 +1035,17 @@ grid on;
     xlabel('Distance along centerline [km]');
     ylabel('Surface elevation misfit [m]');  
 %     xlim([25 60]);
-    ylim([-75 150]);
+    ylim([-75 125]);
     % grounding line location
     plot(ax3, [mod_cond(end).x(mod_cond(end).gl)/10^3 mod_cond(end).x(mod_cond(end).gl)/10^3],...
         [min(get(ax3,'YLim')) max(get(ax3,'YLim'))],'-k','linewidth',linewidth,'displayname','2018 gl');
     for i=1:length(Ih_obs)
         % dataset error
         h_err = 22; % surface elevation observational error margin [m]
+        % interpolate observed surface elevation to model grid coordinates
+        h_obsi = interp1(cl.xi, h_obs(Ih_obs(i)).h_centerline, mod_cond(Ih_mod(i)).x);
         % difference between modeled and observed
-        misfit = mod_cond(Ih_mod(i)).h...
-            -interp1(cl.xi(~isnan(h_obs(Ih_obs(i)).h_centerline)),...
-            h_obs(Ih_obs(i)).h_centerline(~isnan(h_obs(Ih_obs(i)).h_centerline)),...
-            mod_cond(Ih_mod(i)).x);
+        misfit = mod_cond(Ih_mod(i)).h - h_obsi; 
         % adjust misfit for dataset error
         misfit(misfit<0) = misfit(misfit<0) + h_err;
         misfit(misfit>0) = misfit(misfit>0) - h_err;
@@ -1071,10 +1070,10 @@ grid on;
         % dataset error
         U_err = interp1(cl.xi, U_obs(IU_obs(i)).U_err, mod_cond(IU_mod(i)).x); 
         % difference between modeled and observed
-        misfit = mod_cond(IU_mod(i)).U...
-            - interp1(cl.xi(~isnan(U_obs(IU_obs(i)).U_width_ave)), ...
-            U_obs(IU_obs(i)).U_width_ave(~isnan(U_obs(IU_obs(i)).U_width_ave)), ...
-            mod_cond(IU_mod(i)).x);
+        % interpolate observed surface speed to model grid coordinates
+        U_obsi = interp1(cl.xi, U_obs(IU_obs(i)).U_width_ave, mod_cond(IU_mod(i)).x);
+        % difference between modeled and observed
+        misfit = mod_cond(IU_mod(i)).U - U_obsi;
         % adjust misfit for dataset error
         misfit(misfit<0) = misfit(misfit<0) + U_err(misfit<0);
         misfit(misfit>0) = misfit(misfit>0) - U_err(misfit>0);
