@@ -90,7 +90,7 @@ Afn = dir([datapath,'surface_elevations/ASTER/AST14DEM*_aps.tif']);
 % loop through files
 for i=1:length(Afn)
     A(i).fn = Afn(i).name;
-    [A(i).h, A(i).R] = readgeoraster([basepath,'data/surface_elevations/ASTER/',A(i).fn]);
+    [A(i).h, A(i).R] = readgeoraster([datapath,'/surface_elevations/ASTER/',A(i).fn]);
     A(i).h = double(A(i).h);
     A(i).h(A(i).h==-9999) = NaN; % set no data values to NaN
     [A(i).ny, A(i).nx] = size(A(i).h); % number of x and y points
@@ -120,7 +120,7 @@ for i=1:length(OIB_files)
     
     % load file
     OIB(i).fn = OIB_files(i).name; % file name
-    file = readmatrix([basepath,'data/surface_elevations/OIB_L2/',OIB(i).fn]); % full csv file
+    file = readmatrix([datapath,'surface_elevations/OIB_L2/',OIB(i).fn]); % full csv file
     file(file==-9999) = NaN; % replace no data values with NaN
     % extract coordinates
     OIB(i).lat = file(:,1);

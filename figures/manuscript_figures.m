@@ -1525,19 +1525,19 @@ for i=1:length(IDFW)
     dgl(i) = x2(gl2)-x1(gl1); % m
     Ugl(i) = U2(gl2)*3.1536e7; % m/a
 end
-% plot Fgl and Xcf over time
+% plot Fgl and Xcf over time averaged over 1 yr bins
 figure(10);
 fill(ax10A, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
-    [XCF2_DFWmin/10^3 fliplr(XCF2_DFWmax)/10^3],...
-    [150,150,150]./255,'LineStyle','none','displayname','\Deltad_{fw,range}');
+    [movmean(XCF2_DFWmin/10^3,1000) fliplr(movmean(XCF2_DFWmax,1000))/10^3],...
+    [150,150,150]./255,'LineStyle','none','displayname','d_{fw,range}');
 plot(ax10A,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
-    [x0(c0)*ones(1,length(Fgl_preCollapse))/10^3 XCF2_DFWmid/10^3],...
-    '-k','linewidth',linewidth,'displayname','\Deltad_{fw,median}');        
+    movmean([x0(c0)*ones(1,length(Fgl_preCollapse))/10^3 XCF2_DFWmid/10^3],1000),...
+    '-k','linewidth',linewidth,'displayname','d_{fw,median}');        
 fill(ax10B, [t/3.1536e7+2002 fliplr(t)/3.1536e7+2002],...
-    [Fgl2_DFWmin fliplr(Fgl2_DFWmax)],...
+    [movmean(Fgl2_DFWmin,1000) fliplr(movmean(Fgl2_DFWmax,1000))],...
     [150,150,150]./255,'LineStyle','none','HandleVisibility','off');
 plot(ax10B,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
-    [Fgl_preCollapse Fgl2_DFWmid],'-k','linewidth',linewidth,'handlevisibility','off'); 
+    movmean([Fgl_preCollapse Fgl2_DFWmid],1000),'-k','linewidth',linewidth,'handlevisibility','off'); 
 % create table to store result quantities
 varNames = {'dfwd','dL','dxgl','dHgl','dUgl','Qfwd'};
 T_DFW = table(dDFW,dL/10^3,dgl/10^3,dHgl,dUgl,Fdfw,'VariableNames',varNames);
@@ -1808,23 +1808,37 @@ BP.years = [BP.years; 2020*ones(length(XCF(:,(t/3.1536e7+2002)==2020)),1); 2040*
 varNames = {'dSMB_enh','dTF','dL','dgl','dHgl','dUgl','Qgl'};
 T_smb_enh_TF = table(dsmb_enh,dTF,dL/10^3,dgl/10^3,dHgl,dUgl,F,'VariableNames',varNames);
 
-% -----plot Fgl and Xcf     
+% -----plot Fgl and Xcf over time averaged over 1 yr bins     
 % mid
 % SMB
 figure(12);
-plot(ax12A,t/3.1536e7+2002,XCF2_SMBmid/10^3,'color',col2(1,:),'linewidth',linewidth,'displayname','\DeltaSMB');  
-plot(ax12C,t/3.1536e7+2002,Fgl2_SMBmid,'color',col2(1,:),'linewidth',linewidth,'HandleVisibility','off');        
+plot(ax12A,t/3.1536e7+2002,movmean(XCF2_SMBmid/10^3,1000),'color',col2(1,:),'linewidth',linewidth,'displayname','\DeltaSMB');  
+plot(ax12C,t/3.1536e7+2002,movmean(Fgl2_SMBmid,1000),'color',col2(1,:),'linewidth',linewidth,'HandleVisibility','off');        
 % TF
-plot(ax12A,t/3.1536e7+2002,XCF2_TFmid/10^3,'color',col2(2,:),'linewidth',linewidth,'displayName','\DeltaF_{T}');        
-plot(ax12C,t/3.1536e7+2002,Fgl2_TFmid,'color',col2(2,:),'linewidth',linewidth,'HandleVisibility','off');        
+plot(ax12A,t/3.1536e7+2002,movmean(XCF2_TFmid/10^3,1000),'color',col2(2,:),'linewidth',linewidth,'displayName','\DeltaF_{T}');        
+plot(ax12C,t/3.1536e7+2002,movmean(Fgl2_TFmid,1000),'color',col2(2,:),'linewidth',linewidth,'HandleVisibility','off');        
+
+% observations
+% terminus - Dryak and Enderlin
+plot(ax10A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','Dryak and Enderlin (2020)');        
+plot(ax12A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','Dryak and Enderlin (2020)');        
+% discharge - Rignot (2004)
+errorbar(ax10B,F_obs(1:4,1),F_obs(1:4,2),F_obs_err(1:4),'.','color',[150,150,150]./255,...
+    'markersize',markersize*2,'markerfacecolor','k','markeredgecolor','k','linewidth',linewidth,'displayName','Rignot et al. (2004)');        
+errorbar(ax12C,F_obs(1:4,1),F_obs(1:4,2),F_obs_err(1:4),'.','color',[150,150,150]./255,...
+    'markersize',markersize*2,'markerfacecolor','k','markeredgecolor','k','linewidth',linewidth,'displayName','Rignot et al. (2004)');   
+% discharge - Us! 
+plot(ax10B,F_obs(5:6,1),F_obs(5:6,2),'ok','markersize',markersize,'linewidth',linewidth,'displayName','this study');        
+plot(ax12C,F_obs(5:6,1),F_obs(5:6,2),'ok','markersize',markersize,'linewidth',linewidth,'displayName','this study');   
+
 % SMB_enh
-plot(ax12A,t/3.1536e7+2002,XCF2_SMBenh_mid/10^3,'color',col2(3,:),'linewidth',linewidth,'displayname','\DeltaSMB_{enh}');        
-plot(ax12C,t/3.1536e7+2002,Fgl2_SMBenh_mid,'color',col2(3,:),'linewidth',linewidth,'HandleVisibility','off');        
+plot(ax12A,t/3.1536e7+2002,movmean(XCF2_SMBenh_mid/10^3,1000),'color',col2(3,:),'linewidth',linewidth,'displayname','\DeltaSMB_{enh}');        
+plot(ax12C,t/3.1536e7+2002,movmean(Fgl2_SMBenh_mid,1000),'color',col2(3,:),'linewidth',linewidth,'HandleVisibility','off');        
 % SMB_enh & TF
 plot(ax12A,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
-    [x0(c0)*ones(1,length(Fgl_preCollapse))/10^3 XCF2_SMBenhTF_mid/10^3],'color',col2(4,:),'linewidth',linewidth,'DisplayName','\DeltaSMB_{enh} & \DeltaF_{T}');        
+    [x0(c0)*ones(1,length(Fgl_preCollapse))/10^3 movmean(XCF2_SMBenhTF_mid/10^3,1000)],'color',col2(4,:),'linewidth',linewidth,'DisplayName','\DeltaSMB_{enh} & \DeltaF_{T}');        
 plot(ax12C,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
-    [Fgl_preCollapse Fgl2_SMBenhTF_mid],'color',col2(4,:),'linewidth',linewidth,'HandleVisibility','off');        
+    [Fgl_preCollapse movmean(Fgl2_SMBenhTF_mid,1000)],'color',col2(4,:),'linewidth',linewidth,'HandleVisibility','off');        
 % boxplots
 % Note: must add two dummy groups to increase spacing between boxes
 box_width = 0.7; 
@@ -1860,18 +1874,6 @@ text(ax12D,categorical(2020),...
     (max(get(ax12D,'YLim'))-min(get(ax12D,'YLim')))*0.92+min(get(ax12D,'YLim')),...
     'd)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
 ax12D.XLabel.String = 'Year';
-% observations
-% terminus - Dryak and Enderlin
-plot(ax10A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','Dryak and Enderlin (2020)');        
-plot(ax12A,termdate,termx/10^3,'xk','markersize',markersize-1,'linewidth',linewidth,'displayName','Dryak and Enderlin (2020)');        
-% discharge - Rignot (2004)
-errorbar(ax10B,F_obs(1:4,1),F_obs(1:4,2),F_obs_err(1:4),'.','color',[150,150,150]./255,...
-    'markersize',markersize*2,'markerfacecolor','k','markeredgecolor','k','linewidth',linewidth,'displayName','Rignot et al. (2004)');        
-errorbar(ax12C,F_obs(1:4,1),F_obs(1:4,2),F_obs_err(1:4),'.','color',[150,150,150]./255,...
-    'markersize',markersize*2,'markerfacecolor','k','markeredgecolor','k','linewidth',linewidth,'displayName','Rignot et al. (2004)');   
-% discharge - Us! 
-plot(ax10B,F_obs(5:6,1),F_obs(5:6,2),'ok','markersize',markersize,'linewidth',linewidth,'displayName','this study');        
-plot(ax12C,F_obs(5:6,1),F_obs(5:6,2),'ok','markersize',markersize,'linewidth',linewidth,'displayName','this study');   
 
 % Add observed 2018 conditions to figures 5 and 7
 b=1; % create a loop to make section collapsible
