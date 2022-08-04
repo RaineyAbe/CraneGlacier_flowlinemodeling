@@ -18,14 +18,20 @@ clear all;
 basepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
 % outpath = where output figures will be places
 outpath = [basepath,'figures/'];
+% datapath = base directory where data exist
+datapath = '/Volumes/LaCie/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/data/';
 
 % -----Add necessary paths to working directories
 addpath([basepath,'functions/']);
 addpath([basepath,'functions/gridLegend_v1.4/']);
 addpath([basepath,'functions/cmocean_v2.0/cmocean/']);
+addpath([basepath,'functions/AntarcticMappingTools/']);
 addpath([basepath,'inputs-outputs/']);
-% addpath([homepath,'functions/OIBPicking/functions/']);
-addpath([basepath,'data/bed_elevations/OIB_L1B']);
+addpath([datapath,'bed_elevations/OIB_L1B']);
+addpath([basepath,'functions/line2arrow-kakearney-pkg-8aead6f/']);
+addpath([basepath,'functions/line2arrow-kakearney-pkg-8aead6f/line2arrow/']);
+addpath([basepath,'functions/line2arrow-kakearney-pkg-8aead6f/axescoord2figurecoord/']);
+addpath([basepath,'functions/line2arrow-kakearney-pkg-8aead6f/parsepv']);
 
 % -----Load Crane centerline
 cl.Xi = load('Crane_centerline.mat').x; cl.Yi = load('Crane_centerline.mat').y;
@@ -51,18 +57,13 @@ save_figure = 0;    % = 1 to save figure
 markersize = 8;    % marker size
 linewidth = 1.5;      % line width
 
-% Add paths to functions
-addpath([basepath,'functions/']);
-addpath([basepath,'functions/cmocean_v2.0/cmocean/']);
-addpath([basepath,'functions/AntarcticMappingTools/']);
-
 % Specify xticks/yticks coordinates and axes limits
 xticks = linspace(-2.455e6,-2.375e6,5); yticks=linspace(1.21e6,1.29e6,5);
 xlimits=[xticks(1) xticks(end)]; ylimits = [yticks(1) yticks(end)];
 xlimits2 = -2.4196e6:0.005e6:-2.4046e6; ylimits2 = 1.2460e6:0.005e6:1.2610e6; 
     
 % Load & display Landsat image 1
-cd([basepath,'data/imagery/']);
+cd([datapath,'imagery/']);
 landsat = dir('LC08_L1GT_217106_20200110_20200114_01_T2_B8.TIF');
 [LS.im,LS.R] = readgeoraster(landsat.name); [LS.ny,LS.nx] = size(LS.im);
 % polar stereographic coordinates of image boundaries
@@ -91,7 +92,7 @@ REMA.y = linspace(min(REMA.R.YWorldLimits),max(REMA.R.YWorldLimits),REMA.ny);
 hold on; contour(ax(1),REMA.x,REMA.y,flipud(REMA.im),0:500:2000,'-k','linewidth',2,'ShowText','on');
     
 % load & display ITS_LIVE velocity map
-cd([basepath,'data/surface_velocities/ITS_LIVE/']);
+cd([datapath,'surface_velocities/ITS_LIVE/']);
 v.v = ncread('ANT_G0240_2017.nc','v'); v.v(v.v==-3267)=NaN;
 v.x = ncread('ANT_G0240_2017.nc','x'); 
 v.y = ncread('ANT_G0240_2017.nc','y');
@@ -121,17 +122,21 @@ annotation('textarrow',[0.6 0.6],[0.6 0.6],'string','65.00^oW','textcolor',[175 
     'HeadStyle','none','LineStyle', 'none','Position',[.36 .97 0 0],'FontSize',fontsize,'FontName',fontname); 
     
 % plot OIB flights
-cd([basepath,'data/surface_elevations/OIB_L2/']);
+cd([datapath,'surface_elevations/OIB_L2/']);
 OIBfiles = dir('*IRMCR2*.csv');
+count=0;
 for i=1:length(OIBfiles)
     OIB.file = readmatrix(OIBfiles(i).name);
-    [OIB.x,OIB.y] = wgs2ps(OIB.file(:,2),OIB.file(:,1),'StandardParallel',-71,'StandardMeridian',0);
-    if i==1
-        hold on; plot(ax(2),OIB.x,OIB.y,'color','w',...
-            'displayname','NASA OIB','linewidth',linewidth-1);
-    else
-        hold on; plot(ax(2),OIB.x,OIB.y,'color','w',...
-            'HandleVisibility','off','linewidth',linewidth-1);            
+    if any(~isnan(OIB.file))
+        count=count+1;
+        [OIB.x,OIB.y] = wgs2ps(OIB.file(:,2),OIB.file(:,1),'StandardParallel',-71,'StandardMeridian',0);
+        if count==1
+            hold on; plot(ax(2),OIB.x,OIB.y,'color','w',...
+                'displayname','NASA OIB','linewidth',linewidth-1);
+        else
+            hold on; plot(ax(2),OIB.x,OIB.y,'color','w',...
+                'HandleVisibility','off','linewidth',linewidth-1);            
+        end
     end
 end
     
@@ -157,7 +162,7 @@ text(cl.X(Idist)+1500,cl.Y(Idist),labels,'color',[253,224,221]/255,...
 % add colorbar
 c = colorbar('Position',[0.29 0.58 0.02 0.15],'fontsize',fontsize,'fontweight',...
     'bold','color','w','fontname',fontname);
-set(get(c,'Title'),'String','Flow speed [m/yr]','color','w','fontname',...
+set(get(c,'Title'),'String','Flow speed [m yr^{-1}]','color','w','fontname',...
     fontname,'Position',[5 100 0]);
 
 % insert text labels
@@ -205,7 +210,7 @@ text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.05+min(get(gca,'XLim')),(max(
 % plot LIMA inset in figure
 ax(4)=axes('pos',[0.2 0.12 0.2 0.2]);
 set(ax(4),'xtick',[],'xticklabel',[],'ytick',[],'yticklabel',[]);
-cd([basepath,'data/Imagery/']);
+cd([datapath,'imagery/']);
 L = imread('LIMA.jpg');
 imshow(L);
 hold on; plot(1100,4270,'o','color','y','markersize',10,'linewidth',3);
@@ -233,8 +238,10 @@ a4 = annotation('arrow','color','w','position',[0.7 0.85 -0.1 0.0],'linewidth',l
 % save figures 1 and 2
 if save_figure
     set(F1,'InvertHardCopy','off'); %set(F2,'InvertHardCopy','off'); % save colors as is
-    exportgraphics(F1,[basepath,'figures/study_area.png'],'Resolution',300);
-    exportgraphics(F2,[basepath,'figures/meltwater_ponds.png'],'Resolution',300);   
+    exportgraphics(F1,[outpath,'study_area.png'],'Resolution',300);
+    exportgraphics(F1,[outpath,'study_area.eps'],'Resolution',300);
+    exportgraphics(F2,[outpath,'meltwater_ponds.png'],'Resolution',300); 
+    exportgraphics(F2,[outpath,'meltwater_ponds.eps'],'Resolution',300);   
     disp('figures 1 and 2 saved.');    
 end
 
@@ -258,8 +265,8 @@ termX = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.term
 termY = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termy;
 termx = cl.xi(dsearchn([cl.Xi cl.Yi],[termX' termY']));
 termdate = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termdate;
-c = dsearchn(cl.xi',interp1(termdate,termx,[2002 2001 2009 2011 2016:2018])');
-c(1:2) = 186;
+c_obs = dsearchn(cl.xi',interp1(termdate,termx,[2002 2001 2009 2011 2016:2018])');
+c_obs(1:2) = 186;
 
 % 3. Glacier bed (OIB)
 % b = load([homepath,'inputs-outputs/observedBed.mat']).HB.hb0; % OIB
@@ -323,7 +330,7 @@ ax(1)=axes('Position',[0.11 0.7 0.75 0.28],'linewidth',2,'fontsize',...
         'a)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',fontname,'fontweight','bold');    
 ax(2)=axes('Position',[0.11 0.39 0.75 0.28],'linewidth',2,...
     'fontsize',fontsize,'fontname',fontname,'XTickLabels',[]); % speed
-    hold on; grid on; ylabel('Speed [m/yr]');
+    hold on; grid on; ylabel('Speed [m yr^{-1}]');
     xlim([0 65]); ylim([0 1500]);
     for i=1:length(years_U)
         Icol = round(interp1(years, 1:length(years), years_U(i)));
@@ -340,7 +347,7 @@ ax(3)= axes('Position',[0.11 0.08 0.75 0.28],'linewidth',2,...
     'fontsize',fontsize,'fontname',fontname); % SMB
     hold on; grid on; 
     xlabel('Distance along centerline [km]'); 
-    ylabel('SMB [m/yr]');
+    ylabel('SMB [m yr^{-1}]');
     xlim([0 65]); 
     ylim([0.15 0.6]); 
     legend('Location','northeast');
@@ -356,16 +363,16 @@ ax(3)= axes('Position',[0.11 0.08 0.75 0.28],'linewidth',2,...
         plot(ax(3), cl.xi(1:c)./10^3, SMB.linear(i,1:c), 'color', col(Icol,:),...
             'linewidth', linewidth, 'HandleVisibility', 'off');
     end
-    plot(ax(3), cl.xi(1:term)./10^3, SMB.downscaled_average_linear(1:term), '--k',...
+    plot(ax(3), cl.xi(1:c_obs(1))./10^3, SMB.downscaled_average_linear(1:c_obs(1)), '--k',...
         'linewidth', linewidth+0.3, 'displayname', 'SMB_{\mu}');
-    plot(ax(3), x0/10^3, interp1(cl.xi(1:term), SMB.downscaled_average_linear(1:term),x0) ...
+    plot(ax(3), x0/10^3, interp1(cl.xi(1:c_obs(1)), SMB.downscaled_average_linear(1:c_obs(1)),x0) ...
         - RO0.*3.1536e7, '-k', 'linewidth', linewidth+0.6, 'displayname', 'SMB_{\mu} - RO');
     % Add text label
     text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.03+min(get(gca,'XLim')),...
         (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
         'c)','fontsize',fontsize,'linewidth',linewidth-1,'backgroundcolor','w','fontname',fontname,'fontweight','bold');            
     % Add colorbar
-    colormap(col1); 
+    colormap(col); 
     cb = colorbar('Limits', [0 1], 'Ticks',...
         [1/length(years)*(2000-min(years)) 1/length(years)*(2010-min(years)) 1],...
         'TickLabels', string([2000 2010 2020]), 'Position',[.89 .32 .03 .3410],...
@@ -373,35 +380,29 @@ ax(3)= axes('Position',[0.11 0.08 0.75 0.28],'linewidth',2,...
     
 % Save figure
 if save_figure
-    exportgraphics(figure(3),[basepath,'figures/centerline_observations.png'],'Resolution',300);     
+    exportgraphics(figure(3),[outpath,'centerline_observations.png'],'Resolution',300);     
+    exportgraphics(figure(3),[outpath,'centerline_observations.eps'],'Resolution',300);     
     disp('figure 3 saved.');
 end
 
 %% Regional Glacier Termini Time Series
 
-cd([basepath,'data/terminus/regional/']);
-
 save_figure = 0; % = 1 to save figure
 linewidth = 2; 
 
-% add path to required functions
-addpath([basepath,'functions/']);
-addpath([basepath,'functions/line2arrow-kakearney-pkg-8aead6f/']);
-addpath([basepath,'functions/line2arrow-kakearney-pkg-8aead6f/line2arrow/']);
-addpath([basepath,'functions/line2arrow-kakearney-pkg-8aead6f/axescoord2figurecoord/']);
-addpath([basepath,'functions/line2arrow-kakearney-pkg-8aead6f/parsepv']);
-
 % load Landsat images
-cd([basepath,'data/imagery/']);
+cd([datapath,'imagery/']);
 % LSA 
-landsatA = dir('*217105*B8.TIF');
-    [LSA.im,LSA.R] = readgeoraster(landsatA.name); [LSA.ny,LSA.nx] = size(LSA.im);
+landsatA = dir('LC08*20201008*B8.TIF');
+    [LSA.im,LSA.R] = readgeoraster(landsatA.name); 
+    [LSA.ny,LSA.nx] = size(LSA.im);
     % polar stereographic coordinates of image boundaries
     LSA.x = linspace(min(LSA.R.XWorldLimits),max(LSA.R.XWorldLimits),LSA.nx); 
     LSA.y = linspace(min(LSA.R.YWorldLimits),max(LSA.R.YWorldLimits),LSA.ny);
 % LSB
-landsatB = dir('*20211013_01_T2_B8.tif');
-    [LSB.im,LSB.R] = readgeoraster(landsatB.name); [LSB.ny,LSB.nx] = size(LSB.im);
+landsatB = dir('LC08*20211013_01_T2_B8.tif');
+    [LSB.im,LSB.R] = readgeoraster(landsatB.name); 
+    [LSB.ny,LSB.nx] = size(LSB.im);
     % polar stereographic coordinates of image boundaries
     LSB.x = linspace(min(LSB.R.XWorldLimits),max(LSB.R.XWorldLimits),LSB.nx); 
     LSB.y = linspace(min(LSB.R.YWorldLimits),max(LSB.R.YWorldLimits),LSB.ny);
@@ -410,11 +411,11 @@ landsatB = dir('*20211013_01_T2_B8.tif');
 L = imread('LIMA.jpg');
 
 % cd to terminus coordinate shapefiles
-cd([basepath,'data/terminus/regional/']);
+cd([datapath,'terminus/regional/']);
 
 % set up figure, subplots, and plot
 figure(4); clf; 
-set(gcf,'Position',[100 200 1000 1000]); 
+set(gcf,'Position',[-1200 200 1000 725]); 
 % regional map
 ax1 = axes('position',[0.08 0.56 0.23 0.4]); hold on; imshow(L);
     ax1.XLim=[0.7139e3 1.4667e3]; ax1.YLim=[3.8765e3 4.6369e3];
@@ -434,8 +435,8 @@ ax1 = axes('position',[0.08 0.56 0.23 0.4]); hold on; imshow(L);
     colorbar('Limits',[0 1],'Ticks',[0 0.5 1],'TickLabels',[{'2014'},{'2017'},{'2021'}],...
         'Location','southoutside','fontsize',fontsize-1,'FontName',fontname); 
 % a) Edgeworth
-cd([basepath,'data/terminus/regional/Edgeworth/']); % enter folder 
-files = dir('*.shp'); % load file
+cd([datapath,'terminus/regional/Edgeworth/']); % enter folder 
+files = dir('Edgeworth*.shp'); % load file
 % loop through files to grab centerline
 for j=1:length(files)
     if contains(files(j).name,'CL')
@@ -488,8 +489,8 @@ ax2=axes('position',[0.39 0.555 0.23 0.4]); hold on; grid on;
 %     text((ax2.XLim(2)-ax2.XLim(1))*0.08+ax2.XLim(1),(max(ax2.YLim)-min(ax2.YLim))*0.92+min(ax2.YLim),...
 %         'a)','edgecolor','k','fontsize',fontsize,'linewidth',1,'backgroundcolor','w','fontweight','bold'); 
 % b) Drygalski
-cd([basepath,'data/terminus/regional/Drygalski/']); % enter folder 
-files = dir('*.shp'); % load file
+cd([datapath,'terminus/regional/Drygalski/']); % enter folder 
+files = dir('Drygalski*.shp'); % load file
 % loop through files to grab centerline
 for j=1:length(files)
     if contains(files(j).name,'CL')
@@ -541,8 +542,8 @@ ax3=axes('position',[0.72 0.555 0.24 0.4]); hold on; grid on;
 %     text((ax3.XLim(2)-ax3.XLim(1))*0.08+ax3.XLim(1),(max(ax3.YLim)-min(ax3.YLim))*0.92+min(ax3.YLim),...
 %         'b)','edgecolor','k','fontsize',fontsize,'linewidth',1,'backgroundcolor','w','fontweight','bold'); 
 % c) Hektoria & Green
-cd([basepath,'data/terminus/regional/HekGreen/']); % enter folder 
-files = dir('*.shp'); % load file
+cd([datapath,'terminus/regional/HekGreen/']); % enter folder 
+files = dir('HekGreen*.shp'); % load file
 % loop through files to grab centerline
 for j=1:length(files)
     if contains(files(j).name,'CL')
@@ -595,8 +596,8 @@ ax4=axes('position',[0.08 0.08 0.23 0.4]); hold on; grid on;
 %     text((ax4.XLim(2)-ax4.XLim(1))*0.08+ax4.XLim(1),(max(ax4.YLim)-min(ax4.YLim))*0.92+min(ax4.YLim),...
 %         'c)','edgecolor','k','fontsize',fontsize,'linewidth',1,'backgroundcolor','w','fontweight','bold'); 
 % d) Jorum
-cd([basepath,'data/terminus/regional/Jorum/']); % enter folder 
-files = dir('*.shp'); % load file
+cd([datapath,'terminus/regional/Jorum/']); % enter folder 
+files = dir('Jorum*.shp'); % load file
 % loop through files to grab centerline
 for j=1:length(files)
     if contains(files(j).name,'CL')
@@ -648,8 +649,8 @@ ax5=axes('position',[0.39 0.08 0.23 0.4]); hold on; grid on;
 %     text((ax5.XLim(2)-ax5.XLim(1))*0.08+ax5.XLim(1),(max(ax5.YLim)-min(ax5.YLim))*0.92+min(ax5.YLim),...
 %         'd)','edgecolor','k','fontsize',fontsize,'linewidth',1,'backgroundcolor','w','fontweight','bold'); 
 % e) Crane
-cd([basepath,'data/terminus/regional/Crane/']); % enter folder 
-files = dir('*.shp'); % load file
+cd([datapath,'terminus/regional/Crane/']); % enter folder 
+files = dir('Crane*.shp'); % load file
 % loop through files to grab centerline
 for j=1:length(files)
     if contains(files(j).name,'CL')
@@ -703,7 +704,8 @@ ax6=axes('position',[0.72 0.08 0.23 0.4]); hold on; grid on;
 
 % save figure
 if save_figure
-    exportgraphics(figure(4),[basepath,'figures/regional_termini.png'],'Resolution',300);
+    exportgraphics(figure(4),[outpath,'regional_termini.png'],'Resolution',300);
+    exportgraphics(figure(4),[outpath,'regional_termini.eps'],'Resolution',300);
     disp('figure 4 saved');
 end
 
@@ -714,7 +716,7 @@ linewidth = 2;
 markersize = 15;
 
 % Load Landsat image, width, width segments, and glacier extent polygon
-cd([basepath,'data/imagery/']);
+cd([datapath, 'imagery/']);
 ls = dir('LC08*20201104_01_T2_B8.TIF');
 [LS.im,R] = readgeoraster(ls.name); [LS.ny,LS.nx] = size(LS.im);
 % Polar stereographic coordinates of image boundaries
@@ -727,7 +729,7 @@ exty = load('observed_glacier_width.mat').width.exty;
 W = load('observed_glacier_width.mat').width.W;
 ol = load('observed_glacier_outline.mat').ol;
 % load observed terminus positions
-file = shaperead([basepath,'data/terminus/regional/Crane/Crane_2000-01-01_2021-03-17.shp']);
+file = shaperead([datapath,'terminus/regional/Crane/Crane_2000-01-01_2021-03-17.shp']);
 [termX,termY] = wgs2ps(file(end).X,file(end).Y,'StandardParallel',-71,'StandardMeridian',0);
 termx = cl.xi(dsearchn([cl.Xi cl.Yi], [termX(4), termY(4)]));
 
@@ -737,7 +739,7 @@ figure(5); clf
 set(gcf,'units','pixels','position',[200 200 800 800],'defaultAxesColorOrder',[[1 1 1];[0 0 0]]);
 ax1 = axes('position',[0.08 0.1 0.6 0.85]);
     hold on; imagesc(LS.x/10^3,LS.y/10^3,flipud(LS.im)); colormap("gray");
-    set(gca,'fontsize',fontsize,'linewidth',linewidth); 
+    set(gca,'fontsize',fontsize,'linewidth',linewidth,'XTick',-2430:10:-2385); 
     xlabel('Easting [km]'); ylabel('Northing [km]'); 
     legend('Location','east','color',[0.8,0.8,0.8]);
     xlim([-2.43e3 -2.385e3]); 
@@ -775,7 +777,8 @@ ax2 = axes('position',[0.74 0.245 0.2 0.63]);
         
 % save figure
 if save_figure
-    exportgraphics(figure(5),[basepath,'figures/width_segments.png'],'Resolution',300);
+    exportgraphics(figure(5),[outpath,'width_segments.png'],'Resolution',300);
+    exportgraphics(figure(5),[outpath,'width_segments.eps'],'Resolution',300);
     disp('figure 5 saved');
 end
 
@@ -799,7 +802,7 @@ b_bathym = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).bathym;
 b0 = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).HB.hb0;
 
 % load radar echogram (using workflow from main_L1B.m)
-mdata = load_L1B([basepath,'data/bed_elevations/OIB_L1B/IRMCR1B_20181016_01_005.nc']);
+mdata = load_L1B([datapath, 'bed_elevations/OIB_L1B/IRMCR1B_20181016_01_005.nc']);
 param.ylims_bins = [-inf inf];
 good_bins = round(max(1,min(mdata.Surface)+param.ylims_bins(1)) : min(max(mdata.Surface)+param.ylims_bins(2),size(mdata.Data,1)));
 % Apply AGC 
@@ -858,7 +861,7 @@ text((max(get(ax1,'XLim'))-min(get(ax1,'XLim')))*0.02+min(get(ax1,'XLim')),...
     (max(get(ax1,'YLim'))-min(get(ax1,'YLim')))*0.96+min(get(ax1,'YLim')),...
     'a)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold'); 
 % Inset plot: Landsat image, flight path, centerline
-cd([basepath,'data/imagery/']);
+cd([datapath,'imagery/']);
 landsat = dir('LC08_L1GT_218106_20201015_20201104_01_T2_B8.TIF');
 [LS.im,LS.R] = readgeoraster(landsat.name); [LS.ny,LS.nx] = size(LS.im);
 % polar stereographic coordinates of image boundaries
@@ -894,7 +897,8 @@ text((max(get(ax3,'XLim'))-min(get(ax3,'XLim')))*0.98+min(get(ax3,'XLim')),...
     'b)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
 
 if save_figure
-    exportgraphics(figure(6),[basepath,'figures/bed_picks.png'],'Resolution',300);
+    exportgraphics(figure(6),[outpath,'bed_picks.png'],'Resolution',300);
+    exportgraphics(figure(6),[outpath,'bed_picks.eps'],'Resolution',300);
     disp('figure 6 saved');
 end
 
@@ -936,7 +940,7 @@ yyaxis left;
         (max(get(ax1,'YLim'))-min(get(ax1,'YLim')))*0.96+min(get(ax1,'YLim')),...
         'a)','backgroundcolor','w','fontsize',fontsize,'linewidth',linewidth-1,'fontweight','bold');
 yyaxis right; 
-    ylabel('Rate factor [Pa^{-3}/yr]'); 
+    ylabel('Rate factor [Pa^{-3} yr^{-1}]'); 
     colormap(col1);
     hold on; grid on; 
     xlim([0 45]); 
@@ -959,7 +963,8 @@ set(ax2,'linewidth',2,'fontsize',fontsize,'fontname',fontname);
     
 % save figure
 if save_figure
-    exportgraphics(figure(7),[basepath,'figures/rate_factor+basal_roughness.png'],'Resolution',300);      
+    exportgraphics(figure(7),[outpath,'rate_factor+basal_roughness.png'],'Resolution',300); 
+    exportgraphics(figure(7),[outpath,'rate_factor+basal_roughness.eps'],'Resolution',300);      
     disp('figure 7 saved.'); 
 end
         
@@ -1015,7 +1020,7 @@ ax1 = axes('position',[0.08 0.55 0.4 0.4]); hold on;
 ax2 = axes('position',[0.56 0.55 0.4 0.4],'YTick',0:400:1600); hold on; 
     set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2); 
     grid on;
-    ylabel('Modeled flow speed [m/yr]');
+    ylabel('Modeled flow speed [m yr^{-1}]');
 %     xlim([25 60]);
     ylim([0 1700]);
     % grounding line location
@@ -1060,7 +1065,7 @@ ax4 = axes('position',[0.56 0.1 0.4 0.4]); hold on;
 grid on;
     set(gca,'fontsize',fontsize,'fontname','Arial','linewidth',2);
     xlabel('Distance along centerline [km]');
-    ylabel('Flow speed misfit [m/yr]'); 
+    ylabel('Flow speed misfit [m yr^{-1}]'); 
     xlim([0 60]);
     ylim([-600 850]);
     % grounding line location
@@ -1089,7 +1094,8 @@ grid on;
    
 % save figure
 if save_figure
-    exportgraphics(figure(8),[basepath,'figures/model_misfits_2007-2018.png'],'Resolution',300);
+    exportgraphics(figure(8),[outpath,'model_misfits_2007-2018.png'],'Resolution',300);
+    exportgraphics(figure(8),[outpath,'model_misfits_2007-2018.eps'],'Resolution',300);
     disp('figure 8 saved');
 end
 
@@ -1129,7 +1135,7 @@ Fgl_preCollapse(end-10:end) = Fgl_preCollapse(end-10);
 
 % load observed discharge and calving front positions
 % Rignot et al. (2004) discharge observations 
-% F_obs: [deciyear  discharge(km^3/yr)  error(km^3/yr)]
+% F_obs: [deciyear  discharge(km^3 yr^{-1})  error(km^3 yr^{-1})]
 F_obs = [1996 2.6; 2003+2.75/12 5.6; 2003+3.2/12 6.8; 2003+3.5/12 7.6];
 F_obs_err = [sqrt(2.6^2*((100/700)^2 + (100/700)^2 + 2*(100*100)/(700*700)));...
     sqrt(5.6^2*((100/2000)^2 + (100/700)^2 + 2*(100*100)/(2000*700)));...
@@ -1233,7 +1239,7 @@ while loop==1
         set(gca,'fontsize',fontsize,'YTick',0:500:1500,'linewidth',1);   
         grid on;
         xlabel('Distance along centerline [km]');
-        ylabel('Speed [m/yr]');  
+        ylabel('Speed [m yr^{-1}]');  
         xlim([25 80]); 
         ylim([250 1500]);
         % add text label            
@@ -1300,7 +1306,7 @@ while loop==1
         set(gca,'fontsize',fontsize,'YTick',0:500:5000,'linewidth',1); 
         grid on; 
         xlabel('Distance along centerline [km]');
-        ylabel('Speed [m/yr]');  
+        ylabel('Speed [m yr^{-1}]');  
         xlim([25 60]); 
         ylim([250 1500]);
         % add text label            
@@ -1343,7 +1349,7 @@ while loop==1
         colormap(col1);
         cb4=colorbar('horiz'); set(cb4,'fontname',fontname,'fontsize',fontsize-3,...
             'Ticks',0:0.5:1,'TickLabels',[{'0.0'},{'-2.5'},{'-5.0'}],'position',[0.53 0.9 0.19 0.02]);
-        set(get(cb4,'label'),'String','\Delta SMB_{enh} [m/yr]','fontsize',fontsize-3);  
+        set(get(cb4,'label'),'String','\Delta SMB_{enh} [m yr^{-1}]','fontsize',fontsize-3);  
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
@@ -1369,7 +1375,7 @@ while loop==1
         colormap(col1);
         cb5=colorbar('horiz'); set(cb5,'fontname',fontname,'fontsize',fontsize-3,'Ticks',0:1/2:1,...
             'TickLabels',[{'0.0 & 0.0'},{'-2.5 & +0.5'},{'-5.0 & +1.0'}],'position',[0.77 0.9 0.19 0.02]);
-        set(get(cb5,'label'),'String','\DeltaSMB_{enh} [m/yr] & \DeltaF_T [^oC]','fontsize',fontsize-3);  
+        set(get(cb5,'label'),'String','\DeltaSMB_{enh} [m yr^{-1}] & \DeltaF_T [^oC]','fontsize',fontsize-3);  
         % add text label            
         text((max(get(gca,'XLim'))-min(get(gca,'XLim')))*0.9+min(get(gca,'XLim')),...
             (max(get(gca,'YLim'))-min(get(gca,'YLim')))*0.9+min(get(gca,'YLim')),...
@@ -1906,10 +1912,14 @@ end
     
 % save figures 
 if save_figures
-    exportgraphics(figure(9),[basepath,'figures/sensitivityTests_geom+speed_unperturbed.png'],'Resolution',300);
-    exportgraphics(figure(10),[basepath,'figures/sensitivityTests_QglXcf_unperturbed.png'],'Resolution',300);
-    exportgraphics(figure(11),[basepath,'figures/sensitivityTests_geom+speed_climate_scenarios.png'],'Resolution',300);
-    exportgraphics(figure(12),[basepath,'figures/sensitivityTests_QglXcf_climate_scenarios.png'],'Resolution',300);
+    exportgraphics(figure(9),[outpath,'sensitivityTests_geom+speed_unperturbed.png'],'Resolution',300);
+    exportgraphics(figure(9),[outpath,'sensitivityTests_geom+speed_unperturbed.eps'],'Resolution',300);
+    exportgraphics(figure(10),[outpath,'sensitivityTests_QglXcf_unperturbed.png'],'Resolution',300);
+    exportgraphics(figure(10),[outpath,'sensitivityTests_QglXcf_unperturbed.eps'],'Resolution',300);
+    exportgraphics(figure(11),[outpath,'sensitivityTests_geom+speed_climate_scenarios.png'],'Resolution',300);
+    exportgraphics(figure(11),[outpath,'sensitivityTests_geom+speed_climate_scenarios.eps'],'Resolution',300);
+    exportgraphics(figure(12),[outpath,'sensitivityTests_QglXcf_climate_scenarios.png'],'Resolution',300);
+    exportgraphics(figure(12),[outpath,'sensitivityTests_QglXcf_climate_scenarios.eps'],'Resolution',300);
     disp('figures 9-12 saved.');
 end
 

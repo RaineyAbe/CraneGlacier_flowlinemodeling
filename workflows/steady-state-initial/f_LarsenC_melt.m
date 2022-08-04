@@ -116,6 +116,7 @@ end
 if save_figure
     cd([basepath,'figures/']);
     exportgraphics(figure(1),'LarsenC_MeanMeltRate.png','Resolution',300);
+    exportgraphics(figure(1),'LarsenC_MeanMeltRate.eps','Resolution',300);
     disp('figure 1 saved')
 end
 

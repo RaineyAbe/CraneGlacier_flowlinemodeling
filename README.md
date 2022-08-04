@@ -1,17 +1,28 @@
 # Crane Glacier flowline modeling 
 
-Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf collapse and potential sensitivities to future changes in climate
+Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf collapse and sensitivities to future changes in climate
 
 Rainey Aberle and Ellyn Enderlin
 
-![](figures/sensitivityTests_QglXcf_climate_scenarios.png)
+_Estimated conditions along the glacier centerline (1994-2018):_
+![](figures/centerline_observations.eps)
+
+_Modeling results under varying future unchanging and varying climate conditions (1994-2100):_
+![](figures/sensitivityTests_QglXcf_unperturbed.eps)
+![](figures/sensitivityTests_QglXcf_unperturbed.eps)
+
+---
+
+### Correspondence
+
+Rainey Aberle (raineyaberle@u.boisestate.edu)
 
 ---
 
 ### Workflows:
 
-- `steady-state-initial`: tune the model by simulating the pre-ice shelf collapse conditions until reaching near a steady state, the ice shelf collapse, and 
-- `dynamic-initial-UNTESTED`: (not recommended) tune the model to produce post-collapse conditions 2009-2018
+- `steady-state-initial`: tune the model by simulating the pre-ice shelf collapse conditions until reaching a steady state criterion, the ice shelf collapse (remove all back stress), and run the model forward until 2100 with a range of future climate conditions.  
+- `dynamic-initial-UNTESTED`: (not recommended) tune the model to produce post-collapse conditions 2009-2018, then run the model forward until 2100 with a range a future changes in climate conditions. 
 
 ### Order of operations:
 
@@ -21,7 +32,7 @@ Rainey Aberle and Ellyn Enderlin
 
 ### Extracted data:
 
-To access observational data and model outputs averaged across the glacier width, see `inputs-outputs`. 
+To access observational data and model outputs averaged across the glacier width, see `inputs-outputs/`. 
 
 - Centerline observations: all files with the `observed_*.mat` file name structure.
 - Model outputs: all files with the `modeled_*.mat` file name structure. 
@@ -42,12 +53,6 @@ See `figures/` for figures used in manuscript and otherwise.
 
 ---
 
-### Contact
-
-Rainey Aberle (raineyaberle@u.boisestate.edu)
-
----
-
 ### Datasets not included in this repository which are used in the workflow
 
 Velocities:  
@@ -63,7 +68,7 @@ Surface elevations:
 
 Terminus positions:
 
-- Landsat-derived (Dryak and Enderlin, 2020)
+- Manually delineated from Landsat imagery (Dryak and Enderlin, 2020)
 
 Bed elevation: 
 
