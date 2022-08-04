@@ -5,11 +5,11 @@ Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf
 Rainey Aberle and Ellyn Enderlin
 
 _Estimated conditions along the glacier centerline (1994-2018):_
-![](figures/centerline_observations.png)
+<img src="figures/centerline_observations.png" alt="drawing" width="200"/>
 
 _Modeling results under unchanging climate conditions with varying fresh water depth in crevasses (d_fw) and climate perturbations for surface mass balance (SMB) and ocean thermal forcing (F_T) (1994-2100):_
-![](figures/sensitivityTests_QglXcf_unperturbed.png)
-![](figures/sensitivityTests_geom%2Bspeed_climate_scenarios.png)
+<img src="figures/sensitivityTests_QglXcf_unperturbed.png" alt="drawing" width="200"/>
+<img src="figures/sensitivityTests_QglXcf_climate_scenarios.png" alt="drawing" width="200"/>
 
 ---
 
