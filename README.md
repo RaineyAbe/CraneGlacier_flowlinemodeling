@@ -12,7 +12,7 @@ _Modeling results under unchanging climate conditions with varying fresh water d
 
 <img src="figures/sensitivityTests_QglXcf_unperturbed.png" alt="drawing" width="500"/>
 
-<img src="figures/sensitivityTests_QglXcf_climate_scenarios.png" alt="drawing" width="700"/>
+<img src="figures/sensitivityTests_QglXcf_climate_scenarios.png" alt="drawing" width="800"/>
 
 ---
 
