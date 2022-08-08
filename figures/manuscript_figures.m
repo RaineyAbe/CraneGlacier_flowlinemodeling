@@ -842,7 +842,7 @@ clear('UTMe','UTMn','Elvis','D')
 % -----plot
 % Bed picks vs. WGS84 elevation
 figure(6); clf;
-set(gcf,'position',[-1000 100 800 800]);
+set(gcf,'position',[-1000 100 1000 1000]);
 ax1 = axes('position',[0.1 0.45 0.85 0.53],'YDir','normal','fontsize',fontsize,'fontname',fontname); hold on; 
 imagesc(ax1, mdata_WGS84.Distance/1000,mdata_WGS84.Elevation_Fasttime(depth_good_idxs),...
     mdata_WGS84.Data(depth_good_idxs,:));
@@ -886,11 +886,13 @@ ax3 = axes('pos',[0.1 0.06 0.85 0.32],'fontname','Arial','fontsize',fontsize,...
     ylabel('Elevation [m]');
     legend('location','southeast');
     xlim([0 50]);
+    ylim([-2200 1000]);
     ci=157;
     plot(x0(1:c0+5)/10^3, h0(1:c0+5), '-b','linewidth',linewidth,'displayname','Surface picks');    
-    plot(cl.xi(1:ci)/10^3,b0(1:ci),'-k','linewidth',linewidth,'displayname','Smoothed bed picks');
-    plot(cl.xi(1:ci)/10^3,b_SOM(1:ci),'--k','linewidth',linewidth,'displayname','Huss and Farinotti (2014)');
-    plot(cl.xi(1:ci)/10^3,b_BM(1:ci),':k','linewidth',linewidth,'displayname','BedMachine Antarctica');
+    plot(cl.xi/10^3,b0,'-k','linewidth',linewidth,'displayname','Smoothed bed picks');
+    plot(cl.xi/10^3,b_SOM,'--k','linewidth',linewidth,'displayname','Huss and Farinotti (2014)');
+    plot(cl.xi/10^3,b_BM,':k','linewidth',linewidth,'displayname','BedMachine Antarctica');
+    plot(cl.xi/10^3,b_bathym,'xk','linewidth',linewidth,'markersize', 8, 'displayname','Rebesco et al. (2014)');
 % add text label            
 text((max(get(ax3,'XLim'))-min(get(ax3,'XLim')))*0.98+min(get(ax3,'XLim')),...
     (max(get(ax3,'YLim'))-min(get(ax3,'YLim')))*0.94+min(get(ax3,'YLim')),...
