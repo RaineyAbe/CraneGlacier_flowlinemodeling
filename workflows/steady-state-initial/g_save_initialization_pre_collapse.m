@@ -56,16 +56,17 @@ h0 = movmedian(h0, 5);
 % -------------------------------------------------------------------------
 % 3. glacier bed elevation, b0(x)
 % -------------------------------------------------------------------------
-b0 = load('observed_bed_elevations_width_averaged.mat').b_adj;
-b0(1:2) = b0(3);
+b = load('observed_bed_elevations_width_averaged.mat').b_adj;
+b(1:2) = b(3);
 % smooth slightly
-b0=movmean(b0,20);
+b0=movmean(b,20);
 if size(b0)==[186 1]
     b0=b0';
 end
+b_movstd = movstd(b - b0, 5);
 % adjust bed elevation to account for grounding line location
 % initial grounding line ~5km inland of fjord_end (Rebesco et al., 2006)
-fjord_end = shaperead([basepath,'data/terminus/fjord_end.shp']);
+fjord_end = shaperead('/Volumes/LaCie/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/data/terminus/fjord_end.shp');
 Ifjord_end = find(cl.x > polyxpoly(cl.x, cl.y, fjord_end.X, fjord_end.Y), 1, 'first');
 gl0 = find(x0 >= x0(Ifjord_end)-5e3, 1, 'first');
 % calculate required thickness to be perfectly grounded at gl0 using
@@ -75,11 +76,6 @@ gl0 = find(x0 >= x0(Ifjord_end)-5e3, 1, 'first');
 % rho_i = 917; % kg/m^3
 % Hf0 = (rho_sw/rho_i * h0(gl0)) / (rho_sw/rho_i - 1);
 % b0_gl0 = h0(gl0) - Hf0;
-
-% increase elevation near terminus
-% b0(136:end) = b0(136:end)+100;
-% % smooth the transition
-% b0(125:135) = interp1([x0(124);x0(136)],[b0(124);b0(136)],x0(125:135));
 
 % -------------------------------------------------------------------------
 % 4. glacier width, W0(x)
@@ -177,52 +173,3 @@ if save_initial
         'x0','SMB0','RO0','SMR0','Q0','c0','-append');
     disp('model initialization parameters saved to file');
 end
-
-%% Estimate pre-collapse glacier ice backstress between 2002 terminus position and the end of the fjord
-% lateral resistance = 2*H/W * (5*U/E*A*W)^(1/n)
-
-% floating thickness from c0:f0
-% rho_i*H_i = rho_sw*H_sw --> H = -rho_sw/(rho_i - rho_sw) * h
-rho_i = 917; % kg/m^3
-rho_sw = 1000; % kg/m^3
-H = -rho_sw/(rho_i-rho_sw) * h0(c0:f0);
-
-% lateral resistance
-n = 3;
-Rxy = 2*H./W0(c0:f0) .* nthroot(5.*U0(c0:f0) ./ (A0(c0:f0).*W0(c0:f0)), n);
-Rxy_sum = sum(Rxy); % Pa
-% longitudinal stress
-dUdx(c0) = (U0(c0+1)-U0(c0))./(x0(c0+1)-x0(c0)); % forward difference
-dUdx(c0+1:f0-1) = (U0(c0+2:f0)-U0(c0:f0-2))./(x0(c0+2:f0)-x0(c0:f0-2)); % central difference
-dUdx(f0) = (U0(f0)-U0(f0-1))/(x0(f0)-x0(f0-1)); % backward difference at c
-vm = (A0(c0:f0).^(-1/n)).*(abs(dUdx(c0:f0))).^((1-n)/n);
-Rxx = (-2/(dx^2)).*(H.*vm);
-Rxx(1)=Rxx(2); % remove infinite value
-Rxx_sum = sum(Rxx); % Pa
-disp(['Sum Rxy = ',num2str(Rxy_sum/10^3),' kPa']);
-disp(['Sum Rxx = ',num2str(Rxx_sum/10^3),' kPa']);
-
-% plot
-figure(1); clf;
-hold on; set(gca,'fontsize',12,'linewidth',1);
-plot(x0(c0:f0)/10^3, Rxy/10^3, '-b', 'linewidth',2, 'displayname', 'R_{xy}');
-plot(x0(c0:f0)/10^3, Rxx/10^3, '-m', 'linewidth', 2, 'displayname', 'R_{xx}');
-grid on; legend;
-xlabel('distance along centerline [km]');
-ylabel('lateral resistance [kPa]');
-
-figure(2); clf
-subplot(1,2,1); 
-hold on; set(gca,'fontsize',12,'linewidth',1);
-plot(x0/10^3, U0.*3.1536e7, '-k','linewidth',2);
-xlabel('distance along centerline [km]');
-ylabel('speed [m/y]');
-grid on
-subplot(1,2,2);
-hold on; set(gca,'fontsize',12,'linewidth',1);
-plot(x0/10^3, h0, '-b','linewidth',2);
-plot(x0(c0:f0)/10^3, h0(c0:f0)-H,'-c','linewidth',2);
-plot(x0/10^3, b0,'-k', 'linewidth',2);
-xlabel('distance along centerline [km]');
-ylabel('elevation [m]');
-grid on

@@ -47,6 +47,11 @@ cl.X = interp1(cl.xi,cl.Xi,cl.x); cl.Y = interp1(cl.xi,cl.Yi,cl.x);
 % -----Load model initialization variables
 load([basepath,'inputs-outputs/model_initialization_pre-collapse.mat']);
 
+% -----Load 2018 grounding line position
+xgl_2018 = load([basepath,'inputs-outputs/2018_modeledConditions.mat']).x(...
+    load([basepath,'inputs-outputs/2018_modeledConditions.mat']).gl);
+Xgl_2018 = interp1(cl.xi, cl.Xi, xgl_2018); Ygl_2018 = interp1(cl.xi, cl.Yi, xgl_2018);
+
 % -----Define parameters for figures
 fontsize = 16;          % font size for figure text
 fontname = 'Arial';     % font name
@@ -146,7 +151,7 @@ r = rectangle('Position',[xlimits2(1) ylimits2(1) xlimits2(end)-xlimits2(1) ylim
     
 % plot centerline points
 plot(cl.X,cl.Y,'o','color','m','markerfacecolor','m',...
-    'markeredgecolor','k','markersize',markersize,'displayname','Centerline');
+    'markeredgecolor','k','markersize',markersize-3,'displayname','Centerline');
 
 % plot centerline distance markers
 dist = 0:10e3:cl.x(end); Idist = dsearchn(cl.x',dist'); % ticks every 10 km
@@ -158,6 +163,9 @@ for i=1:length(labels)
 end
 text(cl.X(Idist)+1500,cl.Y(Idist),labels,'color',[253,224,221]/255,...
     'fontweight','bold','fontname','arial','fontsize',fontsize);
+
+% plot 2018 grounding line location
+plot(Xgl_2018, Ygl_2018, 'xw', 'markersize', markersize+2,'linewidth',2,'displayname','2018 x_{gl}');
 
 % add colorbar
 c = colorbar('Position',[0.29 0.58 0.02 0.15],'fontsize',fontsize,'fontweight',...
@@ -257,8 +265,8 @@ years = 1994:2020; % total coverage of years for all datasets
 
 % 1. Ice surface elevation
 h = load([basepath,'inputs-outputs/observed_surface_elevations.mat']).h;
-years_h = [2002 2001 2009 2010 2011 2016 2017 2018]; % years of coverage
-I_years_h = [5, 7:13]; % index of each year's profile
+years_h = [2001 2001 2009 2010 2011 2016 2017 2018]; % years of coverage
+I_years_h = [3 7 8:14]; % index of each year's profile
 
 % 2. Glacier terminus position
 termX = load([basepath,'inputs-outputs/LarsenB_centerline.mat']).centerline.termx;
@@ -298,7 +306,7 @@ ax(1)=axes('Position',[0.11 0.7 0.75 0.28],'linewidth',2,'fontsize',...
     hold on; grid on; 
     ylabel('Elevation [m]'); 
     xlim([0 65]); 
-    ylim([-1200 1800]); 
+    ylim([-1200 1350]); 
     legend('Location','northeast');
     % surface elevation
     for i=1:length(years_h)
@@ -331,7 +339,7 @@ ax(1)=axes('Position',[0.11 0.7 0.75 0.28],'linewidth',2,'fontsize',...
 ax(2)=axes('Position',[0.11 0.39 0.75 0.28],'linewidth',2,...
     'fontsize',fontsize,'fontname',fontname,'XTickLabels',[]); % speed
     hold on; grid on; ylabel('Speed [m yr^{-1}]');
-    xlim([0 65]); ylim([0 1500]);
+    set(ax(2), 'XLim', [0 65], 'YLim', [0 1400], 'YTick', 0:400:1600);
     for i=1:length(years_U)
         Icol = round(interp1(years, 1:length(years), years_U(i)));
         xcf = interp1(termdate, termx, years_U(i)); % nearest calving front location [distance along centerline, m]
@@ -784,7 +792,7 @@ end
 
 %% Bed picks, other bed models
 
-save_figure = 0; % = 1 to save figure
+save_figure = 1; % = 1 to save figure
 linewidth = 2; 
 
 % add path to IceBridge functions
@@ -793,13 +801,14 @@ addpath([basepath,'functions/IceBridge/functions/']);
 % load raw picks
 rawX = load([basepath,'inputs-outputs/OIBpicks_raw.mat']).RawX;
 rawY = load([basepath,'inputs-outputs/OIBpicks_raw.mat']).RawY;
-mdata_WGS84 = load([basepath,'inputs-outputs/OIBpicks_raw.mat']).mdata_WGS84;
 
 % load other bed observations
 b_SOM = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).b_cl_SOM;
 b_BM = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).b_cl_BM;
 b_bathym = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).bathym;
 b0 = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).HB.hb0;
+
+gl_col = [254,178,76]./255; % color for plotting grounding line location
 
 % load radar echogram (using workflow from main_L1B.m)
 mdata = load_L1B([datapath, 'bed_elevations/OIB_L1B/IRMCR1B_20181016_01_005.nc']);
@@ -844,14 +853,17 @@ clear('UTMe','UTMn','Elvis','D')
 figure(6); clf;
 set(gcf,'position',[-1000 100 1000 1000]);
 ax1 = axes('position',[0.1 0.45 0.85 0.53],'YDir','normal','fontsize',fontsize,'fontname',fontname); hold on; 
-imagesc(ax1, mdata_WGS84.Distance/1000,mdata_WGS84.Elevation_Fasttime(depth_good_idxs),...
-    mdata_WGS84.Data(depth_good_idxs,:));
+    imagesc(ax1, mdata_WGS84.Distance/1000,mdata_WGS84.Elevation_Fasttime(depth_good_idxs),...
+        mdata_WGS84.Data(depth_good_idxs,:));
     xlabel('Distance along fly line [km]');
     ylabel('Elevation [m]');
     colormap('bone');
     set(ax1,'CLim',[-1.1 -0.9]);
     xlim([0 50]);
     ylim([-1500 850]);
+% 2018 grounding line location
+gl_mdata_WGS84_interp = mdata_WGS84.Distance(dsearchn([mdata_WGS84.Easting, mdata_WGS84.Northing], [Xgl_2018, Ygl_2018]));
+plot(ax1, [gl_mdata_WGS84_interp/1e3, gl_mdata_WGS84_interp/1e3], [-1500 850], 'color', gl_col, 'linewidth', linewidth, 'handlevisibility', 'off');
 % Surface and bed picks
 plot(ax1,mdata_WGS84.Distance/1000,mdata_WGS84.Surface_Elev,'-b','linewidth',2,'displayname','Surface picks');
 plot(ax1,rawX,rawY,'ok','linewidth',1.5,'displayname','Bed picks');
@@ -875,6 +887,7 @@ ax2 = axes('pos',[0.69 0.46 0.25 0.23],'fontname','Arial','fontsize',fontsize,..
     set(ax2,'CLim',[0 40e3]);
     plot(ax2,cl.X/1e3,cl.Y/1e3,'-.m','linewidth',2,'displayname','Centerline');
     plot(ax2,mdata_WGS84.Easting/1e3,mdata_WGS84.Northing/1e3,'-b','linewidth',2,'displayname','OIB fly line');
+    scatter(ax2, Xgl_2018/1e3, Ygl_2018/1e3, 'x', 'markerfacecolor', gl_col, 'markeredgecolor', gl_col, 'linewidth', linewidth, 'displayname','2018 x_{gl}');
     legend('Location','east');
     xlim([-2.4293 -2.3574].*1e3); 
     ylim([1.2119 1.2812].*1e3);
@@ -885,14 +898,18 @@ ax3 = axes('pos',[0.1 0.06 0.85 0.32],'fontname','Arial','fontsize',fontsize,...
     xlabel('Distance along centerline [km]');
     ylabel('Elevation [m]');
     legend('location','southeast');
-    xlim([0 50]);
-    ylim([-2200 1000]);
     ci=157;
-    plot(x0(1:c0+5)/10^3, h0(1:c0+5), '-b','linewidth',linewidth,'displayname','Surface picks');    
-    plot(cl.xi/10^3,b0,'-k','linewidth',linewidth,'displayname','Smoothed bed picks');
-    plot(cl.xi/10^3,b_SOM,'--k','linewidth',linewidth,'displayname','Huss and Farinotti (2014)');
-    plot(cl.xi/10^3,b_BM,':k','linewidth',linewidth,'displayname','BedMachine Antarctica');
-    plot(cl.xi/10^3,b_bathym,'xk','linewidth',linewidth,'markersize', 8, 'displayname','Rebesco et al. (2014)');
+    h_interp = mdata_WGS84.Surface_Elev(dsearchn([mdata_WGS84.Easting, mdata_WGS84.Northing], [cl.Xi, cl.Yi]));
+    rawY_interp = interp1(rawX*1000, rawY, mdata_WGS84.Distance); 
+    b_interp = rawY_interp(dsearchn([mdata_WGS84.Easting, mdata_WGS84.Northing], [cl.Xi, cl.Yi]));
+    plot(ax3, [xgl_2018/10^3 xgl_2018/10^3], [-2200 1000], '-', 'linewidth',linewidth, 'color', gl_col, 'handlevisibility','off');
+    plot(ax3, cl.xi/10^3, h_interp, '-b','linewidth',linewidth,'displayname','Surface picks');    
+    plot(ax3, cl.xi/10^3, b_interp, '-k','linewidth',linewidth,'displayname','Bed picks');
+    plot(ax3, cl.xi/10^3,b_SOM,'--k','linewidth',linewidth,'displayname','Huss and Farinotti (2014)');
+    plot(ax3, cl.xi/10^3,b_BM,':k','linewidth',linewidth,'displayname','BedMachine Antarctica');
+    plot(ax3, cl.xi/10^3,b_bathym,'xk','linewidth',linewidth,'markersize', 8, 'displayname','Rebesco et al. (2014)');
+    xlim([6.5 56.5]);
+    ylim([-2200 1000]);
 % add text label            
 text((max(get(ax3,'XLim'))-min(get(ax3,'XLim')))*0.98+min(get(ax3,'XLim')),...
     (max(get(ax3,'YLim'))-min(get(ax3,'YLim')))*0.94+min(get(ax3,'YLim')),...
@@ -1619,6 +1636,7 @@ dL = zeros(length(IFT),1); % change in length
 dgl = zeros(length(IFT),1); % change in grounding line position
 Ugl = zeros(length(IFT),1); % speed at grounding line 
 F = zeros(length(IFT),1); % grounding line discharge
+clear XCF FGL;
 for i=1:length(IFT)
     load(files(IFT(i)).name);
     W = interp1(x0,W0,x2); % interpolate width on spatial grid
@@ -1681,7 +1699,7 @@ Ugl = zeros(length(IDFW),1); % speed at grounding line
 F = zeros(length(IDFW),1); % grounding line discharge
 % define thermal forcing
 TF0 = 0.2; % ^oC - estimated from Larsen B icebergs
-clear files; files = dir('*geom.mat');
+clear XCF FGL files; files = dir('*geom.mat');
 % sort files by perturbation magnitude
 for i=1:length(files)
     files(i).change = str2double(files(i).name(regexp(files(i).name,'B')+1:...
@@ -1753,7 +1771,7 @@ dL = zeros(length(IDFW),1); % change in length
 dgl = zeros(length(IDFW),1); % change in grounding line position
 Ugl = zeros(length(IDFW),1); % speed at grounding line 
 F = zeros(length(IDFW),1); % grounding line discharge
-clear files; files = dir('*geom.mat');
+clear XCF FGL files; files = dir('*geom.mat');
 % sort files by perturbation magnitude
 for i=1:length(files)
     files(i).change_TF = str2double(files(i).name(regexp(files(i).name,'F')+1:...
@@ -1850,11 +1868,12 @@ plot(ax12C,[(0:dt1:5*3.1536e7-dt1)/3.1536e7+1997 t/3.1536e7+2002],...
 % boxplots
 % Note: must add two dummy groups to increase spacing between boxes
 box_width = 0.7; 
-% climate scenario groups
-BP.groups(1:55) = "SMB";
-BP.groups(56:110) = "TF";
-BP.groups(111:165) = "SMB_{enh}";
-BP.groups(166:220) = "TF+SMB_{enh}";
+% climate scenario groups (add letters to the front in order, because
+% boxchart automatically alphabetizes categories when plotting)
+BP.groups(1:55) = "B_SMB";
+BP.groups(56:110) = "C_TF";
+BP.groups(111:165) = "D_SMB_{enh}";
+BP.groups(166:220) = "E_TF+SMB_{enh}";
 BP.groups(221:225) = "A";
 BP.groups(226:230) = "Z";
 BP.years = [BP.years; (2020:20:2100)'; (2020:20:2100)'];
