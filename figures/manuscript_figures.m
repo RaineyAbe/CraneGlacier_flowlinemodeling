@@ -277,9 +277,9 @@ c_obs = dsearchn(cl.xi',interp1(termdate,termx,[2002 2001 2009 2011 2016:2018])'
 c_obs(1:2) = 186;
 
 % 3. Glacier bed (OIB)
-% b = load([homepath,'inputs-outputs/observedBed.mat']).HB.hb0; % OIB
-b = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).HB.hb0;
-b_width_ave = load([basepath,'inputs-outputs/model_initialization_pre-collapse.mat']).b0;
+b = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).HB.hb0; % raw
+b_width_ave = load([basepath,'inputs-outputs/observed_bed_elevations_width_averaged.mat']).b_adj; % width-averaged
+b_width_ave_smooth = load([basepath,'inputs-outputs/model_initialization_pre-collapse.mat']).b0; % width-averaged, smoothed
 x0 = load([basepath,'inputs-outputs/model_initialization_pre-collapse']).x0;
 W0 = load([basepath,'inputs-outputs/model_initialization_pre-collapse']).W0;
 bathym = load([basepath,'inputs-outputs/observed_bed_elevations.mat']).bathym; % Rebesco et al. (2014)
@@ -300,7 +300,7 @@ I_years_SMB = 1:25; % index of each year's profile
 
 % Plot
 figure(3); clf
-set(gcf,'Position',[-1000 50 650 750]);
+set(gcf,'Position',[-1000 50 800 900]);
 ax(1)=axes('Position',[0.11 0.7 0.75 0.28],'linewidth',2,'fontsize',...
     fontsize,'fontname',fontname,'XTickLabels',[]); % geometry
     hold on; grid on; 
@@ -323,13 +323,15 @@ ax(1)=axes('Position',[0.11 0.7 0.75 0.28],'linewidth',2,'fontsize',...
     % calving front location
     for i=1:length(termx)
         Icol = round(interp1(years, 1:length(years), termdate(i)));
-        plot(ax(1),termx(i)/10^3*[1,1],[interp1(x0,b_width_ave,termx(i)) 30],...
+        plot(ax(1),termx(i)/10^3*[1,1],[interp1(x0,b_width_ave_smooth,termx(i)) 30],...
             'linewidth',linewidth,'color',col(Icol,:),'HandleVisibility','off');
     end
     % bed picks
-    plot(ax(1), cl.xi./10^3, b, ':k', 'linewidth', linewidth, 'displayname', 'b_{centerline}');
+    plot(ax(1), cl.xi./10^3, b, ':', 'color', [150,150,150]./255, 'linewidth',2, 'displayname', 'b_{centerline}');
     % bed, width-averaged
-    plot(ax(1), x0./10^3 ,b_width_ave, '-k', 'linewidth', linewidth, 'displayname', 'b_{width-averaged}');  
+    plot(ax(1), cl.xi./10^3 ,b_width_ave, '-', 'color', [150,150,150]./255, 'linewidth', linewidth, 'displayname', 'b_{width-averaged}');  
+    % bed, width-averaged, smoothed
+    plot(ax(1), x0./10^3 ,b_width_ave_smooth, '-', 'color', 'k', 'linewidth', linewidth, 'displayname', 'b_{width-averaged, smoothed}');      
     % bathymetry observations from Rebesco et al. (2006)
     plot(ax(1), cl.xi./10^3, bathym, 'xk', 'linewidth', linewidth', 'markersize', 3, 'displayname', 'b_{Rebesco et al. (2006)}');
     % Add text label
