@@ -18,7 +18,7 @@ warning off; % turn off warnings (velocity coefficient matrix is close to singul
     
 plot_conditions = 1; % = 1 to plot geometry, speed, cf/gl positions throughout model time period
 plot_climate_params = 1; % = 1 to plot SMB, DFW, TF throughout the model time period
-save_final = 0; % = 1 to save pre-collapse and final (2100) conditions
+save_final = 1; % = 1 to save pre-collapse and final (2100) conditions
 
 % Define path in directory to CraneGlacier_flowlinemodeling
 basepath = '/Users/raineyaberle/Research/MS/CraneGlacier_flowlinemodeling/';
@@ -110,7 +110,7 @@ smb_mean = NaN*zeros(1,length(delta_SMB0));
 for j=length(delta_SMB0)
     
     % -----switch scenarios on and off
-    delta_SMB = delta_SMB0(j);
+    delta_SMB = 0; %delta_SMB0(j);
     delta_DFW = 0; %delta_DFW0(j);
     delta_TF = delta_TF0(j);
     SMB_enhance = 1; % = 1 to increase SMR due to decreased SMB    
@@ -130,7 +130,6 @@ for j=length(delta_SMB0)
     col = parula(50e3); % color scheme for plots
 
     % -----run flowline model-----
-    Fgl_preCollapse = zeros(1,5*3.1536e7/dt);
     i=1; % counter for iterations
     while i < 5*3.1536e7/dt
 
@@ -205,6 +204,51 @@ for j=length(delta_SMB0)
         H(h<0)=0-b(h<0); h(h<0)=0; % surface cannot go below sea level
         h(h-H<b) = b(h-H<b)+H(h-H<b); % thickness cannot go beneath bed elevation
 
+        % -----calculate the effective pressure 
+        % (ice overburden pressure minus water pressure) assuming an easy & 
+        % open connection between the ocean and ice-bed interface
+        sl = find(b<=0,1,'first'); % find where the glacier base first drops below sea level
+        N_ground = rho_i*g*H(1:sl); % effective pressure where the bed is above sea level (Pa)
+        N_marine = rho_i*g*H(sl+1:length(x))+(rho_sw*g*b(sl+1:length(x))); % effective pressure where the bed is below sea level (Pa)
+        N = [N_ground N_marine];
+        N(N<0)=0; % cannot have negative values
+
+        % -----solve for new velocity
+        [U,dUdx] = U_convergence(x,U,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b);
+
+        % -----calculate ice flux
+        F = U.*H.*W; % ice flux (m^3 s^-1)
+        F(isnan(F))=0;
+        F(1)=F(2);
+
+        % -----implement SMB, SMR, & RO
+        SMB = interp1(x0,SMB0+Q0,x);
+        RO = interp1(x0,RO0,x);
+        SMR = zeros(1,c);
+        % use the Larsen C mean melt rate profile to scale SMR
+        % using the max initial SMR
+        if gl<c
+            SMR(gl+1:c) = SMR0/SMR_mean_fit_gl * feval(SMR_mean_fit,x(gl+1:c)-x(gl+1)); 
+        end
+
+        % -----store conditions
+%         hindcast(i).t = t(i); % s
+%         hindcast(i).Fgl = F(gl)*917*1e-12*3.1536e7; % Gt/a
+%         hindcast(i).x = x; % m
+%         hindcast(i).h = h; % m
+%         hindcast(i).H = H; % m
+%         hindcast(i).b = b; % m
+%         hindcast(i).xcf = xcf; % m
+%         hindcast(i).xgl = xgl; % m
+%         hindcast(i).c = c; % index
+%         hindcast(i).gl = gl; % index
+%         hindcast(i).Rxy_gl = sum(2*H(gl+1:c)./W(gl+1:c) .* nthroot(5.*U(gl+1:c) ./ (A(gl+1:c).*W(gl+1:c)), n)) + sigma_b; % Pa
+%         hindcast(i).U = U; % m/s
+%         hindcast(i).SMB = SMB; % m/s
+%         hindcast(i).SMR = SMR; % m/s  
+%         hindcast(i).RO = RO; % m/s
+%         hindcast(i).DFW = DFW; % m
+
         % -----plot geometry, speed, & grounding line and calving front positions
         if plot_conditions
             if i==1
@@ -245,6 +289,9 @@ for j=length(delta_SMB0)
                 ylabel('Year');
                 plot(x(c)/10^3,t(i)./3.1536e7+1997,'.','markersize',15,'color',col(i,:),'displayname','2009');
                 plot(ax3,x(gl)./10^3,t(i)./3.1536e7+1997,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off');
+%                 figure(2); clf; hold on; grid on;
+%                 xlabel('Time [s]');
+%                 ylabel('Lateral resistance at the grounding line [kPa]')
             elseif mod(t(i),dt*200)==0 % display every dt*200
                 figure(1);
                 % glacier geometry
@@ -259,37 +306,9 @@ for j=length(delta_SMB0)
                 % calving front & grounding line positions
                 plot(ax3,x(c)/10^3,t(i)/3.1536e7+1997,'.','Color',col(i,:),'markersize',15,'displayname',num2str(round(t(i)./3.1536e7)+2009)); hold on;
                 plot(ax3,x(gl)/10^3,t(i)/3.1536e7+1997,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
+                % Rxy_gl
+%                 figure(2); plot(t(i), hindcast(i).Rxy_gl / 1e3, '.', 'color', col(i,:), 'markersize', 15);
             end    
-        end
-
-        % -----calculate the effective pressure 
-        % (ice overburden pressure minus water pressure) assuming an easy & 
-        % open connection between the ocean and ice-bed interface
-        sl = find(b<=0,1,'first'); % find where the glacier base first drops below sea level
-        N_ground = rho_i*g*H(1:sl); % effective pressure where the bed is above sea level (Pa)
-        N_marine = rho_i*g*H(sl+1:length(x))+(rho_sw*g*b(sl+1:length(x))); % effective pressure where the bed is below sea level (Pa)
-        N = [N_ground N_marine];
-        N(N<0)=0; % cannot have negative values
-
-        % -----solve for new velocity
-        [U,dUdx] = U_convergence(x,U,H,h,A,E,N,W,dx,c,n,m,beta,rho_i,rho_sw,g,sigma_b);
-
-        % -----calculate ice flux
-        F = U.*H.*W; % ice flux (m^3 s^-1)
-        F(isnan(F))=0;
-        F(1)=F(2);
-
-        % -----save grounding line ice flux (discharge)
-        Fgl_preCollapse(i) = F(dsearchn(x',43e3))*917*1e-12*3.1536e7; % Gt/a
-
-        % -----implement SMB, SMR, & RO
-        SMB = interp1(x0,SMB0+Q0,x);
-        RO = interp1(x0,RO0,x);
-        SMR = zeros(1,c);
-        % use the Larsen C mean melt rate profile to scale SMR
-        % using the max initial SMR
-        if gl<c
-            SMR(gl+1:c) = SMR0/SMR_mean_fit_gl * feval(SMR_mean_fit,x(gl+1:c)-x(gl+1)); 
         end
 
         % -----calculate the  change in ice thickness from continuity
@@ -329,12 +348,6 @@ for j=length(delta_SMB0)
 
         % -----continue loop
         i=i+1;
-    end
-
-    % -----save pre-collapse ice mass discharge
-    if save_final
-        save([basepath,'inputs-outputs/modeled_discharge_pre-collapse.mat'],'Fgl_preCollapse');
-        disp('pre-collapse discharge saved');
     end
     
     % -----save
@@ -420,13 +433,13 @@ for j=length(delta_SMB0)
                 plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;
                 plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); hold on;            
                 % Rxx
-                figure(3); clf; 
-                ax4 = gca;
-                hold on; grid on;
-                set(ax4,'FontSize',12,'linewidth',2);
-                xlabel('Distance along centerline [km]'); 
-                ylabel('R_{xx} [kPa]');
-                plot(ax4, x/10^3, Rxx/10^3, 'Color',col(i,:),'markersize',10,'linewidth',2);
+%                 figure(3); clf; 
+%                 ax4 = gca;
+%                 hold on; grid on;
+%                 set(ax4,'FontSize',12,'linewidth',2);
+%                 xlabel('Distance along centerline [km]'); 
+%                 ylabel('R_{xx} [kPa]');
+%                 plot(ax4, x/10^3, Rxx/10^3, 'Color',col(i,:),'markersize',10,'linewidth',2);
             else
                 figure(1);
                 % glacier geometry
@@ -442,7 +455,7 @@ for j=length(delta_SMB0)
                 plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); 
                 plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'x','Color',col(i,:),'markersize',10,'linewidth',2,'HandleVisibility','off'); 
                 % Rxx
-                plot(ax4, x/10^3, Rxx/10^3, 'Color',col(i,:),'markersize',10,'linewidth',2);
+%                 plot(ax4, x/10^3, Rxx/10^3, 'Color',col(i,:),'markersize',10,'linewidth',2);
             end    
         end
 
@@ -466,7 +479,7 @@ for j=length(delta_SMB0)
                 plot(ax3,x(c)/10^3,t(i)/3.1536e7+2002,'.m','markersize',10,'linewidth',2,'HandleVisibility','off'); 
                 plot(ax3,x(gl)/10^3,t(i)/3.1536e7+2002,'xm','markersize',10,'linewidth',2,'HandleVisibility','off'); 
                 % Rxx
-                plot(ax4, x/10^3, Rxx/10^3, '-m','markersize',10,'linewidth',2);
+%                 plot(ax4, x/10^3, Rxx/10^3, '-m','markersize',10,'linewidth',2);
             end
             break;
         end
@@ -563,6 +576,24 @@ for j=length(delta_SMB0)
             SMR(gl+1:c) = SMR0/SMR_mean_fit_gl * feval(SMR_mean_fit,x(gl+1:c)-x(gl+1)); 
         end
 
+        % -----store modeled conditions
+%         hindcast(i).t = hindcast(end).t + dt; % s
+%         hindcast(i).Fgl = Fgl; % Gt/a
+%         hindcast(i).x = x; % m
+%         hindcast(i).h = h; % m
+%         hindcast(i).H = H; % m
+%         hindcast(i).b = b; % m
+%         hindcast(i).xcf = xcf; % m
+%         hindcast(i).xgl = xgl; % m
+%         hindcast(i).c = c; % index
+%         hindcast(i).gl = gl; % index
+%         hindcast(i).Rxy_gl = sum(2*H(gl+1:c)./W(gl+1:c) .* nthroot(5.*U(gl+1:c) ./ (A(gl+1:c).*W(gl+1:c)), n)) + sigma_b; % Pa
+%         hindcast(i).U = U; % m/s
+%         hindcast(i).SMB = SMB; % m/s
+%         hindcast(i).SMR = SMR; % m/s  
+%         hindcast(i).RO = RO; % m/s
+%         hindcast(i).DFW = DFW; % m
+
         % -----calculate the  change in ice thickness from continuity
         clearvars dHdt
         dHdt(1) = (-1/W(1))*(F(1)-F(2))/(x(1)-x(2)); % forward difference
@@ -598,7 +629,7 @@ for j=length(delta_SMB0)
     %   - Surface crevasse penetration depth [m]: 
     %       crev_s = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*(DFW));
     %   - At xcf, crev_s = h(c). Substitute, rearrange to solve for DFW:
-    DFW = (rho_i/rho_fw) * (h(c) - (Rxx(c)/(rho_i*g))); % fresh water depth in crevasses [m]
+    dfw = (rho_i/rho_fw) * (h(c) - (Rxx(c)/(rho_i*g))); % fresh water depth in crevasses [m]
     
     % ----------B. CALVING FRONT EVOLUTION----------
 
@@ -617,48 +648,34 @@ for j=length(delta_SMB0)
     Fgl = zeros(1,length(t)); % grounding line discharge [Gt/a]
     XCF = zeros(1,length(t)); % calving front position [m]
     XGL = zeros(1,length(t)); % grounding line position [m]
+    Rxy_gl = zeros(1, length(t)); % lateral stress at the grounding line [Pa]
+    DFW = zeros(1, length(t)); % fresh water depth in crevasses [m]
     col = parula(length(t)); % color scheme for plotting
-    count = 0; % count for saving modeled conditions for 2007-2018
+    count = 0; % count for saving modeled conditions 
     
     % -----run flowline model
     % determine linear change in DFW at each time step
     dDFWi = delta_DFW/length(find(t/3.1536e7 + 2002 > 2018));
-    for i=1:dsearchn(t', 16*3.1536e7)
+    for i=1:length(t)%dsearchn(t', 16*3.1536e7)
 
         % pre-2018 DFW change
         if t(i)/3.1536e7 + 2002 < 2018 
             if t(i)/3.1536e7 > 0.01 && t(i)/3.1536e7 < 1 
-                DFW = DFW-0.008;
+                dfw = dfw-0.008;
             elseif t(i)/3.1536e7 >= 1 && t(i)/3.1536e7 < 2
-                DFW = DFW-0.0007;
+                dfw = dfw-0.0007;
             elseif t(i)/3.1536e7 >= 2 && t(i)/3.1536e7 < 5
-                DFW = DFW-0.00015;
+                dfw = dfw-0.00015;
             elseif t(i)/3.1536e7 >= 5 
-                DFW = DFW-0.00058; 
+                dfw = dfw-0.00058; 
             end
         % post-2018 DFW
         elseif t(i)/3.1536e7 + 2002 >= 2018
             % linearly change DFW at each time step
-            DFW = DFW + dDFWi; 
+            dfw = dfw + dDFWi; 
         end
+        DFW(i) = dfw; 
 
-        % save modeled conditions in at years 2007-2018 (model years 5-16)
-        if mod(t(i),3.1536e7)==0 && t(i)/3.1536e7 >= 5 && t(i)/3.1536e7 <= 16
-            count=count+1;
-            mod_cond(count).year = t(i)/3.1536e7+2002;
-            mod_cond(count).x = x;            
-            mod_cond(count).h = h;
-            mod_cond(count).H = H;
-            mod_cond(count).U = U;
-            mod_cond(count).c = c; 
-            mod_cond(count).gl = gl;
-            % save to file in 2018
-            if save_final && t(i)/3.1536e7==16
-                save([basepath,'inputs-outputs/modeled_conditions_2007-2018.mat'],'mod_cond');
-                disp('2007-2018 modeled conditions saved');
-            end
-        end
-        
         % -----calving front location 
         if i==1
             c=c;
@@ -667,7 +684,7 @@ for j=length(delta_SMB0)
             % resistive stress [Pa]
             Rxx = 2*nthroot(dUdx./(E.*A),n); 
             % surface crevasse penetration depth [m]
-            crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*DFW); 
+            crev = (Rxx./(rho_i.*g))+((rho_fw./rho_i).*dfw); 
             % interpolate where h-crev <=0 
             % make sure sample points are unique for interpolation
             [~,I] = unique(h-crev); sort(I);
@@ -790,8 +807,9 @@ for j=length(delta_SMB0)
         F(isnan(F))=0;
         F(1)=F(2);
 
-        % -----save grounding line ice flux (discharge)
+        % -----save grounding line ice flux (discharge) & backstress
         Fgl(i) = F(gl)*917*1e-12*3.1536e7; % Gt/a
+        Rxy_gl(i) = sum(2*H(gl+1:c)./W(gl+1:c) .* nthroot(5.*U(gl+1:c) ./ (A(gl+1:c).*W(gl+1:c)), n)) + sigma_b; % Pa
 
         % -----implement SMB, SMR, RO, & Q
         SMB = interp1(x0, SMB0, x);
@@ -859,16 +877,42 @@ for j=length(delta_SMB0)
                 set(gca,'FontSize',12,'linewidth',2);
                 title('DFW');
                 xlabel('Year'); ylabel('[m]');
-                plot(axD, t(i)./3.1536e7, DFW, '.', 'Color', col(i,:), 'markersize', 20, 'displayname', '2022');
+                plot(axD, t(i)./3.1536e7, dfw, '.', 'Color', col(i,:), 'markersize', 20, 'displayname', '2022');
             else
                 figure(2);
                 plot(axA, x./10^3, SMB*3.1536e7, 'color', col(i,:), 'linewidth', 2);
                 plot(axB, t(i)/3.1536e7, TF, '.', 'Color', col(i,:), 'markersize', 20); 
                 plot(axC, x/10^3, SMR*3.1536e7, 'color', col(i,:), 'linewidth', 2);
-                plot(axD, t(i)./3.1536e7, DFW, '.', 'Color', col(i,:), 'markersize', 20);
+                plot(axD, t(i)./3.1536e7, dfw, '.', 'Color', col(i,:), 'markersize', 20);
             end
         end
 
+         % save modeled conditions every year for 2002-2018
+%         if mod(t(i),3.1536e7)==0 && t(i)/3.1536e7 <= 16
+%             count=count+1;
+%             mod_cond(count).t = t(i); % s
+%             mod_cond(count).Fgl = Fgl; % Gt/a
+%             mod_cond(count).x = x; % m
+%             mod_cond(count).h = h; % m
+%             mod_cond(count).H = H; % m
+%             mod_cond(count).b = b; % m
+%             mod_cond(count).xcf = xcf; % m
+%             mod_cond(count).xgl = xgl; % m
+%             mod_cond(count).c = c; % index
+%             mod_cond(count).gl = gl; % index
+%             mod_cond(count).Rxy_gl = sum(2*H(gl+1:c)./W(gl+1:c) .* nthroot(5.*U(gl+1:c) ./ (A(gl+1:c).*W(gl+1:c)), n)) + sigma_b; % Pa
+%             mod_cond(count).U = U; % m
+%             mod_cond(count).SMB = SMB; % m/s
+%             mod_cond(count).SMR = SMR; % m/s  
+%             mod_cond(count).RO = RO; % m/s
+%             mod_cond(count).DFW = DFW; % m
+%             % save to file in 2018
+%             if save_final && t(i)/3.1536e7 == 16
+%                 save([basepath,'inputs-outputs/modeled_conditions_2002-2018.mat'],'mod_cond');
+%                 disp('2002-2018 modeled conditions saved');
+%             end
+%         end
+        
         % -----calculate the  change in ice thickness from continuity
         clearvars dHdt
         dHdt(1) = (-1/W(1))*(F(1)-F(2))/(x(1)-x(2)); % forward difference
@@ -900,27 +944,27 @@ for j=length(delta_SMB0)
     % save geometry & speed
     if save_final
         % store final geometry & speed
-        h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; DFW2 = delta_DFW;
+        h2=h; H2=H; x2=x; c2=c; gl2=gl; U2=U; Fgl2=Fgl; XCF2=XCF; XGL2=XGL; DFW2=DFW; Rxy_gl2=Rxy_gl;
         % no change
         if delta_DFW==0 && delta_TF==0 && delta_SMB==0 
-            save([basepath,'workflows/steady-state-initial/results/1_SMB_DFW_TF/SMB0_DFW0m_TF0_geom.mat'],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
-            h1=h; H1=H; b1=b; c1=c; U1=U; x1=x; gl1=dsearchn(x1',XGL(end)); DFW1=DFW0; Fgl1=Fgl; XGL1=XGL; XCF1=XCF; 
-            save([basepath,'inputs-outputs/modeled_conditions_2100_unperturbed.mat'],'h1','H1','b1','c1','U1','gl1','x1','DFW1','Fgl1','XGL1','XCF1');
+            save([basepath,'workflows/steady-state-initial/results/1_SMB_DFW_TF/SMB0_DFW0m_TF0_geom.mat'],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2', 'Rxy_gl2');
+            h1=h; H1=H; b1=b; c1=c; U1=U; x1=x; gl1=dsearchn(x1',XGL(end)); DFW1=DFW0; Fgl1=Fgl; XGL1=XGL; XCF1=XCF; Rxy_gl1=Rxy_gl;
+            save([basepath,'inputs-outputs/modeled_conditions_2100_unperturbed.mat'],'h1','H1','b1','c1','U1','gl1','x1','DFW1','Fgl1','XGL1','XCF1', 'Rxy_gl1');
             disp('modeled_conditions_2100_unperturbed saved');
         % 2) SMB_enhanced
         elseif SMB_enhance==1 && delta_TF==0
             fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_enh_geom.mat'];
-            save([basepath,'workflows/steady-state-initial/results/2_SMB_enh/',fileName],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
+            save([basepath,'workflows/steady-state-initial/results/2_SMB_enh/',fileName],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2', 'Rxy_gl2');
             disp('geometry saved (2)');
         % 3) SMB_enhanced + TF
         elseif SMB_enhance==1 && delta_TF~=0 
             fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_enh_dTF',num2str(delta_TF),'_geom.mat'];
-            save([basepath,'workflows/steady-state-initial/results/3_SMB_enh+TF/',fileName],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
+            save([basepath,'workflows/steady-state-initial/results/3_SMB_enh+TF/',fileName],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2', 'Rxy_gl2');
             disp('geometry saved (3)');           
         % 1) SMB, DFW, and TF independent
         else
-            fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_DFW',num2str(DFW2),'m_TF',num2str(delta_TF),'_geom.mat'];
-            save([basepath,'workflows/steady-state-initial/results/1_SMB_DFW_TF/',fileName],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2');
+            fileName = ['SMB',num2str(delta_SMB*3.1536e7),'_DFW',num2str(DFW(end)),'m_TF',num2str(delta_TF),'_geom.mat'];
+            save([basepath,'workflows/steady-state-initial/results/1_SMB_DFW_TF/',fileName],'h2','H2','c2','U2','gl2','x2','DFW2','Fgl2','XGL2','XCF2', 'Rxy_gl2');
             disp('geometry saved (1)');
         end
     else

@@ -452,11 +452,11 @@ end
 % -----SOM
 % load variables from file (note: grid is the same for bedrock and thickness)
 % bedrock
-[SOM.b, SOM.R] = readgeoraster([basepath,'data/bed_elevations/SOM/bedrock/bedrock.tif']);
+[SOM.b, SOM.R] = readgeoraster([datapath,'bed_elevations/SOM/bedrock/bedrock.tif']);
 SOM.b = double(SOM.b);
 SOM.b(SOM.b==-9999) = NaN;
 % thickness
-SOM.H = readgeoraster([basepath,'data/bed_elevations/SOM/thickness/thickness.tif']);
+SOM.H = readgeoraster([datapath,'bed_elevations/SOM/thickness/thickness.tif']);
 SOM.H = double(SOM.H);
 % coordinates
 SOM.X = linspace(SOM.R.XWorldLimits(1), SOM.R.XWorldLimits(2), SOM.R.RasterSize(2));
@@ -468,12 +468,12 @@ SOM.H_cl = interp2(SOM.X, SOM.Y, flipud(SOM.H), cl.X, cl.Y);
 
 % -----BedMachine Antarctica
 % bed
-BM.b = double(ncread([basepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'bed'));
+BM.b = double(ncread([datapath,'bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'bed'));
 % thickness
-BM.H = double(ncread([basepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'thickness'));
+BM.H = double(ncread([datapath,'bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'thickness'));
 % coordinates
-BM.X = double(ncread([basepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'x'));
-BM.Y = double(ncread([basepath,'data/bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'y'));
+BM.X = double(ncread([datapath,'bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'x'));
+BM.Y = double(ncread([datapath,'bed_elevations/BedMachineAntarctica/BedMachineAntarctica_2020-07-15_v02.nc'],'y'));
 % interpolate along centerline
 [BM.X_mesh, BM.Y_mesh] = meshgrid(BM.X, BM.Y);
 BM.b_cl = interp2(BM.X, BM.Y, BM.b', cl.X, cl.Y);
@@ -497,6 +497,69 @@ imagesc(SOM.X/10^3, SOM.Y/10^3, flipud(SOM.H));
 c2 = colorbar;
 xlabel('Easting [km]'); ylabel('Northing [km]');
 
+% -----Extract bed elevations along regional glacier centerlines
+site_names = {'Crane', 'Drygalski', 'Edgeworth', 'Flask', 'HekGreen', 'Jorum'};
+file_names = {'N/A', 'DrygalskiCL_2000-01-01_2014-10-20.shp', 'EdgeworthCL_1950-01-01_2014-10-20.shp',...
+                'FlaskCL_2001-01-01_2014-10-20', 'HekGreenCL_2000-01-01_2014-10-20.shp',...
+                'JorumCL_1950-01-01_2014-10-20.shp'};
+col = [[31,120,180]; [51,160,44]; [178,223,138]; [251,154,153]; [255,127,0]; [202,178,214]]./255;
+% set up figure
+figure(6); clf; 
+subplot(2, 1, 1); % map view
+hold on; grid on;
+set(gca,'fontsize', 14, 'linewidth', 1);
+xlabel('Easting [km]');
+ylabel('Northing [km]');
+legend('location', 'best');
+subplot(2, 1, 2); % bed elevations
+hold on; grid on;
+set(gca,'fontsize', 14, 'linewidth', 1);
+xlabel('Distance along centerline [km]');
+ylabel('Elevation [m]');
+% loop through sites
+for i=1:length(site_names)
+    % Crane
+    if i==1
+        % interpolate bed elevations along centerline
+        centerline.b_SOM = interp2(SOM.X, SOM.Y, SOM.b, cl.X, cl.Y);
+        % plot
+        subplot(2, 1, 1);
+        plot(cl.X./1e3, cl.Y./1e3, '-', 'linewidth', 1, 'color', col(i,:), 'displayname', string(site_names(i)));
+        plot(cl.X(1)/1e3, cl.Y(1)/1e3, 'o', 'markersize', 10, 'color', col(i,:), 'HandleVisibility', 'off');
+        I = find(~isnan(cl.X), 1, 'last');
+        plot(cl.X(I)/1e3, cl.Y(I)/1e3, '*', 'markersize', 10, 'color', col(i,:), 'HandleVisibility', 'off');
+        subplot(2, 1, 2);
+        plot(x/1e3, centerline.b_SOM, '-', 'color', col(i,:), 'linewidth', 1, 'HandleVisibility', 'off');
+    else
+        % load centerline
+        centerline = shaperead(strcat(datapath, 'terminus/regional/', string(site_names(i)), '/', string(file_names(i))));
+        centerline.Lon = centerline.X;
+        centerline.Lat = centerline.Y;
+        % reproject coordinates to polar stereographic
+        [centerline.X, centerline.Y] = wgs2ps(centerline.Lon, centerline.Lat, 'StandardParallel', -71, 'StandardMeridian', 0);
+        % define x as distance along centerline
+        centerline.x = zeros(1,length(centerline.X)); 
+        for j=2:(length(centerline.X))
+            centerline.x(j) = sqrt((centerline.X(j)-centerline.X(j-1))^2 ...
+                + (centerline.Y(j)-centerline.Y(j-1))^2) ...
+                + centerline.x(j-1);
+        end
+        % interpolate bed elevations along centerline
+        centerline.b_SOM = interp2(SOM.X, SOM.Y, SOM.b, centerline.X, centerline.Y);
+        % plot
+        subplot(2, 1, 1);
+        plot(centerline.X./1e3, centerline.Y./1e3, '-', 'linewidth', 1, 'color', col(i,:), 'displayname', string(site_names(i)));
+        plot(centerline.X(1)/1e3, centerline.Y(1)/1e3, 'o', 'markersize', 10, 'color', col(i,:), 'HandleVisibility', 'off');
+        I = find(~isnan(centerline.X), 1, 'last');
+        plot(centerline.X(I)/1e3, centerline.Y(I)/1e3, '*', 'markersize', 10, 'color', col(i,:), 'HandleVisibility', 'off');
+        subplot(2, 1, 2);
+        plot(centerline.x./1e3, centerline.b_SOM, '-', 'color', col(i,:), 'linewidth', 1, 'HandleVisibility', 'off');
+    end
+    legend;
+    
+end
+legend off;
+
 % -----save
 if save_files
     % bed variable
@@ -504,8 +567,9 @@ if save_files
     save([basepath,'inputs-outputs/observed_bed_elevations.mat'],'b_cl_SOM','-append');
     disp('b_cl_SOM saved to file');
     % figure
-    saveas(figure(5), [basepath,'figures/observed_bed_elevation_thickness_SOM.png'], 'png');
-    disp('figure 5 saved');
+    exportgraphics(figure(5), [basepath,'figures/observed_bed_elevation_thickness_SOM.png'], 'resolution', 300);
+    exportgraphics(figure(6), [basepath, 'figures/LarsenB_regional_bed_elevations.png'], 'resolution', 200);
+    disp('figures 5 and 6 saved');
 end
 
 %% 6. Width-averaged bed elevation profile

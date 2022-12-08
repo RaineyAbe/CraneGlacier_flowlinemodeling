@@ -3,6 +3,7 @@ inputs-outputs/OIBpicks_raw.mat
 
 # datasets
 data/
+Crane_Glacier_centerline_observations+modeling_results*
 
 # OIB picking (different GitHub repo source)
 functions/IceBridge/
