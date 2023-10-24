@@ -2,10 +2,13 @@
 
 Code package used to model Crane Glacier response to the 2002 Larsen B ice shelf collapse and sensitivities to future changes in climate.
 
+---
+
 ### Citation
 
 Aberle R, Enderlin EM, Marshall H-P, Kopera M, Meehan TG (2023). Assessing controls on ice dynamics at Crane Glacier, Antarctic Peninsula, using a numerical ice flow model. _Journal of Glaciology_ __69__(277), 1109–1124. https://doi.org/10.1017/jog.2023.2
 
+---
 _Estimated conditions along the glacier centerline (1994-2018):_
 
 <img src="figures/centerline_observations.png" alt="drawing" width="500"/>
